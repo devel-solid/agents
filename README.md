@@ -26,10 +26,10 @@ fontes + agents-compose.yml
 ```yaml
 agents:
   repository: https://github.com/devel-solid/agents.git
-  ref: v4.0.0
+  ref: v4.0.1
 ```
 
-O exemplo usa `v4.0.0`, a primeira versão desta base no GitHub com o novo contrato. A tag `v3.0.2` usa o contrato anterior.
+O exemplo usa `v4.0.1`, que inclui a correção de recuperação do cache no Windows. O novo contrato foi introduzido em `v4.0.0`; a tag `v3.0.2` usa o contrato anterior.
 
 ## Estrutura
 

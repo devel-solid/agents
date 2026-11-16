@@ -16,7 +16,7 @@ Crie `agents-compose.yml` na raiz do consumidor:
 ```yaml
 agents:
   repository: https://github.com/devel-solid/agents.git
-  ref: v4.0.0
+  ref: v4.0.1
 
 outputs:
   AGENTS.md:
@@ -34,7 +34,7 @@ outputs:
             from: padrao-de-mensagem-de-commit.tpl.md
 ```
 
-O exemplo usa `v4.0.0`, que contém o novo contrato. Não use `v3.0.2` neste exemplo: ela contém o esquema anterior.
+O exemplo usa `v4.0.1`, que contém o novo contrato e a correção de recuperação do cache no Windows. Não use `v3.0.2` neste exemplo: ela contém o esquema anterior.
 
 - `agents.repository/ref` identifica o checkout fixado.
 - `out_dir` define o destino dos documentos.

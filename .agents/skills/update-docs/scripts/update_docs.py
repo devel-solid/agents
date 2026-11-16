@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
+import stat
 import shutil
 import subprocess
 import sys
@@ -266,9 +268,20 @@ def run_git(*args: str, cwd: Path | None = None) -> str:
     raise CheckoutError(message)
 
 
+def retry_readonly_remove(function, path, exc_info) -> None:
+    error = exc_info[1]
+    if function is not os.unlink or not isinstance(error, PermissionError):
+        raise error
+    mode = os.stat(path, follow_symlinks=False).st_mode
+    if not stat.S_ISREG(mode) or mode & stat.S_IWUSR:
+        raise error
+    os.chmod(path, mode | stat.S_IWUSR)
+    function(path)
+
+
 def remove_path(path: Path) -> None:
     if path.is_dir() and not path.is_symlink():
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=retry_readonly_remove)
     elif path.exists() or path.is_symlink():
         path.unlink()
 

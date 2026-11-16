@@ -50,7 +50,7 @@ HEAD de origem limpo em main
 
 A tag contém as fontes da release; o commit posterior em `main` atualiza a referência e os documentos gerados. A versão é conduzida por `agents.ref` e pelas tags, sem prévia isolada nem sincronização automática da versão em `package.json`.
 
-Consumidores que usam `v3.0.2` precisam migrar o manifesto e adotar `v4.0.0` ou uma versão posterior com o novo contrato.
+Consumidores que usam `v3.0.2` precisam migrar o manifesto e adotar `v4.0.1` ou uma versão posterior com o novo contrato e a correção de recuperação do cache no Windows.
 
 ## OpenSpec
 

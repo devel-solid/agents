@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -101,6 +103,37 @@ def build_manifest(
 
 
 class UpdateDocsSkillTests(unittest.TestCase):
+    def test_remove_path_handles_readonly_git_pack_files(self) -> None:
+        cache = self.make_repo() / "cache"
+        pack = cache / ".git" / "objects" / "pack" / "example.idx"
+        write_text(pack, "objeto Git somente leitura\n")
+        pack.chmod(stat.S_IREAD)
+
+        self.module.remove_path(cache)
+
+        self.assertFalse(cache.exists())
+
+    def test_readonly_removal_retries_the_failed_unlink(self) -> None:
+        path = self.make_repo() / "example.idx"
+        write_text(path, "objeto Git\n")
+        path.chmod(stat.S_IREAD)
+        error = PermissionError("arquivo somente leitura")
+
+        self.module.retry_readonly_remove(os.unlink, path, (type(error), error, None))
+
+        self.assertFalse(path.exists())
+
+    def test_readonly_removal_preserves_other_permission_errors(self) -> None:
+        path = self.make_repo() / "example.idx"
+        write_text(path, "arquivo gravável\n")
+        error = PermissionError("permissão negada por outro motivo")
+
+        with self.assertRaises(PermissionError) as raised:
+            self.module.retry_readonly_remove(os.unlink, path, (type(error), error, None))
+
+        self.assertIs(raised.exception, error)
+        self.assertTrue(path.exists())
+
     def setUp(self) -> None:
         self.module = load_module()
 
