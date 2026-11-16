@@ -1,6 +1,6 @@
 agents:
   repository: https://github.com/devel-solid/agents.git
-  ref: v3.0.2
+  ref: v4.0.0
 
 outputs:
   AGENTS.md:
