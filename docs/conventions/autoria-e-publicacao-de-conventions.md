@@ -35,14 +35,13 @@ O agente não deve:
 
 ## 3. Como a sincronização acontece
 
-A materialização de `AGENTS.md`, do diretório configurado por `outputs.AGENTS.md.include.conventions.out_dir` e das skills normais declaradas acontece pelo fluxo público `update-docs`.
+A materialização de `AGENTS.md` e das conventions no diretório configurado por `outputs.AGENTS.md.include.conventions.out_dir` acontece pelo fluxo público `update-docs`.
 
 Nesse fluxo:
 
 - o usuário decide executar `update-docs`
 - a skill lê `agents-compose.yml`
-- em `agents.root: true`, a skill usa os templates locais deste repositório
-- em `agents.root: false`, a skill usa o checkout pinado declarado em `agents.source.repository/ref` para entradas `origin: remote`
+- a skill usa o checkout fixado em `agents.repository/ref` para o template-base e as entradas `origin: remote`, inclusive no próprio repositório base
 - a skill regenera os artefatos publicados a partir das fontes e do manifesto
 
 Fora desse fluxo, trate `AGENTS.md` e o diretório configurado por `outputs.AGENTS.md.include.conventions.out_dir` como saídas derivadas que não devem ser editadas manualmente.
@@ -50,9 +49,9 @@ Fora desse fluxo, trate `AGENTS.md` e o diretório configurado por `outputs.AGEN
 ## 4. Como o versionamento acontece
 
 A publicação de versão Git acontece pelo fluxo `update-version`.
-Esse fluxo valida o estado do repositório, prepara artefatos derivados quando necessário, sincroniza metadados de versão e cria uma tag anotada no commit versionado.
+Esse fluxo valida o HEAD de origem limpo em `main`, apresenta o plano e aguarda sua confirmação antes dos efeitos de publicação.
 
-`update-version` pode chamar o fluxo público `update-docs`, criar commits necessários de preparação da release, publicar `main` e publicar a tag Git correspondente. Ele não atualiza `agents-compose.yml` nem refs de origem de consumidores em `agents.source.ref`.
+Depois da confirmação, `update-version` cria e publica a tag anotada no HEAD de origem, atualiza `agents.ref` deste repositório e chama `update-docs`. Só então cria o commit de referência e documentos e publica `main`. O fluxo não altera refs de outros consumidores nem sincroniza metadados de versão em `package.json`.
 
 ## 5. Regra de interpretação
 

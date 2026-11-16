@@ -51,7 +51,7 @@ Use estas categorias:
 | saída de ferramenta externa | identifique a ferramenta ou workflow responsável |
 
 Quando o valor vier de `agents-compose.yml`, não trate o valor atual como diretório fixo.
-Use o campo do manifesto como regra, como `outputs.AGENTS.md.include.conventions.out_dir`, `outputs.AGENTS.md.include.conventions.local.tpl_dir`, `outputs.AGENTS.md.include.conventions.remote.tpl_dir`, `outputs.skills.out_dir`, `outputs.skills.local.tpl_dir`, `outputs.skills.remote.tpl_dir` ou `entries[].from`.
+Use o campo do manifesto como regra, como `outputs.AGENTS.md.include.conventions.out_dir`, `outputs.AGENTS.md.include.conventions.local.tpl_dir`, `outputs.AGENTS.md.include.conventions.remote.tpl_dir` ou `entries[].from`.
 
 Valores literais podem aparecer em exemplos, diagnósticos, contexto local ou casos fixos por contrato, desde que essa classificação esteja clara no texto.
 

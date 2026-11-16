@@ -24,9 +24,8 @@
 ## Uso de Skills
 
 - Quando existir uma `skill` aplicável, use a `skill` como interface pública do fluxo.
-- Não chame script interno da `skill` como caminho normal de execução.
-- Não apresente script interno da `skill` ao usuário como primeira opção.
-- Só use script interno da `skill` quando o usuário pedir isso explicitamente ou quando o trabalho for implementar, depurar ou testar a própria `skill`.
+- Siga a `skill` como ponto de entrada. Quando ela indicar um script para executar uma etapa já autorizada, use o comando indicado.
+- O agente também pode chamar um script interno diretamente a pedido explícito do usuário ou ao implementar, depurar ou testar a própria `skill`.
 
 ## Escopo e Proatividade
 
@@ -50,7 +49,7 @@
 - As entradas listadas aqui são pontos de entrada de `conventions` pai; quando uma delas indicar subconventions, continue a descoberta pelas regras do documento pai.
 - O agente deve consultar esta seção em toda mudança para verificar se existe alguma `convention` acionada no caso concreto.
 - Ao criar, remover, renomear ou alterar o escopo de uma `convention`, atualize as fontes e o manifesto correspondentes.
-- Não edite manualmente `AGENTS.md` nem `conventions` ou `subconventions` finais publicadas em `docs/conventions/`; altere a fonte e o manifesto aplicáveis e use o fluxo público de publicação do repositório.
+- Não edite manualmente `AGENTS.md` nem `conventions` ou `subconventions` finais publicadas no diretório configurado em [`conventions.out_dir`](agents-compose.yml); altere as fontes resolvidas por `local.tpl_dir` ou `remote.tpl_dir`, ajuste o manifesto aplicável e use o fluxo público de publicação do repositório.
 
 ### Contexto do Projeto
 
@@ -77,7 +76,7 @@ Arquivo: `docs/conventions/composicao-de-instrucoes-para-repositorios-consumidor
 
 Arquivo: `docs/conventions/contratos-de-artefatos-para-repositorios-consumidores.md`
 
-- Leia este documento ao criar, revisar ou ajustar `agents-compose.yml`, `conventions`, `subconventions` ou fontes de `skills` em um repositório consumidor.
+- Leia este documento ao criar, revisar ou ajustar `agents-compose.yml`, `conventions` ou `subconventions` em um repositório consumidor.
 - Use este documento como ponto de entrada para o contrato público dos artefatos locais que participam da composição das instruções compartilhadas.
 
 ### Segurança para Agentes e Conteúdo Não Confiável
@@ -114,13 +113,6 @@ Arquivo: `docs/conventions/apresentacao-visual-de-artefatos-tecnicos.md`
 
 - Leia este documento ao criar, revisar ou reorganizar specs, RFCs, instruções operacionais, documentação técnica ou qualquer artefato cujo entendimento dependa de fluxo, estrutura, hierarquia, mapeamento, comparação ou decomposição.
 - Use este documento para decidir quando preferir parágrafo curto, lista estruturada, tabela, árvore ASCII ou fluxograma ASCII.
-
-### Fluxo OpenSpec com Remoção Direta
-
-Arquivo: `docs/conventions/fluxo-openspec-com-remocao-direta.md`
-
-- Leia este documento ao propor, aplicar, remover ou limpar mudanças OpenSpec em repositórios consumidores que tratam changes concluídas como temporárias.
-- Use este documento para tratar OpenSpec como fluxo `Explore -> Propose -> Apply -> remover openspec/changes/<change-id>/`, preservando `openspec/config.yaml`.
 
 ### Testes Mínimos e Lefthook
 

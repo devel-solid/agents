@@ -5,7 +5,6 @@ import hashlib
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -25,18 +24,6 @@ class CheckoutError(BootstrapError):
     pass
 
 
-SELF_SKILL_SOURCE_PATH = Path("templates") / "skills" / "update-docs"
-PUBLISHED_SKILL_PATH = Path(".codex") / "skills" / "update-docs"
-BOOTSTRAP_SKILL_NAME = "update-docs"
-
-
-@dataclass(frozen=True)
-class BootstrapContext:
-    is_root: bool
-    source_repository: str | None
-    source_ref: str | None
-
-
 def normalize_text(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
@@ -45,12 +32,8 @@ def read_text(path: Path) -> str:
     return normalize_text(path.read_text(encoding="utf-8"))
 
 
-def parse_scalar(token: str) -> str | bool:
+def parse_scalar(token: str) -> str:
     token = token.strip()
-    if token == "true":
-        return True
-    if token == "false":
-        return False
     if len(token) >= 2 and token[0] == token[-1] and token[0] in {"'", '"'}:
         return token[1:-1]
     return token
@@ -72,6 +55,8 @@ def compute_fingerprint(repository: str, ref: str) -> str:
 
 
 def is_git_repository(path: Path) -> bool:
+    if not (path / ".git").exists():
+        return False
     completed = subprocess.run(
         ["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"],
         capture_output=True,
@@ -94,7 +79,7 @@ def refresh_checkout(checkout: Path) -> None:
     run_git("fetch", "--force", "--tags", "origin", cwd=checkout)
 
 
-def parse_agents_compose(repo_root: Path) -> BootstrapContext:
+def parse_agents_compose(repo_root: Path) -> tuple[str, str]:
     compose_path = repo_root / "agents-compose.yml"
     if not compose_path.is_file():
         raise ManifestError("agents-compose.yml não encontrado")
@@ -103,15 +88,9 @@ def parse_agents_compose(repo_root: Path) -> BootstrapContext:
     except UnicodeDecodeError as exc:
         raise ManifestError("agents-compose.yml não é UTF-8 válido") from exc
 
-    is_root: bool | None = None
-    source_repository: str | None = None
-    source_ref: str | None = None
+    repository: str | None = None
+    ref: str | None = None
     in_agents = False
-    in_source = False
-    in_bootstrap = False
-    source_seen = False
-    bootstrap_seen = False
-    bootstrap_skill: str | None = None
 
     for raw_line in lines:
         if "\t" in raw_line:
@@ -123,81 +102,31 @@ def parse_agents_compose(repo_root: Path) -> BootstrapContext:
         if indent == 0:
             if stripped == "agents:":
                 in_agents = True
-                in_source = False
                 continue
             if in_agents:
                 break
             continue
         if not in_agents:
             continue
-        if indent == 2:
-            in_source = False
-            in_bootstrap = False
         if ":" not in stripped:
             continue
         key, raw_value = stripped.split(":", 1)
         key = key.strip()
         value = parse_scalar(raw_value)
-        if indent == 2 and key in {"repository", "ref"}:
-            raise ManifestError(
-                "agents.repository e agents.ref foram substituídos por agents.root e agents.source.repository/ref"
-            )
-        if indent == 2 and key == "root":
-            if is_root is not None:
-                raise ManifestError("agents.root duplicado")
-            if not isinstance(value, bool):
-                raise ManifestError("agents.root deve ser booleano")
-            is_root = value
-        elif indent == 2 and key == "source":
-            source_seen = True
-            if value:
-                raise ManifestError("agents.source ausente ou inválido")
-            in_source = True
-        elif indent == 2 and key == "bootstrap":
-            bootstrap_seen = True
-            if value:
-                raise ManifestError("agents.bootstrap ausente ou inválido")
-            in_bootstrap = True
-        elif indent == 4 and in_source and key == "repository":
-            if source_repository is not None:
-                raise ManifestError("agents.source.repository duplicado")
-            if not isinstance(value, str) or not value.strip():
-                raise ManifestError("agents.source.repository ausente ou inválido")
-            source_repository = value
-        elif indent == 4 and in_source and key == "ref":
-            if source_ref is not None:
-                raise ManifestError("agents.source.ref duplicado")
-            if not isinstance(value, str) or not value.strip():
-                raise ManifestError("agents.source.ref ausente ou inválido")
-            source_ref = value
-        elif indent == 4 and in_bootstrap and key == "skill":
-            if bootstrap_skill is not None:
-                raise ManifestError("agents.bootstrap.skill duplicado")
-            if not isinstance(value, str) or not value.strip():
-                raise ManifestError("agents.bootstrap.skill ausente ou inválido")
-            bootstrap_skill = value
+        if key == "repository":
+            if repository is not None:
+                raise ManifestError("agents.repository duplicado")
+            repository = value
+        elif key == "ref":
+            if ref is not None:
+                raise ManifestError("agents.ref duplicado")
+            ref = value
 
-    if is_root is None:
-        raise ManifestError("agents.root ausente ou inválido")
-    if is_root:
-        if source_seen:
-            raise ManifestError("agents.source não pode ser usado quando agents.root é true")
-    else:
-        if not source_seen:
-            raise ManifestError("agents.source ausente ou inválido")
-        if not source_repository:
-            raise ManifestError("agents.source.repository ausente ou inválido")
-        if not source_ref:
-            raise ManifestError("agents.source.ref ausente ou inválido")
-    if not bootstrap_seen:
-        raise ManifestError("agents.bootstrap ausente ou inválido")
-    if bootstrap_skill is None:
-        raise ManifestError("agents.bootstrap.skill ausente ou inválido")
-    if bootstrap_skill != BOOTSTRAP_SKILL_NAME:
-        raise ManifestError("agents.bootstrap.skill deve ser update-docs")
-    if is_root:
-        return BootstrapContext(is_root=True, source_repository=None, source_ref=None)
-    return BootstrapContext(is_root=False, source_repository=source_repository, source_ref=source_ref)
+    if not repository or not repository.strip():
+        raise ManifestError("agents.repository ausente ou inválido")
+    if not ref or not ref.strip():
+        raise ManifestError("agents.ref ausente ou inválido")
+    return repository, ref
 
 
 def ref_exists(checkout: Path, ref: str) -> bool:
@@ -231,37 +160,23 @@ def remove_path(path: Path) -> None:
         path.unlink()
 
 
-def copy_skill_from_source(source: Path, repo_root: Path) -> Path:
+def copy_skill(checkout: Path, repo_root: Path) -> Path:
+    source = checkout / ".agents" / "skills" / "update-docs"
     if not source.is_dir():
-        raise ValidationError(f"skill update-docs ausente ou inválida: {source}")
-    if not (source / "SKILL.md").is_file():
-        raise ValidationError(f"skill sem SKILL.md na raiz: {source}")
-    destination = repo_root / PUBLISHED_SKILL_PATH
+        raise ValidationError(f"skill ausente no checkout pinado: {source}")
+    destination = repo_root / ".agents" / "skills" / "update-docs"
     if destination.exists() or destination.is_symlink():
         remove_path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, destination)
-    if not (destination / "SKILL.md").is_file():
-        raise ValidationError(f"skill copiada sem SKILL.md na raiz: {destination}")
     return destination
 
 
-def copy_skill(checkout: Path, repo_root: Path) -> Path:
-    return copy_skill_from_source(checkout / SELF_SKILL_SOURCE_PATH, repo_root)
-
-
 def bootstrap(repo_root: Path) -> Path:
-    context = parse_agents_compose(repo_root)
-    if context.is_root:
-        source = repo_root / SELF_SKILL_SOURCE_PATH
-        copy_skill_from_source(source, repo_root)
-        return source
-
-    assert context.source_repository is not None
-    assert context.source_ref is not None
-    fingerprint = compute_fingerprint(context.source_repository, context.source_ref)
+    repository, ref = parse_agents_compose(repo_root)
+    fingerprint = compute_fingerprint(repository, ref)
     checkout = repo_root / ".cache" / "agents" / fingerprint
-    ensure_checkout(context.source_repository, context.source_ref, checkout)
+    ensure_checkout(repository, ref, checkout)
     copy_skill(checkout, repo_root)
     return checkout
 

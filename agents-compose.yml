@@ -1,7 +1,6 @@
 agents:
-  root: true
-  bootstrap:
-    skill: update-docs
+  repository: https://github.com/devel-solid/agents.git
+  ref: v3.0.2
 
 outputs:
   AGENTS.md:
@@ -32,8 +31,6 @@ outputs:
           - origin: remote
             from: apresentacao-visual-de-artefatos-tecnicos.tpl.md
           - origin: remote
-            from: fluxo-openspec-com-remocao-direta.tpl.md
-          - origin: remote
             from: testes-minimos-e-lefthook.tpl.md
           - origin: remote
             from: atualizacao-segura-e-auditavel-de-dependencias-e-plataformas.tpl.md
@@ -43,14 +40,3 @@ outputs:
             from: uuid-em-novas-implementacoes.tpl.md
           - origin: remote
             from: convencoes-para-skills.tpl.md
-  skills:
-    out_dir: .codex/skills
-    local:
-      tpl_dir: templates/skills-local
-    remote:
-      tpl_dir: templates/skills
-    entries:
-      - origin: remote
-        from: prompt-awesome
-      - origin: local
-        from: update-version

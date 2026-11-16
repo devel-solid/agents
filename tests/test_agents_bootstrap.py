@@ -64,25 +64,12 @@ def clone_git_repo(source: Path, destination: Path) -> None:
     run_git(source.parent, "clone", str(source), str(destination))
 
 
-def build_manifest(repository: str, ref: str, *, root: bool = False) -> str:
-    if root:
-        return textwrap.dedent(
-            """\
-            agents:
-              root: true
-              bootstrap:
-                skill: update-docs
-            """
-        )
+def build_manifest(repository: str, ref: str) -> str:
     return textwrap.dedent(
         f"""\
         agents:
-          root: false
-          source:
-            repository: {repository}
-            ref: {ref}
-          bootstrap:
-            skill: update-docs
+          repository: {repository}
+          ref: {ref}
         """
     )
 
@@ -110,8 +97,8 @@ class AgentsBootstrapTests(unittest.TestCase):
         source_ref = init_git_repo(
             source_repo,
             {
-                "templates/skills/update-docs/SKILL.md": "# skill de origem\n",
-                "templates/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
+                ".agents/skills/update-docs/SKILL.md": "# skill de origem\n",
+                ".agents/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
                 "templates/AGENTS.tpl.md": "# template\n",
             },
         )
@@ -125,28 +112,10 @@ class AgentsBootstrapTests(unittest.TestCase):
         self.assertEqual(checkout, repo_root / ".cache" / "agents" / fingerprint)
         self.assertTrue((checkout / ".git").exists())
         self.assertEqual(
-            read_text(repo_root / ".codex" / "skills" / "update-docs" / "SKILL.md"),
+            read_text(repo_root / ".agents" / "skills" / "update-docs" / "SKILL.md"),
             "# skill de origem\n",
         )
         self.assertEqual(read_text(repo_root / "AGENTS.md"), "sentinela AGENTS\n")
-
-    def test_bootstrap_root_copies_local_skill_without_checkout(self) -> None:
-        repo_root = self.make_repo()
-        write_text(repo_root / "agents-compose.yml", build_manifest("", "", root=True))
-        write_text(repo_root / "templates" / "skills" / "update-docs" / "SKILL.md", "# skill local\n")
-        write_text(
-            repo_root / "templates" / "skills" / "update-docs" / "scripts" / "update_docs.py",
-            "#!/usr/bin/env python3\nprint('local')\n",
-        )
-
-        source = self.module.bootstrap(repo_root)
-
-        self.assertEqual(source, repo_root / "templates" / "skills" / "update-docs")
-        self.assertFalse((repo_root / ".cache" / "agents").exists())
-        self.assertEqual(
-            read_text(repo_root / ".codex" / "skills" / "update-docs" / "SKILL.md"),
-            "# skill local\n",
-        )
 
     def test_bootstrap_rejects_non_git_checkout(self) -> None:
         repo_root = self.make_repo()
@@ -154,8 +123,8 @@ class AgentsBootstrapTests(unittest.TestCase):
         source_ref = init_git_repo(
             source_repo,
             {
-                "templates/skills/update-docs/SKILL.md": "# skill de origem\n",
-                "templates/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
+                ".agents/skills/update-docs/SKILL.md": "# skill de origem\n",
+                ".agents/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
             },
         )
         repository = str(source_repo)
@@ -178,57 +147,14 @@ class AgentsBootstrapTests(unittest.TestCase):
         with self.assertRaises(self.module.ManifestError):
             self.module.bootstrap(repo_root)
 
-    def test_bootstrap_requires_bootstrap_skill(self) -> None:
-        cases = [
-            {
-                "name": "missing-bootstrap",
-                "manifest": build_manifest("git@example.com:org/agents.git", "deadbeef").replace(
-                    "  bootstrap:\n    skill: update-docs\n",
-                    "",
-                ),
-                "error": r"agents\.bootstrap ausente ou inválido",
-            },
-            {
-                "name": "unsupported-bootstrap-skill",
-                "manifest": build_manifest("git@example.com:org/agents.git", "deadbeef").replace(
-                    "skill: update-docs",
-                    "skill: other-skill",
-                ),
-                "error": r"agents\.bootstrap\.skill deve ser update-docs",
-            },
-        ]
-
-        for case in cases:
-            with self.subTest(case=case["name"]):
-                repo_root = self.make_repo()
-                write_text(repo_root / "agents-compose.yml", case["manifest"])
-
-                with self.assertRaisesRegex(self.module.ManifestError, case["error"]):
-                    self.module.bootstrap(repo_root)
-
-    def test_bootstrap_rejects_skill_without_skill_md(self) -> None:
-        repo_root = self.make_repo()
-        source_repo = self.make_repo()
-        source_ref = init_git_repo(
-            source_repo,
-            {
-                "templates/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
-            },
-        )
-        repository = str(source_repo)
-        write_text(repo_root / "agents-compose.yml", build_manifest(repository, source_ref))
-
-        with self.assertRaisesRegex(self.module.ValidationError, r"skill sem SKILL\.md na raiz"):
-            self.module.bootstrap(repo_root)
-
     def test_bootstrap_accepts_tag_refs_even_when_checkout_needs_refresh(self) -> None:
         repo_root = self.make_repo()
         source_repo = self.make_repo()
         commit_sha = init_git_repo(
             source_repo,
             {
-                "templates/skills/update-docs/SKILL.md": "# skill de origem\n",
-                "templates/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
+                ".agents/skills/update-docs/SKILL.md": "# skill de origem\n",
+                ".agents/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
             },
         )
         repository = str(source_repo)
@@ -245,7 +171,7 @@ class AgentsBootstrapTests(unittest.TestCase):
             run_git(checkout, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"),
             commit_sha,
         )
-        self.assertTrue((repo_root / ".codex" / "skills" / "update-docs" / "SKILL.md").is_file())
+        self.assertTrue((repo_root / ".agents" / "skills" / "update-docs" / "SKILL.md").is_file())
 
     def test_main_uses_script_location(self) -> None:
         repo_root = self.make_repo()
@@ -253,8 +179,8 @@ class AgentsBootstrapTests(unittest.TestCase):
         source_ref = init_git_repo(
             source_repo,
             {
-                "templates/skills/update-docs/SKILL.md": "# skill de origem\n",
-                "templates/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
+                ".agents/skills/update-docs/SKILL.md": "# skill de origem\n",
+                ".agents/skills/update-docs/scripts/update_docs.py": "#!/usr/bin/env python3\nprint('source')\n",
             },
         )
         repository = str(source_repo)
@@ -263,4 +189,4 @@ class AgentsBootstrapTests(unittest.TestCase):
         exit_code = self.module.main(script_path=repo_root / "bin" / "agents-bootstrap.py")
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((repo_root / ".codex" / "skills" / "update-docs" / "SKILL.md").is_file())
+        self.assertTrue((repo_root / ".agents" / "skills" / "update-docs" / "SKILL.md").is_file())

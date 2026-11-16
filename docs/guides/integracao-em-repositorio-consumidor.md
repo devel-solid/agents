@@ -1,44 +1,22 @@
 # Integração em Repositório Consumidor
 
-Este guia é para quem quer aplicar a base `agents` em outro repositório.
-
-Use o guia de manutenção quando o objetivo for trabalhar no próprio repositório base: [manutencao-do-repositorio-agents.md](manutencao-do-repositorio-agents.md).
-
-## Visão geral
-
-```text
-repositório consumidor
-├── agents-compose.yml
-├── templates/docs/conventions-local/**
-├── templates/skills-local/**
-└── artefatos publicados
-    ├── AGENTS.md
-    ├── docs/conventions/**
-    └── .codex/skills/**
-```
-
-O consumidor declara quais fontes locais e remotas quer publicar. As fontes remotas vêm da versão pinada da base `agents`.
+Use este guia para adotar a base em outro projeto. Para trabalhar na própria base, consulte o [guia de manutenção](manutencao-do-repositorio-agents.md).
 
 ## Pré-requisitos
 
 | Ferramenta | Uso |
 |---|---|
-| Python `>=3.10` como `python3` | executar `bin/agents-bootstrap.py` e `update-docs` |
-| Git | clonar a base pinada |
-| Acesso ao repositório `agents` | ler a tag declarada em `agents.source.ref` |
+| Python >=3.10 | bootstrap e sincronização |
+| Git | acesso à versão fixada da base |
 
-## 1. Crie o manifesto
+## 1. Declare fontes e publicação
 
-Crie `agents-compose.yml` no repositório consumidor:
+Crie `agents-compose.yml` na raiz do consumidor:
 
 ```yaml
 agents:
-  root: false
-  source:
-    repository: git@github.com:henrique013/agents.git
-    ref: v3.0.2
-  bootstrap:
-    skill: update-docs
+  repository: https://github.com/devel-solid/agents.git
+  ref: v4.0.0
 
 outputs:
   AGENTS.md:
@@ -54,103 +32,48 @@ outputs:
             from: contexto-do-projeto.tpl.md
           - origin: remote
             from: padrao-de-mensagem-de-commit.tpl.md
-          - origin: remote
-            from: composicao-de-instrucoes-para-repositorios-consumidores.tpl.md
 ```
 
-Regras principais:
+O exemplo usa `v4.0.0`, que contém o novo contrato. Não use `v3.0.2` neste exemplo: ela contém o esquema anterior.
 
-- `agents.root` deve ser `false` no consumidor.
-- `agents.source.repository` aponta para a base.
-- `agents.source.ref` deve apontar para uma tag ou ref estável.
-- `agents.bootstrap.skill` deve ser `update-docs`.
-- `entries[].from` é relativo ao `tpl_dir` da origem declarada.
-- Convention aponta para arquivo `.tpl.md` pai.
-- Skill normal em `outputs.skills.entries` aponta para diretório com `SKILL.md` na raiz.
-- Não declare `update-docs` em `outputs.skills.entries`; ela é provisionada pelo bootstrap.
+- `agents.repository/ref` identifica o checkout fixado.
+- `out_dir` define o destino dos documentos.
+- `local.tpl_dir` e `remote.tpl_dir` definem as raízes das fontes.
+- `entries[].from` aponta para um arquivo-pai `.tpl.md`, relativo à raiz da origem. Subdiretórios são preservados na publicação.
+- Declare os dois blocos de origem, mesmo quando não houver entradas locais.
+- Não use `agents.root`, `agents.source`, `agents.bootstrap` ou `outputs.skills`.
 
-## 2. Crie as fontes locais
+## 2. Escreva as fontes locais
 
-Exemplo mínimo:
+No exemplo, crie `templates/docs/conventions-local/contexto-do-projeto.tpl.md`. Cada fonte deve ter exatamente um título H1 e um bloco `AGENT-CARD` não vazio. O corpo normativo fica fora do cartão.
 
-```text
-templates/docs/conventions-local/
-└── contexto-do-projeto.tpl.md
-```
+## 3. Faça o bootstrap
 
-O arquivo de convention precisa ter:
-
-- exatamente um heading Markdown de nível 1
-- exatamente um bloco `AGENT-CARD`
-- corpo normativo fora do `AGENT-CARD`
-
-## 3. Instale o launcher inicial
-
-Antes da primeira execução, o consumidor ainda não tem a skill `update-docs` publicada localmente. Por isso, declare `agents.bootstrap.skill: update-docs` e obtenha `bin/agents-bootstrap.py` da mesma versão declarada em `agents.source.ref`.
-
-Exemplo usando uma cópia temporária da base:
-
-```sh
-tmp_dir="$(mktemp -d)"
-git clone --depth 1 --branch v3.0.2 git@github.com:henrique013/agents.git "$tmp_dir"
-mkdir -p bin
-cp "$tmp_dir/bin/agents-bootstrap.py" bin/agents-bootstrap.py
-rm -rf "$tmp_dir"
-```
-
-Depois rode, na raiz do consumidor:
+Obtenha `bin/agents-bootstrap.py` da mesma tag declarada em `agents.ref`, coloque-o no consumidor e execute na raiz:
 
 ```sh
 python3 bin/agents-bootstrap.py
 ```
 
-O bootstrap instala `.codex/skills/update-docs/` a partir da versão pinada. Esse caminho é reservado ao bootstrap e à autoatualização da própria skill. Depois disso, o fluxo normal passa a ser a skill `update-docs`.
+No Windows, use `python` quando esse for o executável Python instalado.
 
-## 4. Sincronize os artefatos publicados
+O bootstrap instala apenas `.agents/skills/update-docs/`, sem gerar documentos. Depois, invoque a skill `update-docs` para sincronizar a documentação. Não há distribuição automática de outras skills pelo manifesto.
 
-Use a skill `update-docs`.
-
-O fluxo recorrente fica assim:
+## 4. Sincronize e atualize
 
 ```text
-editar fontes ou agents-compose.yml
+alterar fontes ou manifesto
   |
   +-> update-docs
-        |
-        +-> AGENTS.md
-        +-> docs/conventions/**
-        +-> .codex/skills/**
+        +-> garantir checkout de agents.repository/ref
+        +-> autoatualizar update-docs
+        +-> gerar conventions e AGENTS.md
 ```
 
-## 5. OpenSpec opcional
+Para adotar uma nova versão, atualize `agents.ref`, invoque `update-docs` e revise o diff antes de commitar no consumidor. A referência deve existir no remoto antes da sincronização.
 
-Para adotar OpenSpec, escolha uma convention remota de fechamento.
+## OpenSpec opcional
 
-Use `Archive` quando o repositório quiser preservar histórico OpenSpec, archives ou specs permanentes:
+Use o OpenSpec 2.0.0 do ambiente para gerar suas skills em `.agents/skills/`. O fluxo de arquivamento sincroniza os deltas em `openspec/specs/` e preserva a change em `openspec/changes/archive/`, conforme o workflow de `openspec-archive-change`.
 
-```yaml
-- origin: remote
-  from: fluxo-openspec-com-archive.tpl.md
-```
-
-Use remoção direta quando o repositório quiser tratar changes concluídas como artefatos temporários:
-
-```yaml
-- origin: remote
-  from: fluxo-openspec-com-remocao-direta.tpl.md
-```
-
-Inclua apenas uma das duas conventions em uso normal. Ao atualizar `agents.source.ref` para uma versão que remove `fluxo-openspec-enxuto.tpl.md`, substitua a entrada antiga por uma dessas duas opções.
-
-Não declare `update-docs` em `outputs.skills.entries`, porque ela já é a skill de bootstrap declarada em `agents.bootstrap.skill`.
-
-As skills OpenSpec padrão, como `openspec-explore`, `openspec-propose`, `openspec-apply-change` e `openspec-archive-change`, devem vir do ambiente OpenSpec/Codex disponível para o agente. Este repositório não as publica como fonte compartilhável por padrão.
-
-## 6. Atualização da versão da base
-
-Para atualizar um consumidor para uma nova versão da base:
-
-1. Altere `agents.source.ref` para a nova tag.
-2. Rode `update-docs`.
-3. Revise o diff de `AGENTS.md`, `docs/conventions/**` e `.codex/skills/**`.
-4. Faça commit das mudanças no consumidor.
+As antigas conventions `fluxo-openspec-com-archive.tpl.md` e `fluxo-openspec-com-remocao-direta.tpl.md` não fazem parte deste contrato. Remova essas entradas ao migrar o manifesto e use as skills do OpenSpec.

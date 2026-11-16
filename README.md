@@ -1,66 +1,53 @@
 # Base de instruções para agentes
 
-Este repositório centraliza a base compartilhada de instruções para agentes. Ele existe para evitar cópia manual entre projetos e manter previsível a composição de `AGENTS.md`, `conventions` e `skills`.
-
-A ideia principal é simples: este repositório publica uma versão base, e repositórios consumidores apontam para essa versão para materializar localmente os artefatos que os agentes vão ler.
+Este repositório centraliza instruções e conventions reutilizáveis. Os projetos consumidores fixam uma versão da base e usam `update-docs` para gerar seus documentos.
 
 ```text
 fontes + agents-compose.yml
   |
   +-> update-docs
-        |
         +-> AGENTS.md
-        +-> docs/conventions/**
-        +-> .codex/skills/update-docs/ (bootstrap)
-        +-> .codex/skills/<skill>/ (skills declaradas)
+        +-> diretório publicado de conventions
+        +-> .agents/skills/update-docs/ (autoatualização)
 ```
 
 ## Leituras principais
 
 | Objetivo | Leia |
 |---|---|
-| Manter este repositório `agents` | [docs/guides/manutencao-do-repositorio-agents.md](docs/guides/manutencao-do-repositorio-agents.md) |
-| Integrar um repositório consumidor | [docs/guides/integracao-em-repositorio-consumidor.md](docs/guides/integracao-em-repositorio-consumidor.md) |
-| Entender o contrato de composição | [docs/conventions/contratos-de-artefatos-para-repositorios-consumidores.md](docs/conventions/contratos-de-artefatos-para-repositorios-consumidores.md) |
-| Entender o fluxo OpenSpec enxuto | [docs/conventions/fluxo-openspec-enxuto.md](docs/conventions/fluxo-openspec-enxuto.md) |
+| Manter a base | [Guia de manutenção](docs/guides/manutencao-do-repositorio-agents.md) |
+| Integrar outro projeto | [Guia de integração](docs/guides/integracao-em-repositorio-consumidor.md) |
+| Entender o manifesto | [Contrato dos artefatos](docs/conventions/contratos-de-artefatos-para-repositorios-consumidores.md) |
 
 ## Modelo
 
-| Modo | Onde acontece | Manifesto | Fonte de `origin: remote` |
-|---|---|---|---|
-| raiz | neste repositório | `agents.root: true` + `agents.bootstrap.skill` | templates locais deste repositório |
-| consumidor | repositório filho | `agents.root: false` + `agents.source.repository/ref` + `agents.bootstrap.skill` | checkout pinado da base |
+`agents.repository` identifica a base e `agents.ref` fixa sua versão. Entradas `origin: local` usam fontes do consumidor; entradas `origin: remote` usam o checkout fixado, inclusive neste repositório. Não existe modo `agents.root` nem publicação declarativa de skills em `outputs.skills`.
 
-No modo raiz, tudo que é compartilhável vem dos templates locais deste repositório.
+```yaml
+agents:
+  repository: https://github.com/devel-solid/agents.git
+  ref: v4.0.0
+```
 
-No modo consumidor, o manifesto fixa a versão da base em `agents.source.repository/ref`. Entradas `origin: local` vêm do repositório consumidor; entradas `origin: remote` vêm do checkout pinado da base.
+O exemplo usa `v4.0.0`, a primeira versão desta base no GitHub com o novo contrato. A tag `v3.0.2` usa o contrato anterior.
 
 ## Estrutura
 
 | Caminho | Papel |
 |---|---|
-| `templates/AGENTS.tpl.md` | template base de `AGENTS.md` |
-| `templates/docs/conventions/` | fontes compartilhadas de `conventions` |
-| `templates/docs/conventions-local/` | fontes locais deste repositório |
-| `templates/skills/` | fontes compartilhadas de skills |
-| `templates/skills-local/` | fontes locais de skills deste repositório |
-| `agents-compose.yml` | manifesto que declara o que entra na publicação |
-| `AGENTS.md` | saída publicada para instrução ativa |
-| `docs/conventions/**` | saídas publicadas de conventions |
-| `.codex/skills/**` | saídas publicadas de skills |
+| `templates/AGENTS.tpl.md` | template de instruções |
+| `templates/docs/conventions/` | fontes compartilhadas |
+| `templates/docs/conventions-local/` | fontes locais |
+| `agents-compose.yml` | origem, referência e composição |
+| `AGENTS.md` e `docs/conventions/` | documentos gerados |
+| `.agents/skills/update-docs/` | sincronização e bootstrap |
+| `.agents/skills/update-version/` | publicação de versões da base |
+| `.agents/skills/openspec-*/` | workflows gerados pelo OpenSpec 2.0.0 |
 
-Não edite manualmente `AGENTS.md`, `docs/conventions/**` ou `.codex/skills/**` para refletir mudanças de conteúdo. Edite as fontes e use o fluxo público `update-docs`.
+Altere as fontes e use a skill `update-docs` para materializar documentos. As skills próprias são mantidas diretamente em `.agents/skills/`.
 
-## Versão
+## OpenSpec
 
-As versões publicadas usam tags `vX.Y.Z`. Em consumidores, prefira sempre uma tag estável em `agents.source.ref`, por exemplo:
+Use o OpenSpec global 2.0.0. As skills incluem `openspec-propose`, `openspec-explore`, `openspec-apply-change`, `openspec-update-change`, `openspec-sync-specs` e `openspec-archive-change`.
 
-```yaml
-agents:
-  root: false
-  source:
-    repository: git@github.com:henrique013/agents.git
-    ref: v3.0.2
-  bootstrap:
-    skill: update-docs
-```
+O fluxo preserva specs em `openspec/specs/` e changes concluídas em `openspec/changes/archive/`. Para atualizar as skills, confira `openspec update --dry-run` antes de executar `openspec update`. O idioma continua definido em `openspec/config.yaml`.

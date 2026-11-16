@@ -1,94 +1,63 @@
 # Manutenção do Repositório `agents`
 
-Este guia é para quem clona e mantém este repositório base.
+Para adotar a base em outro projeto, consulte o [guia de integração](integracao-em-repositorio-consumidor.md).
 
-Use o guia de integração quando o objetivo for aplicar esta base em outro repositório: [integracao-em-repositorio-consumidor.md](integracao-em-repositorio-consumidor.md).
+## Setup e testes
 
-## Pré-requisitos
-
-| Ferramenta | Versão |
-|---|---|
-| Python | `>=3.10`, disponível como `python3` |
-| Node | `>=22` |
-| npm | compatível com o Node instalado |
-
-## Setup local
-
-Depois de clonar este repositório, rode:
+O setup exige Python >=3.10, Node >=22 e npm. O OpenSpec 2.0.0 é instalado globalmente, sem dependência local neste projeto.
 
 ```sh
 make setup
-```
-
-Esse comando valida o ambiente, executa `npm ci` a partir de `package-lock.json` e instala os hooks Git via Lefthook local.
-
-O setup atual não instala Python, Node, npm, curl ou Lefthook globalmente. Se o clone ainda tiver o Lefthook global legado instalado por fluxo antigo, remova essa instalação antes de confiar no setup local.
-
-## Testes
-
-Para validar o repositório:
-
-```sh
 make tests
 ```
 
-O hook `pre-push` também executa `make tests`.
+`make setup` valida o ambiente, executa `npm ci` e instala o Lefthook local. O hook `pre-push` executa a suíte geral. No Windows, a suíte também pode ser executada com `python -B -m unittest discover -s tests -v`.
 
 ## O que editar
 
-| Tipo de mudança | Edite |
+| Mudança | Fonte |
 |---|---|
-| Template base de instruções | `templates/AGENTS.tpl.md` |
-| Convention compartilhável | `templates/docs/conventions/**` |
-| Convention local deste repositório | `templates/docs/conventions-local/**` |
-| Skill compartilhável | `templates/skills/**` |
-| Skill local deste repositório | `templates/skills-local/**` |
-| Inclusão, remoção ou ordem de publicação | `agents-compose.yml` |
+| Instruções gerais | `templates/AGENTS.tpl.md` |
+| Conventions compartilhadas | `templates/docs/conventions/` |
+| Conventions locais | `templates/docs/conventions-local/` |
+| Origem, referência e composição | `agents-compose.yml` |
+| Sincronização | `.agents/skills/update-docs/` |
+| Publicação de versões | `.agents/skills/update-version/` |
 
-Não edite manualmente:
+`AGENTS.md` e `docs/conventions/` são gerados. Use a skill `update-docs` para materializá-los. As skills OpenSpec são mantidas pelo gerador, com `openspec update`.
 
-- `AGENTS.md`
-- `docs/conventions/**`
-- `.codex/skills/**`
+## Sincronização
 
-Esses caminhos são artefatos publicados.
+O manifesto usa `agents.repository/ref`; não existe modo raiz. Fontes remotas e o template-base vêm sempre da referência fixada, inclusive neste repositório. A skill também atualiza sua própria cópia local a partir desse checkout.
 
-## Publicação de artefatos
+Durante a autoria, alterar um template compartilhado local não o torna disponível no checkout fixado. A publicação da nova tag precisa acontecer antes da atualização de `agents.ref` e da sincronização final.
 
-Use a skill `update-docs` quando precisar materializar `AGENTS.md`, `docs/conventions/**` e skills normais publicadas em `.codex/skills/**` a partir das fontes e do manifesto.
-O caminho `.codex/skills/update-docs/` é reservado ao bootstrap e à autoatualização da própria skill.
+## Publicação de versões
+
+Invoque `update-version` quando quiser publicar uma versão. Após a confirmação do plano, o fluxo:
 
 ```text
-templates/** + agents-compose.yml
+HEAD de origem limpo em main
   |
-  +-> update-docs
-        |
-        +-> AGENTS.md
-        +-> docs/conventions/**
-        +-> .codex/skills/update-docs/ (bootstrap/self-update)
-        +-> .codex/skills/<skill>/ (outputs.skills)
+  +-> validar estado e próxima versão
+  +-> criar e publicar tag no HEAD de origem
+  +-> atualizar agents.ref
+  +-> update-docs gera os documentos
+  +-> validar caminhos da release
+  +-> commitar referência e documentos
+  +-> publicar main
 ```
 
-No repositório raiz, entradas `origin: remote` também são resolvidas a partir dos templates locais deste próprio repositório.
+A tag contém as fontes da release; o commit posterior em `main` atualiza a referência e os documentos gerados. A versão é conduzida por `agents.ref` e pelas tags, sem prévia isolada nem sincronização automática da versão em `package.json`.
 
-## Versionamento
-
-Use a skill `update-version` para publicar uma nova versão semver.
-
-Esse fluxo:
-
-- prepara uma prévia isolada
-- roda `update-docs`
-- valida caminhos gerados
-- sincroniza `package.json.version` e `package-lock.json`
-- cria o commit de versão
-- cria a tag anotada `vX.Y.Z`
-- publica `main` e a tag no `origin`
-
-`update-version` não atualiza `agents-compose.yml` nem refs de consumidores.
+Consumidores que usam `v3.0.2` precisam migrar o manifesto e adotar `v4.0.0` ou uma versão posterior com o novo contrato.
 
 ## OpenSpec
 
-Este repositório mantém `openspec/config.yaml` e seleciona a convention `fluxo-openspec-com-remocao-direta.tpl.md`. Para fechar uma change descartável sem arquivar, remova diretamente somente o diretório ativo correspondente em `openspec/changes/<change-id>/` pela árvore de arquivos do projeto.
+Confira a geração com `openspec update --dry-run`. As seis skills ficam em `.agents/skills/`; use `openspec-archive-change` para sincronizar specs permanentes e arquivar changes concluídas. O idioma continua em inglês conforme `openspec/config.yaml`.
 
-As skills OpenSpec padrão, como `openspec-explore`, `openspec-propose`, `openspec-apply-change` e `openspec-archive-change`, são esperadas como parte do ambiente OpenSpec/Codex usado pelo agente. Elas não são fonte compartilhável deste repositório por padrão.
+Valide as specs com:
+
+```sh
+openspec validate --all --strict
+```

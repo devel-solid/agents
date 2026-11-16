@@ -21,9 +21,8 @@
 ## Uso de Skills
 
 - Quando existir uma `skill` aplicável, use a `skill` como interface pública do fluxo.
-- Não chame script interno da `skill` como caminho normal de execução.
-- Não apresente script interno da `skill` ao usuário como primeira opção.
-- Só use script interno da `skill` quando o usuário pedir isso explicitamente ou quando o trabalho for implementar, depurar ou testar a própria `skill`.
+- Siga a `skill` como ponto de entrada. Quando ela indicar um script para executar uma etapa já autorizada, use o comando indicado.
+- O agente também pode chamar um script interno diretamente a pedido explícito do usuário ou ao implementar, depurar ou testar a própria `skill`.
 
 ## Escopo e Proatividade
 
@@ -47,4 +46,4 @@
 - As entradas listadas aqui são pontos de entrada de `conventions` pai; quando uma delas indicar subconventions, continue a descoberta pelas regras do documento pai.
 - O agente deve consultar esta seção em toda mudança para verificar se existe alguma `convention` acionada no caso concreto.
 - Ao criar, remover, renomear ou alterar o escopo de uma `convention`, atualize as fontes e o manifesto correspondentes.
-- Não edite manualmente `AGENTS.md` nem `conventions` ou `subconventions` finais publicadas em `docs/conventions/`; altere a fonte e o manifesto aplicáveis e use o fluxo público de publicação do repositório.
+- Não edite manualmente `AGENTS.md` nem `conventions` ou `subconventions` finais publicadas no diretório configurado em [`conventions.out_dir`](agents-compose.yml); altere as fontes resolvidas por `local.tpl_dir` ou `remote.tpl_dir`, ajuste o manifesto aplicável e use o fluxo público de publicação do repositório.
