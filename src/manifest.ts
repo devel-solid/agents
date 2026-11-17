@@ -14,9 +14,15 @@ export class EngineError extends Error {
 export type Language = 'en' | 'pt-br';
 export interface Manifest {
   language: Language;
+}
+export interface LegacyManifest extends Manifest {
   templates_dir: string;
   conventions_dir: string;
 }
+export const CONFIG_PATH = '.agentscli/config.yml';
+export const TEMPLATE_ROOT = '.agentscli/templates';
+export const CONVENTION_ROOT = `${TEMPLATE_ROOT}/conventions`;
+export const OUTPUT_ROOT = '.agentscli/conventions';
 export const MANIFEST = 'agentscli-compose.yml';
 export const INTERNAL_MANIFEST = 'agentscli.yml';
 export function language(value = 'en'): Language {
@@ -26,20 +32,16 @@ export function language(value = 'en'): Language {
   return normalized;
 }
 export function defaultManifest(value?: string): Manifest {
-  return {
-    language: language(value),
-    templates_dir: 'templates',
-    conventions_dir: 'docs/conventions',
-  };
+  return { language: language(value) };
 }
-export function parseManifest(text: string): Manifest {
+function parseFields(text: string, path: string): Record<string, unknown> {
   const document = parseDocument(text, { uniqueKeys: true });
   if (document.errors.length)
     throw new EngineError(
       'MANIFEST_YAML',
       `Invalid YAML: ${document.errors[0]!.message}`,
       2,
-      MANIFEST,
+      path,
     );
   let value: unknown;
   try {
@@ -49,17 +51,41 @@ export function parseManifest(text: string): Manifest {
       'MANIFEST_YAML',
       'YAML aliases are not supported.',
       2,
-      MANIFEST,
+      path,
     );
   }
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new EngineError(
       'MANIFEST_FIELDS',
-      'Expected language, templates_dir, and conventions_dir.',
+      'Expected a configuration mapping.',
       2,
-      MANIFEST,
+      path,
     );
-  const fields = value as Record<string, unknown>;
+  return value as Record<string, unknown>;
+}
+function storedLanguage(value: unknown, path: string): Language {
+  if (typeof value !== 'string' || (value !== 'en' && value !== 'pt-br'))
+    throw new EngineError(
+      'LANGUAGE',
+      'Stored language must be lowercase en or pt-br.',
+      2,
+      path,
+    );
+  return value;
+}
+export function parseManifest(text: string): Manifest {
+  const fields = parseFields(text, CONFIG_PATH);
+  if (Object.keys(fields).length !== 1 || !Object.hasOwn(fields, 'language'))
+    throw new EngineError(
+      'MANIFEST_FIELDS',
+      'Use exactly language: en or language: pt-br; client paths are fixed.',
+      2,
+      CONFIG_PATH,
+    );
+  return { language: storedLanguage(fields.language, CONFIG_PATH) };
+}
+export function parseLegacyManifest(text: string): LegacyManifest {
+  const fields = parseFields(text, MANIFEST);
   const keys = ['language', 'templates_dir', 'conventions_dir'];
   if (
     Object.keys(fields).length !== 3 ||
@@ -72,18 +98,22 @@ export function parseManifest(text: string): Manifest {
       2,
       MANIFEST,
     );
-  const selected = language(fields.language as string);
-  if (selected !== fields.language)
-    throw new EngineError(
-      'LANGUAGE',
-      'Manifest language must be lowercase.',
-      2,
-      MANIFEST,
-    );
+  const selected = storedLanguage(fields.language, MANIFEST);
   const templates = rootDirectory(fields.templates_dir as string);
   const conventions = rootDirectory(fields.conventions_dir as string);
   const a = portableKey(templates),
     b = portableKey(conventions);
+  if (
+    [a, b].some(
+      (root) => root === '.agentscli' || root.startsWith('.agentscli/'),
+    )
+  )
+    throw new EngineError(
+      'ROOT_OVERLAP',
+      'Legacy roots must not overlap the .agentscli namespace.',
+      2,
+      MANIFEST,
+    );
   if (a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`))
     throw new EngineError(
       'ROOT_OVERLAP',

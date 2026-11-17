@@ -27,7 +27,7 @@ test('dispatch forwards root, normalized language, and read-only init preview', 
         return engineResult('init', 0, [
           {
             action: 'update',
-            path: 'agentscli-compose.yml',
+            path: '.agentscli/config.yml',
             status: 'pending',
           },
         ]);
@@ -69,6 +69,12 @@ test('removed, misplaced, duplicate, and incompatible options never dispatch', a
     ['sync', '--lang', 'en'],
     ['validate', '--dry-run'],
     ['init', '--check'],
+    ['init', '--migrate', '--check'],
+    ['sync', '--migrate'],
+    ['validate', '--migrate'],
+    ['init', '--migrate', '--migrate'],
+    ['init', '--templates-dir', 'custom'],
+    ['init', '--conventions-dir', 'custom'],
     ['sync', '--dry-run', '--check'],
     ['init', '--lang'],
     ['init', '--repo-root='],
@@ -119,11 +125,50 @@ test('help and standalone version use no runtime or project writes', async () =>
   }
   const help = await runCli(['--help', '--json'], dependencies);
   assert.equal(JSON.parse(help.stdout).command, 'help');
-  assert.match(JSON.parse(help.stdout).text, /agentscli-compose\.yml/);
+  assert.match(JSON.parse(help.stdout).text, /\.agentscli\/config\.yml/);
+  assert.match(JSON.parse(help.stdout).text, /init --migrate/);
+  assert.match(JSON.parse(help.stdout).text, /existing language and content/);
   assert.doesNotMatch(
     helpText('0.1.0'),
     /agentscli release|--base|--frozen|--offline/,
   );
+});
+
+test('migration remains init and forwards language, preview, and common options', async () => {
+  const root = resolve('migration-client');
+  for (const args of [
+    ['init', '--migrate', '--lang', 'PT-BR', '--dry-run', '--json'],
+    ['--migrate', '--dry-run', '--lang=PT-BR', '--json', 'init'],
+  ]) {
+    const calls = [];
+    const response = await runCli(args, {
+      cwd: root,
+      execute: async (...values) => {
+        calls.push(values);
+        return engineResult('init', 0, [
+          {
+            action: 'delete',
+            path: 'agentscli-compose.yml',
+            status: 'pending',
+          },
+        ]);
+      },
+    });
+    assert.deepEqual(calls, [
+      [
+        'init',
+        { repoRoot: root, language: 'pt-br', dryRun: true, migrate: true },
+      ],
+    ]);
+    assert.equal(response.exitCode, 0);
+    assert.equal(response.stderr, '');
+    assert.equal(JSON.parse(response.stdout).command, 'init');
+    assert.equal(JSON.parse(response.stdout).changes[0].status, 'pending');
+  }
+  assert.deepEqual(parseArguments(['init', '--migrate'], root).options, {
+    repoRoot: root,
+    migrate: true,
+  });
 });
 
 test('JSON preserves drift, validation, and operational exit codes in one document', async () => {

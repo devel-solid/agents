@@ -7,13 +7,14 @@ description: Curate concise AGENTS.md instructions and convention discovery, edi
 
 ## Select the source
 
-Inspect the requested project root and read its instructions and manifest before writing:
+Inspect the requested project root and ancestors and read its instructions and context before writing:
 
 - Only `agentscli.yml`: edit the handwritten root `AGENTS.md` directly in English. This manifest identifies the source repository and lists distributed skills; it does not configure document generation.
-- Only `agentscli-compose.yml`: edit `<templates_dir>/AGENTS.tpl.md`, using the manifest's `language` for authored text. Root `AGENTS.md` is generated and disposable.
-- Both or neither: explain the conflicting or missing context and ask for direction before editing. Do not guess or initialize a project to resolve it.
+- Only valid `.agentscli/config.yml`: edit `.agentscli/templates/AGENTS.tpl.md`, using its `language` for authored text. Root `AGENTS.md` is generated and disposable.
+- `agentscli-compose.yml`, with or without new configuration: report that explicit migration must finish before authorship; edit no legacy sources. Explain `agentscli init --migrate --dry-run` and `agentscli init --migrate` without running either unless requested.
+- Missing, malformed, or conflicting context: explain the problem and ask for direction before editing. Do not infer direct mode from absent client configuration, guess, or initialize a project to resolve it.
 
-Never run `init` or `sync` in the internal-manifest source repository.
+A valid client configuration contains exactly `language: en` or `language: pt-br`, with no duplicate/unknown keys, YAML aliases, or layout overrides. Invalid configuration blocks edits. An ancestor containing `agentscli.yml` blocks treating its subtree as a client; diagnose it before editing. Never run client initialization, migration, validation, or synchronization in the internal source repository or its descendants.
 
 ## Decide what belongs in AGENTS
 
@@ -33,10 +34,10 @@ In client mode, preserve valid UTF-8, exactly one H1, and exactly one full-line 
 <!-- agentscli:conventions -->
 ```
 
-The generator replaces that comment with the convention index. Titles, sections, and surrounding content are customizable; the default body is not a mandatory schema. Do not insert `<!-- agentscli:generated -->` into the template: the renderer supplies it.
+The generator replaces that comment with the convention index. Convention sources are below `.agentscli/templates/conventions/`; generated links target `.agentscli/conventions/` relative to root `AGENTS.md`. Titles, sections, and surrounding content are customizable; the default body is not a mandatory schema. Do not insert `<!-- agentscli:generated -->` into the template: the renderer supplies it.
 
 In direct mode, keep ordinary readable Markdown and valid discovery links. A handwritten AGENTS file needs neither the template insertion marker nor a generated marker.
 
-If the request needs convention changes, use `agentscli-write-conventions` in the same manifest context. For client structural checks, use the installed `agentscli validate --repo-root <project>` when available; do not implicitly install or upgrade it. Do not validate the internal repository as a client.
+If the request needs convention changes, use `agentscli-write-conventions` in the same context. For client structural checks, use the installed `agentscli validate --repo-root <project>` when available; do not implicitly install or upgrade it. Skills remain English; configuration selects authored document language, not chat language. Do not validate the internal repository as a client.
 
 A review-only request changes no files. Source authorship does not imply generation, commits, or publication. When client generation is also requested, follow `agentscli-build-agents` within that scope. Report the edited source, content moved into conventions, and checks actually performed.

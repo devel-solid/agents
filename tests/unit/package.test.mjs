@@ -15,13 +15,14 @@ function resourceIO(overrides = {}) {
   }
   add(
     'agentscli.yml',
-    'skills:\n  - .agents/skills/agentscli-write-conventions\n  - assets/templates/skills/agentscli-build-agents\n',
+    'skills:\n  - .agents/skills/agentscli-write-conventions\n  - .agents/skills/agentscli-update-agents\n  - assets/templates/skills/agentscli-build-agents\n',
   );
   for (const [path, name] of [
     [
       '.agents/skills/agentscli-write-conventions',
       'agentscli-write-conventions',
     ],
+    ['.agents/skills/agentscli-update-agents', 'agentscli-update-agents'],
     [
       'assets/templates/skills/agentscli-build-agents',
       'agentscli-build-agents',
@@ -33,8 +34,15 @@ function resourceIO(overrides = {}) {
     );
     add(`${path}/references/example.md`, 'Support content\n');
   }
-  for (const language of ['en', 'pt-br'])
+  for (const language of ['en', 'pt-br']) {
     add(`assets/templates/${language}/AGENTS.tpl.md`, '# Project\n');
+    add(
+      `assets/templates/${language}/conventions/project.tpl.md`,
+      language === 'pt-br'
+        ? '# Contexto\n\n<!-- AGENT-CARD START -->\nLeia antes de trabalhar.\n<!-- AGENT-CARD END -->\n\n<!-- Substitua este comentário pelo contexto do projeto. -->\n'
+        : '# Context\n\n<!-- AGENT-CARD START -->\nRead before working.\n<!-- AGENT-CARD END -->\n\n<!-- Replace this comment with project context. -->\n',
+    );
+  }
   const writes = [];
   const io = {
     realpathSync: (path) => path,
@@ -99,7 +107,7 @@ test('distribution manifest accepts mixed roots and rejects unsupported/duplicat
 test('whole skill trees and both document locales map without duplicated sources', () => {
   const { root, io } = resourceIO();
   const resources = collectResources(root, io);
-  assert.equal(resources.length, 6);
+  assert.equal(resources.length, 10);
   assert.equal(
     resources
       .find(
@@ -116,6 +124,47 @@ test('whole skill trees and both document locales map without duplicated sources
     ),
   );
   assert.ok(resources.every((item) => !item.destination.includes('release')));
+  assert.deepEqual(
+    [
+      ...new Set(
+        resources
+          .filter((item) => item.destination.startsWith('skills/'))
+          .map((item) => item.destination.split('/')[1]),
+      ),
+    ].sort(),
+    [
+      'agentscli-build-agents',
+      'agentscli-update-agents',
+      'agentscli-write-conventions',
+    ],
+  );
+  for (const [language, title, hint] of [
+    ['en', '# Context', 'Replace this comment'],
+    ['pt-br', '# Contexto', 'Substitua este comentário'],
+  ]) {
+    const resource = resources.find(
+      (item) =>
+        item.destination === `templates/${language}/conventions/project.tpl.md`,
+    );
+    assert.ok(resource);
+    assert.ok(resource.content.toString().startsWith(title));
+    assert.ok(resource.content.toString().includes(hint));
+    assert.equal(
+      resource.content.toString(),
+      io.readFileSync(
+        resolve(
+          root,
+          `assets/templates/${language}/conventions/project.tpl.md`,
+        ),
+        'utf8',
+      ),
+    );
+    assert.ok(
+      !resources.some(
+        (item) => item.destination === `templates/${language}/project.tpl.md`,
+      ),
+    );
+  }
 });
 
 test('entrypoint metadata must match the directory and include a description', () => {
@@ -153,8 +202,8 @@ test('packaging rejects linked sources and writes nothing before all resources p
 
 test('packaging preserves all bytes and targets only dist/assets', () => {
   const { root, io, writes } = resourceIO();
-  assert.equal(packageAssets(root, io), 6);
-  assert.equal(writes.length, 6);
+  assert.equal(packageAssets(root, io), 10);
+  assert.equal(writes.length, 10);
   assert.ok(
     writes.every(({ path }) =>
       path.startsWith(resolve(root, 'dist/assets') + sep),

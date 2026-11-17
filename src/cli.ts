@@ -22,25 +22,36 @@ export function helpText(packageVersion = version): string {
   return `agentscli ${packageVersion} — project instructions from editable templates
 
 Usage:
-  agentscli init [--lang en|pt-br] [--dry-run]
+  agentscli init [--migrate] [--lang en|pt-br] [--dry-run]
   agentscli validate
   agentscli sync [--dry-run | --check]
   agentscli --version
 
 Common options: --repo-root <directory>, --json, --help.
 
-init replaces agentscli-compose.yml with the requested language (default en)
-and default roots. It creates missing templates, generated documents, and three
-client skills while preserving valid existing templates and regular skill files.
-validate checks the manifest, templates, safe paths, and destination conflicts
+init creates missing setup, preserving existing language and content. --lang
+changes the preference and selects missing defaults; existing text stays literal
+and existing output notices change only on sync. First init defaults to en.
+.agentscli/config.yml contains only language. Sources are
+.agentscli/templates/AGENTS.tpl.md and .agentscli/templates/conventions/**/*.tpl.md;
+outputs are root AGENTS.md and .agentscli/conventions/**/*.md. Version the complete
+.agentscli/ tree and root AGENTS.md; the CLI does not change Git state.
+init --migrate explicitly converts a supported agentscli-compose.yml client.
+Preview with --migrate --dry-run. Migration repairs managed references, restores
+managed skills, prepares the new tree before cleanup, and removes the old manifest
+last. Conflicts block writes; review incoming references from unmanaged files.
+Ordinary commands reject remaining legacy manifests, even beside new config.
+validate checks configuration, templates, safe paths, and destination conflicts
 without writing. Missing skills alone do not block validation.
 sync regenerates all AGENTS.md/convention content and replaces the three managed
 skill directories, including support files. Customize document templates;
 direct generated edits and changes inside managed skills are overwritten.
 Manual documents and other skills are preserved. Destination conflicts block
-all writes. Cleanup only removes obsolete marked conventions in the current root.
+all writes. Sync cleanup only removes obsolete marked .agentscli/conventions/*.md.
 --dry-run previews document and skill changes without writing. --check returns
-1 for document or skill drift. After a partial failure, repeat sync to finish.
+1 for document or skill drift. After a partial sync failure, repeat sync to finish.
+After a partial migration, repeat init --migrate with the same options. Ordinary
+init retries use the same options. No rollback or recovery database is maintained.
 
 Exit codes: 0 success; 1 check drift; 2 usage, validation, or conflict;
 3 operational failure. Runtime operations use Node and packaged resources only.
@@ -71,6 +82,7 @@ export function parseArguments(
       help: { type: 'boolean' },
       version: { type: 'boolean' },
       lang: { type: 'string' },
+      migrate: { type: 'boolean' },
       'dry-run': { type: 'boolean' },
       check: { type: 'boolean' },
     },
@@ -96,7 +108,7 @@ export function parseArguments(
   if (!command && !values.help)
     throw new Error('Choose init, validate, or sync. Use agentscli --help.');
   const allowed: Record<string, string[]> = {
-    init: ['lang', 'dry-run'],
+    init: ['lang', 'dry-run', 'migrate'],
     validate: [],
     sync: ['dry-run', 'check'],
   };
@@ -123,6 +135,7 @@ export function parseArguments(
         : { language: values.lang.toLowerCase() }),
       ...(values['dry-run'] ? { dryRun: true } : {}),
       ...(values.check ? { check: true } : {}),
+      ...(values.migrate ? { migrate: true } : {}),
     },
   };
 }

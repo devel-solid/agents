@@ -10,6 +10,7 @@ import {
   type FileSystem,
 } from './io.js';
 import { loadResources, plan, type Effect, type Resources } from './plan.js';
+import { planMigration } from './migration.js';
 
 export type Command = 'init' | 'validate' | 'sync';
 export interface ExecuteOptions {
@@ -17,6 +18,7 @@ export interface ExecuteOptions {
   language?: string;
   dryRun?: boolean;
   check?: boolean;
+  migrate?: boolean;
 }
 export interface Change {
   path: string;
@@ -58,13 +60,25 @@ export async function execute(
   try {
     const root = checkRoot(io, options.repoRoot);
     assertClientContext(io, root);
-    effects = plan(
-      io,
-      root,
-      command,
-      dependencies.resources ?? loadResources(),
-      options.language,
-    );
+    if (options.migrate && (command !== 'init' || options.check))
+      throw new EngineError(
+        'USAGE',
+        '--migrate applies only to init without --check.',
+      );
+    effects = options.migrate
+      ? planMigration(
+          io,
+          root,
+          dependencies.resources ?? loadResources(),
+          options.language,
+        )
+      : plan(
+          io,
+          root,
+          command,
+          dependencies.resources ?? loadResources(),
+          options.language,
+        );
     if (command === 'validate') return { exitCode: 0, result };
     result.changes = effects.map(({ path, action }) => ({
       path,
@@ -72,11 +86,11 @@ export async function execute(
       status: 'pending',
     }));
     if (options.dryRun || options.check) {
-      if (command === 'init' && options.dryRun)
+      if (command === 'init' && options.dryRun && !options.migrate)
         result.diagnostics.push({
           code: 'INIT_PRESERVED',
           message:
-            'Existing valid templates, regular skill files, and marked outputs are preserved. Only missing setup is created; the client manifest is overwritten with the selected language and default roots.',
+            'Existing valid templates, regular skill files, and marked outputs are preserved. Only missing setup is created; stored language is preserved unless --lang is explicit.',
         });
       const exitCode = options.check && effects.length ? 1 : 0;
       result.ok = exitCode === 0;
@@ -84,6 +98,7 @@ export async function execute(
     }
     applying = true;
     for (const effect of effects) {
+      effect.precondition?.(io, root);
       if (effect.action === 'delete') {
         if (effect.directory) {
           if (inspect(io, root, effect.path, 'directory'))
@@ -106,8 +121,8 @@ export async function execute(
     });
     if (applying)
       result.diagnostics.push({
-        code: 'RETRY_SYNC',
-        message: `${completed} of ${effects.length} effects completed. Fix the reported problem and ${command === 'init' ? 'repeat agentscli init with the same options to finish setup, then run agentscli sync' : 'run agentscli sync again to finish'}; no rollback was performed.`,
+        code: options.migrate ? 'RETRY_MIGRATION' : 'RETRY_SYNC',
+        message: `${completed} of ${effects.length} effects completed. Fix the reported problem and ${options.migrate ? 'repeat agentscli init --migrate with the same options to finish migration' : command === 'init' ? 'repeat agentscli init with the same options to finish setup, then run agentscli sync' : 'run agentscli sync again to finish'}; no rollback was performed.`,
       });
     return { exitCode: applying ? 3 : known ? error.exitCode : 3, result };
   }

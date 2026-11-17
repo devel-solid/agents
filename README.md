@@ -1,7 +1,7 @@
 # agentscli
 
 Generate a project's `AGENTS.md` and conventions from editable Markdown templates.
-Package **@devel-solid/agentscli**, experimental version **0.1.1**, licensed under MIT.
+Package **@devel-solid/agentscli**, experimental version **0.2.0**, licensed under MIT.
 Requires Node.js 22, 24, or 26. The executable is `agentscli`.
 
 ## Use
@@ -19,33 +19,56 @@ agentscli sync --check
 ~~~
 
 Use `agentscli init --lang pt-br` for Brazilian Portuguese document templates and
-generated notices. The default is `en`. Skills, CLI help, and diagnostics stay English.
-Authored template text is preserved literally.
+generated notices. First initialization defaults to `en`; repeated init preserves
+the stored preference. Explicit `--lang` changes the preference and selects defaults
+for missing resources. Existing authored text stays literal, and existing output
+notices change only after a requested `sync`. Skills, CLI help, and diagnostics stay English.
 
-The client manifest `agentscli-compose.yml` contains exactly:
+Client configuration `.agentscli/config.yml` contains exactly:
 
 ~~~yaml
 language: pt-br
-templates_dir: templates
-conventions_dir: docs/conventions
 ~~~
 
-Every successful `init` overwrites that manifest using the requested language
-(default `en`) and default roots. It creates missing templates, skills, and initial
+The paths are fixed: no configuration field or flag customizes the layout. Invalid
+configuration blocks init, even with `--lang`; it is never silently replaced.
+Init creates missing templates, skills, and initial
 documents while preserving valid existing templates, regular skill files, and
 generated documents. Repeated initialization does not recreate intentionally
-removed convention sources. Previous custom roots are not cleaned.
+removed convention sources. Retry interrupted ordinary init with the same options.
+
+Version the **complete `.agentscli/` tree**, including configuration, authored
+templates, and generated conventions, alongside root `AGENTS.md` and the distributed
+skills. The CLI does not change Git state or ignore rules.
+
+~~~text
+.agentscli/
+  config.yml
+  templates/
+    AGENTS.tpl.md
+    conventions/
+      project.tpl.md
+  conventions/
+    project.md
+AGENTS.md
+.agents/skills/
+  agentscli-write-conventions/
+  agentscli-update-agents/
+  agentscli-build-agents/
+~~~
 
 ## Edit templates, then synchronize
 
 ~~~text
-templates/AGENTS.tpl.md       -> AGENTS.md
-templates/project.tpl.md      -> docs/conventions/project.md
-templates/testing/unit.tpl.md -> docs/conventions/testing/unit.md
+.agentscli/templates/AGENTS.tpl.md                   -> AGENTS.md
+.agentscli/templates/conventions/project.tpl.md      -> .agentscli/conventions/project.md
+.agentscli/templates/conventions/testing/unit.tpl.md -> .agentscli/conventions/testing/unit.md
 ~~~
 
-All convention `*.tpl.md` files participate automatically, including nested and
-dotted names. An empty set is valid. No per-file registration or inheritance exists.
+Only convention `*.tpl.md` files below `.agentscli/templates/conventions/`
+participate automatically, including nested and dotted names and nested `AGENTS.tpl.md`.
+Paths map relative to that full subtree; unrelated templates beside the main source
+are ignored. An empty set is valid. No per-file registration or inheritance exists.
 
 The main template needs one H1 and one full-line insertion comment outside examples.
 Other headings, sections, and text are yours to customize:
@@ -84,6 +107,9 @@ Keep tests focused on observable behavior.
 The card becomes part of the AGENTS index and is removed from the convention body.
 Generated documents start with `<!-- agentscli:generated -->` and a source-edit notice.
 `sync` replaces their entire content; put customizations in templates.
+Author links for their generated location: convention body links resolve from
+`.agentscli/conventions/<relative>.md`; main-template and card links resolve from
+root `AGENTS.md`. The generated index uses root-relative convention links.
 
 `validate` checks inputs, Markdown structure, paths, and destination conflicts.
 `sync --dry-run` previews changes without writes. `sync --check` returns 1 for document
@@ -92,8 +118,9 @@ or managed-skill drift and 0 when current. Common options: `--repo-root <directo
 
 Unmarked documents occupying required output paths block all writes. Move useful
 content into a template and resolve the destination before retrying. Other manual
-documents remain untouched. Only stale marked Markdown below the **current**
-conventions root is removed. Unsafe paths and file aliases are rejected.
+documents remain untouched. Only stale Markdown below `.agentscli/conventions/`
+whose exact first line is `<!-- agentscli:generated -->` is removed. Other roots
+are untouched by ordinary sync. Unsafe paths and file aliases are rejected.
 
 Inputs and destinations are checked before writing. Files are replaced individually.
 A failure can leave some documents or skills updated; diagnostics report completed
@@ -101,6 +128,69 @@ and remaining changes. Repeat `sync` to finish. Concurrent writes are unsupporte
 
 JSON results contain `schemaVersion`, `command`, `ok`, `changes`, and `diagnostics`.
 Exit codes: 0 success, 1 check drift, 2 usage/validation/conflict, 3 operational failure.
+
+## Migrate an existing client
+
+Only explicit migration reads `agentscli-compose.yml`. Ordinary init, validate,
+and sync reject any remaining legacy manifest, including beside new configuration.
+The supported legacy shape contains exactly these three fields (actual safe custom
+roots are supported):
+
+~~~yaml
+language: pt-br
+templates_dir: templates
+conventions_dir: docs/conventions
+~~~
+
+Use the installed CLI; these operations need only Node, packaged resources, and
+project files, with no network or implicit installation:
+
+~~~sh
+agentscli init --migrate --dry-run
+agentscli init --migrate
+agentscli validate
+agentscli sync --dry-run
+agentscli sync --check
+~~~
+
+Migration preserves the legacy language unless `--lang en|pt-br` is explicit. Use
+the same options for preview, application, and retries. It transfers the legacy
+main source and every other `*.tpl.md`, retaining their full relative paths under
+the new convention-source subtree; a legacy `conventions/rule.tpl.md` keeps that
+subdirectory. An empty convention set stays empty. Older composition schemas,
+unsafe roots, or roots overlapping `.agentscli/` are rejected.
+
+The preview includes source transfers, regenerated documents/notices, complete
+replacement of the three managed skill trees (including removal of extra files),
+configuration publication, and legacy cleanup. Other skills remain untouched.
+Managed Markdown links/images are rebased to retain resolved targets, queries,
+and fragments. External URLs and code examples stay literal. Ambiguous links or
+affected unsupported HTML references require an author correction first.
+Review incoming links in **unmanaged files** separately: migration does not scan
+or edit arbitrary project prose, and unrelated resources are not moved.
+
+Different occupied new targets, manual required outputs, or direct edits to expected
+legacy generated outputs block all writes. Reconcile useful output edits into
+their template and resolve reported conflicts before retrying. Identical planned
+copies and missing old outputs allow retry.
+
+Migration prepares and verifies new sources, documents, and managed skills before
+publishing `.agentscli/config.yml` and starting legacy cleanup. It deletes only
+transferred equivalent sources and marked Markdown under the declared old output
+root, preserves unrelated/manual files and nonempty directories, removes only
+empty legacy directories, and deletes `agentscli-compose.yml` last.
+
+A failure reports completed/pending effects with exit 3. Repeat **`init --migrate`
+with the same options**, including any language selection; do not use ordinary
+sync while the old manifest remains. The new configuration and remaining old
+manifest let retry verify and finish cleanup even after some sources were removed.
+Intervening divergent edits block retry. There is no automatic rollback, backup,
+or recovery database. The CLI performs no Git operation.
+
+After completion, `init --migrate` validates the new client and returns no effects,
+even with `--lang`; change its preference with ordinary `init --lang` instead.
+With neither client configuration, migration fails; use ordinary init for a new
+project. Version and review the complete new tree through your normal workflow.
 
 ## Skills
 
@@ -111,10 +201,20 @@ Exit codes: 0 success, 1 check drift, 2 usage/validation/conflict, 3 operational
 | `agentscli-build-agents` | — | Validate, preview, synchronize, check |
 | `agentscli-release` | Native CLI versioning/publication | — |
 
-Shared authoring skills select context using exactly one manifest:
-`agentscli.yml` means direct repository authorship; `agentscli-compose.yml` means client
-templates. Both or neither produces a diagnostic before edits. AGENTS stays concise;
-detailed or scoped rules belong in conventions.
+All three client skills inspect context before acting:
+
+| Context | Behavior |
+| --- | --- |
+| Only `agentscli.yml` | Direct handwritten English repository authorship; no client CLI operations |
+| Only valid `.agentscli/config.yml` | Fixed client templates; use configured document language |
+| Any `agentscli-compose.yml` | Explicit migration must finish before ordinary client work |
+| Missing, invalid, or conflicting context | Diagnose before edits; do not implicitly initialize |
+| `agentscli.yml` in an ancestor | Reject nested client interpretation |
+
+The configuration stores only language. The internal `skills` list is solely a
+distribution list. AGENTS stays concise; detailed or scoped rules belong in
+conventions. The build skill uses the installed CLI only for the requested
+operation, without implicit installation, upgrade, initialization, or migration.
 
 Client skills are installed under `.agents/skills`. **Sync fully restores the three
 distributed directories**, including support files and removal of extra files.

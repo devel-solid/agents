@@ -1,8 +1,13 @@
 import { fileURLToPath } from 'node:url';
 import {
   EngineError,
+  CONFIG_PATH,
+  TEMPLATE_ROOT,
+  CONVENTION_ROOT,
+  OUTPUT_ROOT,
   MANIFEST,
   defaultManifest,
+  language,
   parseManifest,
   serializeManifest,
   type Language,
@@ -28,6 +33,7 @@ export interface Effect {
   content?: Uint8Array;
   previous?: Uint8Array;
   directory?: boolean;
+  precondition?: (io: FileSystem, root: string) => void;
 }
 const bytes = (text: string): Uint8Array => new TextEncoder().encode(text);
 export const equalBytes = (a: Uint8Array, b: Uint8Array): boolean =>
@@ -73,7 +79,7 @@ export function loadResources(): Resources {
     ),
   };
 }
-function read(io: FileSystem, root: string, path: string): Uint8Array {
+export function read(io: FileSystem, root: string, path: string): Uint8Array {
   if (!inspect(io, root, path, 'file'))
     throw new EngineError(
       'SOURCE_MISSING',
@@ -83,7 +89,7 @@ function read(io: FileSystem, root: string, path: string): Uint8Array {
     );
   return io.read(containedPath(root, path));
 }
-function directoryPaths(files: string[]): Set<string> {
+export function directoryPaths(files: string[]): Set<string> {
   const paths = new Set<string>();
   for (const file of files) {
     const parts = file.split('/');
@@ -92,7 +98,7 @@ function directoryPaths(files: string[]): Set<string> {
   }
   return paths;
 }
-function allDirectories(
+export function allDirectories(
   io: FileSystem,
   root: string,
   directory: string,
@@ -114,23 +120,31 @@ export function plan(
   selectedLanguage?: string,
 ): Effect[] {
   assertClientContext(io, root);
+  if (inspect(io, root, MANIFEST, 'file'))
+    throw new EngineError(
+      'MIGRATION_REQUIRED',
+      'Legacy client configuration remains. Preview agentscli init --migrate --dry-run, then repeat agentscli init --migrate with the same options to finish migration.',
+      2,
+      MANIFEST,
+    );
   const initializing = command === 'init';
+  const stored = inspect(io, root, CONFIG_PATH, 'file')
+    ? parseManifest(decode(read(io, root, CONFIG_PATH), CONFIG_PATH))
+    : undefined;
+  if (!initializing && !stored) read(io, root, CONFIG_PATH);
   const manifest = initializing
-    ? defaultManifest(selectedLanguage)
-    : parseManifest(decode(read(io, root, MANIFEST), MANIFEST));
-  inspect(io, root, manifest.templates_dir, 'directory');
-  inspect(io, root, manifest.conventions_dir, 'directory');
+    ? selectedLanguage === undefined
+      ? (stored ?? defaultManifest())
+      : { language: language(selectedLanguage) }
+    : stored!;
+  inspect(io, root, TEMPLATE_ROOT, 'directory');
+  inspect(io, root, OUTPUT_ROOT, 'directory');
   const effects: Effect[] = [];
-  function compare(
-    path: string,
-    content: Uint8Array,
-    preserve = false,
-    force = false,
-  ): void {
+  function compare(path: string, content: Uint8Array, preserve = false): void {
     const existing = inspect(io, root, path, 'file');
     if (existing && preserve) return;
     const previous = existing ? io.read(containedPath(root, path)) : undefined;
-    if (!existing || force || !equalBytes(previous!, content))
+    if (!existing || !equalBytes(previous!, content))
       effects.push({
         path,
         action: existing ? 'update' : 'create',
@@ -139,19 +153,11 @@ export function plan(
       });
   }
   const virtual = new Map<string, Uint8Array>();
-  for (const path of walk(io, root, manifest.templates_dir))
+  for (const path of walk(io, root, CONVENTION_ROOT))
     if (path.endsWith('.tpl.md')) virtual.set(path, read(io, root, path));
-  const main = `${manifest.templates_dir}/AGENTS.tpl.md`;
-  let initialized = virtual.has(main);
-  if (initializing && !initialized && inspect(io, root, MANIFEST, 'file')) {
-    const oldBytes = read(io, root, MANIFEST);
-    try {
-      parseManifest(decode(oldBytes, MANIFEST));
-      initialized = true;
-    } catch (error) {
-      if (!(error instanceof EngineError)) throw error;
-    }
-  }
+  const main = `${TEMPLATE_ROOT}/AGENTS.tpl.md`;
+  if (inspect(io, root, main, 'file')) virtual.set(main, read(io, root, main));
+  const initialized = !!stored || virtual.has(main);
   if (initializing) {
     const defaults = resources.templates[manifest.language];
     if (!defaults || !defaults['AGENTS.tpl.md'])
@@ -174,7 +180,7 @@ export function plan(
               : 0,
     );
     for (const [relative, content] of defaultsInOrder) {
-      const path = `${manifest.templates_dir}/${relative}`;
+      const path = `${TEMPLATE_ROOT}/${relative}`;
       if ((path === main || !initialized) && !virtual.has(path)) {
         inspect(io, root, path, 'file');
         virtual.set(path, content);
@@ -199,7 +205,7 @@ export function plan(
     .filter((path) => path !== main)
     .map((source) => ({
       source,
-      output: `${manifest.conventions_dir}/${source.slice(manifest.templates_dir.length + 1, -7)}.md`,
+      output: `${OUTPUT_ROOT}/${source.slice(CONVENTION_ROOT.length + 1, -7)}.md`,
       text: decode(virtual.get(source)!, source),
     }));
   const documents = render(
@@ -221,7 +227,7 @@ export function plan(
   }
   const stale: Effect[] = [];
   if (!initializing)
-    for (const path of walk(io, root, manifest.conventions_dir)) {
+    for (const path of walk(io, root, OUTPUT_ROOT)) {
       if (
         path.endsWith('.md') &&
         !documents.has(path) &&
@@ -233,6 +239,25 @@ export function plan(
           previous: io.read(containedPath(root, path)),
         });
     }
+  effects.push(...managedSkillEffects(io, root, resources, initializing));
+  effects.push(...stale);
+  // Publish client configuration only after the complete setup. Its presence
+  // distinguishes initialized clients from interrupted first-time seeding.
+  if (initializing && (!stored || stored.language !== manifest.language))
+    compare(CONFIG_PATH, bytes(serializeManifest(manifest)));
+  uniquePaths(
+    effects.filter((effect) => !effect.directory).map((effect) => effect.path),
+  );
+  return effects;
+}
+export function managedSkillEffects(
+  io: FileSystem,
+  root: string,
+  resources: Resources,
+  preserve = false,
+): Effect[] {
+  const effects: Effect[] = [],
+    stale: Effect[] = [];
   const skillNames = Object.keys(resources.skills).sort();
   if (!skillNames.length)
     throw new EngineError(
@@ -260,9 +285,21 @@ export function plan(
     const expected = new Set(
       Object.keys(skill).map((path) => `${directory}/${path}`),
     );
-    for (const [relative, content] of Object.entries(skill))
-      compare(`${directory}/${relative}`, content, initializing);
-    if (!initializing) {
+    for (const [relative, content] of Object.entries(skill)) {
+      const path = `${directory}/${relative}`;
+      const existing = inspect(io, root, path, 'file');
+      const previous = existing
+        ? io.read(containedPath(root, path))
+        : undefined;
+      if (!existing || (!preserve && !equalBytes(previous!, content)))
+        effects.push({
+          path,
+          action: existing ? 'update' : 'create',
+          content,
+          previous,
+        });
+    }
+    if (!preserve) {
       for (const path of walk(io, root, directory))
         if (!expected.has(path))
           stale.push({
@@ -277,12 +314,5 @@ export function plan(
     }
   }
   effects.push(...stale);
-  // Publish client configuration only after the complete setup. Retry can use
-  // the existing main template to distinguish completed setup from a fresh root.
-  if (initializing)
-    compare(MANIFEST, bytes(serializeManifest(manifest)), false, true);
-  uniquePaths(
-    effects.filter((effect) => !effect.directory).map((effect) => effect.path),
-  );
   return effects;
 }
