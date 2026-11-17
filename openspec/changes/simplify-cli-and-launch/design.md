@@ -145,7 +145,7 @@ Keep npm test unit-only; npm run check adds types/formatting; Lefthook pre-push 
 
 ### 10. Deliver the ready-to-run package with existing history
 
-Use repository devel-solid/agentscli, unscoped npm package agentscli, executable agentscli, version 0.1.0, tag v0.1.0, and MIT. Replace active old identities in metadata, links, examples, and project markers. Keep existing capability identifiers and removed-requirement headers where needed to address historical specifications correctly.
+Use repository devel-solid/agentscli, npm package @devel-solid/agentscli, executable agentscli, version 0.1.0, tag agentscli-v0.1.0, and MIT. Replace active old identities in metadata, links, examples, and project markers. Keep existing capability identifiers and removed-requirement headers where needed to address historical specifications correctly.
 
 Rename the existing repository and update its remote/public metadata during the authorized delivery step. Preserve Git history, branches, and tags; do not export another checkout, initialize independent history, purge historical objects, or force-push to implement the rename.
 
@@ -153,7 +153,7 @@ Use a package files allowlist for compiled runtime code and required dist/assets
 
 The release skill uses native Git/npm. Choose version changes without incidental commit/tag side effects before authorization, inspect npm pack --dry-run contents and the actual candidate archive, then identify the exact commit/tag/tarball/integrity for delivery review. Build/package inspection are delivery operations, not disguised integration tests.
 
-A public registry lookup on 2026-11-17 returned 404 for agentscli; this is not a reservation or guaranteed permission to publish. Recheck names, account access, remote refs, and native authentication at the actual release. OIDC is optional infrastructure, not mandatory first-release scope. Never collect secrets in chat or embed them in artifacts.
+The public registry returned 404 for agentscli, but publication on 2026-11-17 was refused because it is too similar to agents-cli. The user selected @devel-solid/agentscli and agentscli-v0.1.0 while preserving version 0.1.0 and the repository/executable identity agentscli. Preserve the already-public v0.1.0 candidate tag at e59bf3b without moving or deleting it. A registry 404 is not a reservation or guaranteed permission to publish. Recheck names, account access, remote refs, and native authentication at the actual release. OIDC is optional infrastructure, not mandatory first-release scope. Never collect secrets in chat or embed them in artifacts.
 
 After corresponding authorization, perform the repository rename, reviewed commit/tag/push, and exact npm artifact publication. Verify the public commit/tag and registry identity/integrity. Resolve ambiguous responses by inspecting remote state; do not replace conflicting published tags/versions. This change remains pending until actual authorized first delivery is verified.
 

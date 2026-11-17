@@ -8,11 +8,11 @@ Deliver the complete experimental agentscli product as a small MIT-licensed npm 
 
 ### Requirement: The first public artifact has one explicit identity
 
-The product, repository name, unscoped npm package, and executable SHALL be agentscli. Public repository links SHALL use devel-solid/agentscli. The initial version SHALL be 0.1.0 under MIT with consistent package/lockfile metadata and license text. Private 3.0.2 and old content tags SHALL NOT determine the initial version.
+The product, repository name, and executable SHALL be agentscli. The npm package SHALL be @devel-solid/agentscli. Public repository links SHALL use devel-solid/agentscli. The initial version SHALL be 0.1.0 under MIT with consistent package/lockfile metadata and license text. Private 3.0.2 and old content tags SHALL NOT determine the initial version.
 
 #### Scenario: Initial release metadata is inspected
 - **WHEN** the candidate archive and maintained metadata are reviewed
-- **THEN** package, executable, repository links, version, and license agree on agentscli@0.1.0 under MIT
+- **THEN** the package is @devel-solid/agentscli@0.1.0 under MIT and the executable/repository retain agentscli
 
 ### Requirement: The first release includes both document languages and English skills
 
@@ -56,7 +56,7 @@ Repository-only agentscli-release SHALL guide CLI version changes, unit gates, b
 
 ### Requirement: Delivery effects wait for corresponding authorization
 
-Repository rename, commit, tag, push, and npm publication SHALL wait for their corresponding execution authorization. Planning and local readiness SHALL perform none of those effects. The delivery procedure SHALL identify the reviewed source commit, v0.1.0 tag, exact artifact, and expected public effects.
+Repository rename, commit, tag, push, and npm publication SHALL wait for their corresponding execution authorization. Planning and local readiness SHALL perform none of those effects. The delivery procedure SHALL identify the reviewed source commit, agentscli-v0.1.0 tag, exact artifact, and expected public effects.
 
 #### Scenario: Local readiness is complete without publication authorization
 - **WHEN** the candidate is ready but external effects are not authorized
@@ -67,12 +67,16 @@ Repository rename, commit, tag, push, and npm publication SHALL wait for their c
 After authorized publication, the maintainer SHALL verify public commit/tag and registry name/version/visibility/integrity against the candidate. Ambiguous responses SHALL be resolved by inspecting native remote state. Conflicting existing tags or versions SHALL stop delivery without replacement.
 
 #### Scenario: The publication response is lost
-- **WHEN** registry metadata for agentscli@0.1.0 is inspected
+- **WHEN** registry metadata for @devel-solid/agentscli@0.1.0 is inspected
 - **THEN** matching integrity confirms delivery, mismatching content blocks it, and no blind republish occurs
 
 #### Scenario: Only local package evidence exists
 - **WHEN** change completion is reviewed
 - **THEN** it reports local readiness and leaves actual publication/remote verification open
+
+#### Scenario: A registry naming restriction changes the package identity
+- **WHEN** the unscoped candidate is refused and the user selects the scoped package
+- **THEN** delivery uses @devel-solid/agentscli@0.1.0 and agentscli-v0.1.0 while preserving the existing public v0.1.0 candidate tag
 
 ### Requirement: Account and name prerequisites are checked without collecting secrets
 

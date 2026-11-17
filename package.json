@@ -1,5 +1,5 @@
 {
-  "name": "agentscli",
+  "name": "@devel-solid/agentscli",
   "version": "0.1.0",
   "description": "Generate project AGENTS.md and conventions from editable Markdown templates.",
   "license": "MIT",

@@ -1,14 +1,15 @@
 # agentscli
 
 Generate a project's `AGENTS.md` and conventions from editable Markdown templates.
-Experimental version **0.1.0**, licensed under MIT. Requires Node.js 22, 24, or 26.
+Package **@devel-solid/agentscli**, experimental version **0.1.0**, licensed under MIT.
+Requires Node.js 22, 24, or 26. The executable is `agentscli`.
 
 ## Use
 
 Install the CLI, then run it inside your project:
 
 ~~~sh
-npm install --global agentscli
+npm install --global @devel-solid/agentscli
 agentscli init --dry-run
 agentscli init
 agentscli validate

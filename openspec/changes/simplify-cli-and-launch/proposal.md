@@ -7,7 +7,7 @@ The project has become a distribution and recovery system for shared instruction
 ## What Changes
 
 - **BREAKING:** Remove bases, shared/global conventions, subconventions, families, remote composition, content locks, remote caches, ownership databases, and recovery journals. Do not retain private pre-release formats or deleted changes as compatibility requirements.
-- Use agentscli for the repository, unscoped npm package, and executable. Release experimental 0.1.0 under MIT. Rename the existing repository to devel-solid/agentscli while preserving its Git history; remove the independent-history export/handoff procedure.
+- Use agentscli for the repository and executable, and @devel-solid/agentscli for the npm package. Release experimental 0.1.0 under MIT with tag agentscli-v0.1.0, preserving the existing v0.1.0 candidate tag. Rename the existing repository to devel-solid/agentscli while preserving its Git history; remove the independent-history export/handoff procedure.
 - Keep the client manifest agentscli-compose.yml with exactly language, templates_dir, and conventions_dir. Every successful init overwrites it with the requested language (default en) and default roots. All valid convention templates participate automatically, without per-convention selections.
 - Add the internal agentscli.yml with only a skills directory list. It selects package resources and identifies this source repository; it is not a client manifest and does not make this repository consume itself.
 - Keep the main AGENTS.tpl.md and convention templates editable in the client. Sync recreates the entire AGENTS.md and all convention documents. Preserve custom main-template headings and sections around one agentscli:conventions insertion marker.
@@ -25,7 +25,7 @@ The project has become a distribution and recovery system for shared instruction
 
 ### New Capabilities
 
-- release-publication: MIT-licensed agentscli@0.1.0 identity, history-preserving repository rename, internal native release skill, lean package readiness, and verified Git/npm delivery.
+- release-publication: MIT-licensed @devel-solid/agentscli@0.1.0 identity, history-preserving repository rename, internal native release skill, lean package readiness, and verified Git/npm delivery.
 
 ### Modified Capabilities
 
