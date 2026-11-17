@@ -6,7 +6,7 @@ Date: 2026-11-17. Change: simplify-cli-and-launch.
 
 Local implementation passed its 32-task readiness checkpoint. The user subsequently authorized the complete delivery. The existing remote repository was renamed to devel-solid/agentscli and origin was updated; native verification confirms the same repository id and preserved main/tag refs. Actual npm delivery is pending.
 
-The source worktree is based on commit `3a5fc3fdcd4de163765cf25da2789acd1b13cb8b`. This is the existing parent commit, not the final release commit. Task 5.4 remains open until the reviewed release source has an exact committed identity. Rename and delivery authorization are complete; source/tag and npm delivery identities will be recorded after their actual operations.
+Reviewed release source: `e59bf3b15ba21cc0867d47b6c00e167c302adca0`, with existing commit `3a5fc3fdcd4de163765cf25da2789acd1b13cb8b` verified as an ancestor. Implementation is committed and the annotated local tag `v0.1.0` exists. The tag object is `9a458c34cd2add0e29abd94c2c608bd0b1640c9c` and resolves to that release source. Rename and complete delivery authorization are recorded; npm publication and its final public verification remain pending.
 
 ## Requirement map
 
@@ -15,7 +15,7 @@ The source worktree is based on commit `3a5fc3fdcd4de163765cf25da2789acd1b13cb8b
 | agents-cli (8 requirements) | Native argument parsing and guarded entrypoint in src/cli.ts; stable results in src/runtime.ts; 7 isolated CLI units; installed resource lookup and unit-only gates |
 | project-instruction-workflows (18 requirements) | Reduced manifests, template discovery/validation/rendering, stateless file plan, safe writer, complete managed-skill inventory; 19 engine units and 6 package units; two document locales and direct repository instructions |
 | convention-authoring (7 requirements) | Four standard canonical English SKILL.md sources; shared manifest context and content curation; 3 client skills, internal release excluded; all four skill validators and locale Markdown structure checks passed |
-| release-publication (10 requirements) | agentscli@0.1.0/MIT metadata, internal native release workflow, inspected candidate below; actual rename/publication and final public verification remain unperformed |
+| release-publication (10 requirements) | agentscli@0.1.0/MIT metadata, internal native release workflow, preserved-history rename, exact source/tag and inspected candidate below; npm publication and final public verification remain pending |
 
 The legacy runtime was reduced from 18 to 8 TypeScript modules. Remote resolution, roles, locks, ownership, transactional recovery, base release, Ajv, obsolete JSON schemas, old catalog/assets, integration suites/fixtures, Python oracle, and redundant Makefile wrappers are removed. Useful guide content was reviewed before deletion; see guide-review.md. Own instructions remain handwritten and English.
 
@@ -31,7 +31,7 @@ The legacy runtime was reduced from 18 to 8 TypeScript modules. Remote resolutio
 ## Candidate artifact
 
 - Package/executable/repository identity: `agentscli`.
-- Version: `0.1.0`; intended tag: `v0.1.0`; license: MIT.
+- Version: `0.1.0`; source commit: `e59bf3b15ba21cc0867d47b6c00e167c302adca0`; annotated tag: `v0.1.0`; license: MIT.
 - Candidate archive: `.tmp/agentscli-0.1.0.tgz` (ignored local build artifact, reproducible from maintained sources).
 - Size: 17358 bytes packed; 55289 bytes unpacked; 18 files.
 - SHA-1: `b174fc8502545c2b42aff45a0f476d70da4ed20c`.
@@ -39,12 +39,12 @@ The legacy runtime was reduced from 18 to 8 TypeScript modules. Remote resolutio
 - Contents: 8 compiled runtime modules, 3 complete English client skill trees, 4 templates across en/pt-br, README, LICENSE, and package.json.
 - Excluded: internal manifest/release skill, OpenSpec, source/test trees, source maps, obsolete assets, and development checkout paths. No prepare/postinstall build or resource fetch exists.
 
-This identifies an inspected dirty-worktree candidate, not a committed or published release. Reconcile final source commit and artifact again before delivery; changes affecting package contents invalidate this candidate identity.
+The archive matches the reviewed committed runtime/client sources and metadata. Subsequent delivery bookkeeping changes only this change's evidence/tasks and is excluded from the package. The artifact is not yet published; any change affecting package contents requires a fresh candidate review.
 
 ## Native access checks and blockers
 
 - Renamed public repository: `devel-solid/agentscli`, unchanged GitHub repository id `1247610370`, default branch `main`; origin is `https://github.com/devel-solid/agentscli.git`.
-- Remote main matches the existing parent commit. Existing remote branches/tags were inspected and are preserved; `v0.1.0` was absent.
+- Before source delivery, remote main matched the existing parent commit. All existing remote branches/tags were inspected and preserved; `v0.1.0` was absent before non-forcing local creation.
 - The native GitHub credential reports push access but `admin: false` and `maintain: false`. The existing browser session had repository-owner access and completed the authorized rename and English description update. Native API and Git reads verified the resulting identity/history; no credential value was exposed.
 - `npm whoami` initially reported `ENEEDAUTH`. Native web login has been opened for the user; account/package permission and actual publication remain pending that authentication.
 - The public registry lookup for `agentscli` returned HTTP 404 on 2026-11-17. This does not reserve the name or guarantee publishability. Name/account restrictions remain to be checked after authentication.

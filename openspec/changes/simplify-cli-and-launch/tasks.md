@@ -46,14 +46,14 @@
 - [x] 5.1 Set product, unscoped npm package, executable, repository links, and lockfile metadata to agentscli / devel-solid/agentscli with experimental 0.1.0; add MIT LICENSE and retain required attribution, verifying bin and public metadata consistency.
 - [x] 5.2 Restrict the npm allowlist to compiled runtime/client resources plus README/license/package metadata; inspect npm pack --dry-run and the actual candidate archive to verify three complete English client skills, both document locales, and exclusion of internal skills/manifest, OpenSpec, tests, and obsolete assets.
 - [x] 5.3 Keep prepack building runtime resources and installed-package asset lookup independent of the source checkout; inspect scripts/file references to verify installation/execution requires no compiler, resource download, prepare/postinstall build, or checkout path.
-- [ ] 5.4 Review the final requirement map and README against the implementation, passing unit gate, build, and package contents; record exact candidate commit/version/tag/tarball/integrity and do not claim unperformed installation or integration tests.
+- [x] 5.4 Review the final requirement map and README against the implementation, passing unit gate, build, and package contents; record exact candidate commit/version/tag/tarball/integrity and do not claim unperformed installation or integration tests.
 - [x] 5.5 Present the concrete history-preserving repository rename, remote update, source commit/tag/push, and npm artifact publication plan; verify every effect is reviewable and obtain only any corresponding execution authorization still missing before performing it.
 
 ## 6. Authorized repository rename and first publication
 
 - [ ] 6.1 Recheck target repository access, agentscli npm name restrictions/account permission, and available native authentication without exposing secrets; record blockers and verify a prior registry 404 is not treated as a reservation or publication guarantee.
 - [x] 6.2 When authorized, rename the existing repository to devel-solid/agentscli and update the checkout remote/public references; verify repository identity and preserved history/refs without an independent-history export, history purge, reset, or force-push.
-- [ ] 6.3 Reconcile final public metadata with the reviewed build/archive, then create only the authorized source commit and v0.1.0 tag; verify parent history, final file inventory, and exact artifact identity before delivery.
+- [x] 6.3 Reconcile final public metadata with the reviewed build/archive, then create only the authorized source commit and v0.1.0 tag; verify parent history, final file inventory, and exact artifact identity before delivery.
 - [ ] 6.4 Push the approved source/tag and publish the exact agentscli@0.1.0 artifact through native Git/npm within granted scope; inspect remote state before ambiguous retries and stop on conflicting tags/versions without replacing immutable published identities.
 - [ ] 6.5 Verify the actual public repository commit/tag, registry name/version/visibility, dist.integrity, license, and required resources against the candidate; report first delivery only after native delivery checks pass and leave failed/unperformed tasks open.
 
