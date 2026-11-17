@@ -27,6 +27,8 @@ None. This proposal adds operational guarantees to the composition and CLI contr
 
 ### Sequence and validation gate
 
+The subsequent `modernize-release-workflow` stage owns the maintained product rename to `agents-cli`, npm package `@devel-solid/agents-cli`, and future public repository `devel-solid/agents-cli` before candidate packing. This reliability stage uses the current development identity and does not implement or depend on that rename. Its `agents` commands, manifest, lock, ownership, cache and skill identifiers remain technical contracts through the later rename.
+
 Apply this proposal only after content stage 0 `simplify-shared-conventions` and runtime stage 1 `introduce-node-cli` have been implemented, validated by their respective gates, reviewed by the user, synchronized into permanent specifications, and archived. This is reliability stage 2 following the content prerequisite; it must work without publication stage 3. Cross-change sequencing is an explicit workflow prerequisite, not an automatic OpenSpec dependency.
 
 Use accepted neutral/local candidate fixtures, a separately initialized content-only company base consumed by two projects, and synthetic future-update/removal sequences. Verify independent selections, private-access diagnostics, and no fallback to our repository. No v3/v4 consumer adoption, private-catalog transition, or existing-real-project gate is required. Keep ownership and conflict protections for future users; this is product behavior rather than a legacy rollout.

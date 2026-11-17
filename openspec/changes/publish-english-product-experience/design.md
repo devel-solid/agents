@@ -8,6 +8,8 @@ The implemented Node CLI, owned base AGENTS.md, Portuguese guides, three authore
 
 The first public version is a real compatibility baseline, unlike private development v3/v4. The absence of consumers during today's planning cannot justify overwriting published tags, ignoring locks, or assuming nobody has adopted that first version.
 
+`modernize-release-workflow` establishes the `agents-cli` product, `@devel-solid/agents-cli` npm package, and future `devel-solid/agents-cli` repository before first-public-version readiness. This English stage starts after that identity is actually published and verified, retains it for the subsequent release, and does not repeat the rename or handoff. Use `npm install -g @devel-solid/agents-cli` and the preserved `agents` executable in onboarding and installed-example tests. Keep the existing manifest/state/cache paths, schemas and authored skill identifiers rather than treating `agents` in technical names as untranslated branding.
+
 The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
 
 ## Goals / Non-Goals

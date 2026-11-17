@@ -6,6 +6,7 @@ The first public version must start in a new repository without this development
 
 ## What Changes
 
+- Rename the maintained product to `agents-cli` and the npm package to `@devel-solid/agents-cli` during this stage, before candidate packing and readiness validation. The future public repository is `devel-solid/agents-cli`; real repository creation remains a later authorized handoff. Preserve the `agents` executable and existing technical contracts.
 - Add bounded approved publication plans and recoverable execution behind the maintainer agents-update-version workflow. Preserve the public init/validate/sync/release surface; release --bump remains a local base-tag operation, with dry-run for calculation. Publication target/initial-state fields belong to the approved internal plan rather than new public command flags.
 
 ## Capabilities
@@ -23,6 +24,7 @@ None. Reuse the accepted manifest, engine, ownership, lock, and recovery contrac
 - The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
 
 - Extends internal TypeScript release planning, authored `agents-update-version`, package/release CI, and relevant public/local documentation. A one-time export is a reviewed maintainer procedure, not a new generic repository-migration CLI.
+- Owns the project-wide maintained identity audit and rename: package/lockfile metadata, self-references, displayed product name, installation examples, README/guides, authored integrations, templates and packaged assets, standalone HTML presentation, relevant tests, publication configuration, and GitHub/npm links. Preserve immutable archives and historical fixture provenance; document technical identifiers that intentionally retain `agents`. No rename implementation is moved into `harden-instruction-sync` or deferred to the English change.
 - All implementation, predecessor validation, archival, and release rehearsals happen in this repository. Actual creation/export is follow-up work after first-public-version readiness and separate authorization; applying this proposal does not perform that handoff.
 - The public Git lineage is independent. Internal source provenance and validation evidence stay in the private backup and handoff record; the new package, lock, generated documents, and public references must resolve without private commits or old tags.
 - The initial-version decision is explicit for both streams. Examples are not approved versions, and old private version numbers are not mandatory baselines.

@@ -50,6 +50,7 @@
 
 ## Workflow follow-up
 
+- Leave the product/package rename to modernize-release-workflow, which establishes agents-cli, @devel-solid/agents-cli and the future devel-solid/agents-cli repository before its artifact gate. Do not make this reliability gate depend on renamed installation metadata or change the agents command, consumer/state/cache paths or skill identities.
 - The fifth `publish-english-product-experience` change starts after real first publication and reuses these transaction/provenance guarantees for English generated text and old-public-input compatibility. Preserve its testable lock/ownership boundaries; do not silently translate company sources or fold English implementation into this reliability stage.
 
 - After the gate is accepted by the user, synchronize the two delta specifications and archive this change through `openspec-archive-change`.

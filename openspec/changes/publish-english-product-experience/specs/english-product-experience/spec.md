@@ -17,6 +17,7 @@ This change SHALL start only after the four predecessor changes are accepted, sy
 #### Scenario: The initial public launch is verified
 - **WHEN** implementation starts from its approved public repository and released baseline
 - **THEN** the next version uses ordinary release baselines rather than initial mode or private development tags
+- **AND** English onboarding, installation examples and registry verification retain product `agents-cli`, package `@devel-solid/agents-cli`, repository `devel-solid/agents-cli`, and the existing `agents` executable and technical contracts established before launch by `modernize-release-workflow`
 
 ### Requirement: Maintained first-party product content is English
 

@@ -4,17 +4,37 @@
 
 See `proposal.md` and `specs/release-publication/spec.md`. Content, runtime, and reliability stages are completed, accepted, and archived before this stage. There are no external consumers. Previous Python implementations and tags are retained as development evidence, not release baselines or consumer compatibility obligations for the new public product.
 
-All four implementations stay in the current repository. This stage builds and rehearses release behavior using disposable Git remotes and registry fixtures. Only after the first public version is ready and a later handoff is authorized do we create the real new repository and export final files. No actual export, remote/name change, Git rewrite, commit, tag, or publication occurs merely by implementing or accepting this change.
+All four implementations stay in the current repository. This stage renames maintained product/package references locally and builds and rehearses release behavior using disposable Git remotes and registry fixtures. Only after the first public version is ready and a later handoff is authorized do we create the real new repository and export final files. No actual export, live repository/remote rename, Git rewrite, commit, tag, or publication occurs merely by implementing or accepting this change.
 
 The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
 
 ## Goals / Non-Goals
 
-**Goals:** independent public Git lineage, safe initial and subsequent releases, exact installed-artifact verification, owned base instructions, explicit version decisions, and recoverable publication.
+**Goals:** a consistent `agents-cli` public product identity, independent public Git lineage, safe initial and subsequent releases, exact installed-artifact verification, owned base instructions, explicit version decisions, and recoverable publication.
 
 **Non-Goals:** migrating nonexistent consumers, supporting private v3/v4 tooling, importing history, automating general repository migration, distributing arbitrary skills, changing the accepted renderer, or treating stage acceptance as launch permission.
 
 ## Decisions
+
+### 0. Establish the product identity before artifact readiness
+
+This stage owns the rename, after the reliability gate and before building the release candidate. Update maintained source references in the current development checkout; do not create a separate rename stage or postpone the change until the post-launch English release.
+
+| Surface | Target or preserved contract |
+| --- | --- |
+| Product name | `agents-cli` |
+| Public npm package | `@devel-solid/agents-cli` |
+| Future public GitHub repository | `devel-solid/agents-cli` |
+| Installed executable and four command roots | Preserve `agents init`, `agents validate`, `agents sync`, and `agents release` |
+| Consumer files and runtime paths | Preserve `AGENTS.md`, `agents-compose.yml`, `agents-lock.json`, `.agents/`, and `.cache/agents/` |
+| Authored skill names, schema fields/identifiers, renderer contract, diagnostic codes, JSON and exit contracts | Preserve existing technical identities and semantics |
+| Historical archives, provenance fixtures and third-party attribution | Preserve exact evidence; distinguish it from maintained product branding |
+
+Audit package.json/package-lock metadata, package-name lookups and self-references, CLI product labels, maintained instructions, templates, authored skills and their distributed copies, README/guides/install examples, the offline HTML presentation, relevant tests, CI/publication configuration, and repository/homepage/issues/npm links. Update source-owned assets through their existing build/packaging pipeline. Installation examples use `npm install -g @devel-solid/agents-cli` followed by the existing `agents` commands. Do not apply a global replacement to the word `agents`, company-base identities, or historical inputs. Record justified remaining old-name occurrences and verify that active product references use the new identity.
+
+Future public URLs are target metadata before handoff, not evidence that a repository or package already exists. Rehearsals use disposable resources and validate URL/identity consistency without requiring the future live target. At the separately authorized launch, verify target availability, permissions, public npm namespace/name/version readiness, and trusted-publisher identity; a conflict stops the plan rather than silently selecting another name. Keep the current repository, origin, workspace directory, and Git history unchanged during implementation.
+
+Pack/install tests must address the renamed package and invoke its installed `agents` executable outside the checkout, covering both base and consumer journeys. Inspect regenerated assets and presentation references, validate the exact renamed tarball, and ensure normal installation no longer depends on `@devel-solid/agents`. The later real export revalidates any commit/URL/provenance transformations against this already established identity and rebuilds the artifact when inputs change. The English stage inherits the first published `agents-cli` identity and does not rename it again.
 
 ### 1. Keep readiness, handoff, and publication distinct
 
@@ -43,7 +63,7 @@ Alternative: reset history on the current remote. Rejected because the agreed ha
 
 Build a reviewed positive inventory of final code, schemas, runtime assets, two shared convention sources, owned base AGENTS.md and role identity, relevant tests, product specs, and documentation. Copy files into a fresh directory with no Git metadata, then initialize an independent Git repository. Never use a fork, mirror, shallow clone as a substitute for a new root, copied `.git` directory at any depth, or old branch/tag push.
 
-Exclude caches, dependencies, temporary/build leftovers, private backup/evidence, old release journals, obsolete development-generated documents, and development lock/ownership records. Do not copy obsolete outputs just to delete them later. Generate final documents from accepted sources in isolated candidate verification; regenerate durable state against the new published identity. Update repository URLs, package metadata, examples, workflow identity, and refs as explicit reviewed export transformations. Final checks must not need this checkout's private objects, tags, paths, caches, or old registry versions.
+Exclude caches, dependencies, temporary/build leftovers, private backup/evidence, old release journals, obsolete development-generated documents, and development lock/ownership records. Do not copy obsolete outputs just to delete them later. Generate final documents from accepted sources in isolated candidate verification; regenerate durable state against the new published identity. Verify the already-renamed `agents-cli` product references and record any remaining commit-bound repository URLs, package metadata, examples, workflow identity, and refs as explicit reviewed export transformations. Final checks must not need this checkout's private objects, tags, paths, caches, or old registry versions.
 
 The new initial source commit is one approved snapshot with no parent. Later commits made by the new release workflow, such as generated lock metadata, are new history. The requirement is absence of imported development ancestry, not a promise that the public repository will forever have exactly one commit. Verify parentage and refs again from a fresh clone after publication.
 
@@ -121,7 +141,7 @@ Add an installed-package company journey: create an empty base or explicit minim
 
 The initial-product readiness boundary remains the first four changes. Only after the separately authorized handoff and actual first Git/npm launch does `publish-english-product-experience` begin in the resulting public repository. Retain the approved pending plan at a known location or explicitly include its reviewed files in the handoff inventory; do not copy private planning archives or Git ancestry automatically. Record the first public artifact/content identities so its next-version tests use a genuine public baseline, not private development tags. This fifth change owns the English translation, README overhaul, and actual ordinary-release proof; it is not a second clean-history migration.
 
-1. Implement/rehearse here after all predecessor gates; update relevant authored workflows, local policies, and product guides without migrating a repository.
+1. After all predecessor gates, establish the `agents-cli` product and `@devel-solid/agents-cli` package identity here, preserve technical contracts, and implement/rehearse release behavior with aligned authored workflows, local policies, guides, assets and presentation without migrating a repository.
 2. Test initial and subsequent release paths, reviewed export inventories, independent roots, fresh metadata, installed artifacts, interruptions, and unchanged development sources using only fixtures.
 3. Present first-public-version readiness for user acceptance. Preserve the new-repository handoff and all real Git/npm effects as follow-up requiring separate authorization.
 4. At that later handoff, verify the private backup, approve exact final files/metadata, create the fresh target, freeze the independent initial commit, and approve its concrete publication plan.

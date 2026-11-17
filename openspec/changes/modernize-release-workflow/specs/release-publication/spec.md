@@ -6,6 +6,29 @@ Provide reviewable first and subsequent public releases, with a readiness-gated 
 
 ## ADDED Requirements
 
+### Requirement: Product renaming precedes candidate artifact readiness
+
+Before candidate packing, this stage SHALL establish product `agents-cli`, npm package `@devel-solid/agents-cli`, and future repository `devel-solid/agents-cli` consistently across maintained sources, assets and publication metadata. The `agents` executable and existing technical contracts SHALL remain unchanged; historical evidence SHALL be preserved.
+
+#### Scenario: Maintained identity references are reviewed
+- **WHEN** rename readiness is checked
+- **THEN** package/lockfile metadata, self-references, product labels, documentation/examples, integration/template sources and packaged copies, offline presentation, relevant tests and publication configuration use the approved identity
+- **AND** existing command roots, file/state/cache paths, skill/schema identifiers and other technical contracts retain their meaning, with justified historical references recorded separately
+
+#### Scenario: The renamed package is installed outside the checkout
+- **WHEN** the candidate tarball for `@devel-solid/agents-cli` is installed in a disposable environment
+- **THEN** its installed `agents` executable supports the accepted base and consumer journeys without the old package
+- **AND** maintained product labels, examples, packaged assets and links consistently identify `agents-cli` while existing file and schema contracts still work
+
+#### Scenario: Local rename readiness is accepted before handoff
+- **WHEN** rename and release-rehearsal checks pass in the development checkout
+- **THEN** the current repository, origin, workspace directory and Git history remain unchanged
+- **AND** creation of `devel-solid/agents-cli`, actual registry-name checks and publication remain in the separately authorized launch workflow
+
+#### Scenario: The launch target identity is unavailable
+- **WHEN** authorized launch preflight cannot use the approved GitHub or npm identity
+- **THEN** publication stops with the identity conflict and no implicit alternative name
+
 ### Requirement: Release implementation follows accepted predecessor stages
 
 This capability SHALL start only after the content, runtime, and reliability predecessors are validated, user-accepted, synchronized, and archived. Release implementation and rehearsal SHALL remain in the current development repository. No external existing consumer SHALL be required for acceptance.

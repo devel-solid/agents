@@ -20,6 +20,7 @@ The public manifest has one format: required `schemaVersion: 1`, directory-disco
 **Non-Goals:**
 - No generic skill installation, package registry, new agent adapters, or changes to official OpenSpec-generated skills.
 - No npm publication or semantic release automation; stage 3 owns those workflows.
+- No product/package rename: `modernize-release-workflow` later establishes `agents-cli`, `@devel-solid/agents-cli`, and the future `devel-solid/agents-cli` public repository before release-candidate packing. Reliability is implemented and accepted under the current development identity; the `agents` executable and manifest/lock/ownership/cache/skill identifiers remain unchanged by that later branding change.
 - No automatic CLI upgrade, daemon, shared service, database, or instantaneous filesystem-wide atomicity.
 
 ## Decisions

@@ -21,6 +21,7 @@
 
 ## 4. Candidate and exported-identity preflight
 
+- [ ] 4.0 Before candidate packing, inventory and rename maintained product references to agents-cli and package references to @devel-solid/agents-cli, targeting the future devel-solid/agents-cli repository; cover package/lockfile metadata, runtime self-references and labels, instructions, README/guides/install examples, authored skills/templates and regenerated assets, offline HTML presentation, tests and publication configuration. Preserve the agents executable, command roots, file/state/cache paths, schema/skill identifiers and historical provenance; review residual old-name matches and verify renamed tarball installation plus base/consumer workflows without creating or renaming a live repository, changing origin/workspace history, or publishing anything.
 - [ ] 4.1 Validate the exact two-source catalog, minimal neutral consumer, local-maintenance profile, final URL/ref metadata and reference-guide links through isolated candidate generation; verify no old private dependency or content-checkout script execution is required and invalid inputs block publication.
 - [ ] 4.2 Build, inspect, pack and install-test the exact frozen new-identity fixture candidate outside its checkout, retaining artifact integrity; verify runtime resources, no Python/Make/compiler requirement, and revalidation after export metadata changes rather than reuse of an old-identity tarball without proof.
 - [ ] 4.3 Cover initial combined, later combined, CLI-only and content-only preflight cases; verify content availability only for explicitly declared compositions, independent version decisions, no implicit CLI content-remote defaults or mandatory starter tag, and correct failure guidance before remote effects.
@@ -34,7 +35,7 @@
 
 ## 6. Public delivery, CI and product documentation
 
-- [ ] 6.1 Implement public npm readiness/publication and registry integrity/fresh-install verification, bound to the approved new repository/commit and exact artifact; verify fixture namespace/version errors, lost responses, and mismatched existing integrity without real publication.
+- [ ] 6.1 Implement public npm readiness/publication and registry integrity/fresh-install verification for @devel-solid/agents-cli, bound to the approved future devel-solid/agents-cli repository/commit and exact artifact; verify fixture namespace/name/version errors, lost responses, and mismatched existing integrity without real publication, leaving actual name availability and publisher permissions for the authorized launch preflight.
 - [ ] 6.2 Extend platform CI and preserve Lefthook with initial/subsequent/export/interruption checks; add the approved-identity publication workflow and trusted-publisher/provenance setup guidance, verifying PR fixtures cannot create real repositories or invoke account/migration/publication effects.
 - [ ] 6.3 Adapt authored `agents-update-version`, applicable local policy and retained composition/reference guidance for explicit initial and later release decisions; verify scope/confirmation rules survive and no consumer migration from private tooling is introduced.
 - [ ] 6.4 Complete initial-public-product notes, ongoing stream changelog/support/setup/update/recovery docs, and the final handoff runbook in pt-BR for the initial release; verify installed examples/links and explicit target/version inputs, no private-tag baseline or previous-public-version rollback claim, and explain that the fifth post-launch change owns English artifacts/README and ordinary real-release validation.
@@ -49,6 +50,7 @@
 ## Workflow follow-up
 
 - The fifth `publish-english-product-experience` change starts only after this stage's acceptance/archive and the actual separately authorized first public Git/npm launch with remote verification. It continues in the new public checkout, translates maintained content and improves the README, then uses the existing ordinary-release workflow for the next real package version.
+- This stage implements the maintained product/package rename before its readiness gate. The later handoff creates the new repository as devel-solid/agents-cli; it does not rename or migrate the current development repository. The fifth change retains the published name and technical contracts.
 - At the future reviewed handoff, retain the approved fifth-change plan at a known location without importing private archives/history automatically. After actual first launch, record exact public package/tag/commit identities for its compatibility and next-release baseline. Do not move translation before that launch or treat this planning edit as commit/publication authorization.
 
 - After user acceptance, synchronize this capability spec and archive through the public OpenSpec workflow when requested. Keep this implementation and all previous stage history in the current development repository.
