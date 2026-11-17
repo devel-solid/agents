@@ -2,181 +2,190 @@
 
 ## Purpose
 
-Provide four clear public operations for preparing, validating, generating, and versioning instructions, with explicit file effects and previews.
+Prepare, validate, and regenerate project instructions and managed skills from local templates, with small manifests, explicit file effects, and write-free previews.
 
 ## Requirements
 
-### Requirement: The public interface has four command roots
+### Requirement: A reduced manifest configures each client project
 
-The CLI SHALL expose only init, validate, sync, and release as public command roots. Help/version and supported common options SHALL remain flags. The public interface SHALL NOT expose new, doctor, convention-management, base-configuration, or release helper subcommands.
+The client SHALL use agentscli-compose.yml with exactly language, templates_dir, and conventions_dir. Language SHALL support en and pt-br. Roots SHALL be nonempty, nonoverlapping relative project directories. Invalid YAML, unknown fields, unsafe paths, and unsupported languages SHALL fail validation. No version, origin, pin, or selection list SHALL exist.
 
-#### Scenario: A developer requests help
-- **WHEN** agents --help runs
-- **THEN** it documents the four commands and their file/tag effects with Bash examples
-- **AND** it does not teach the retired helpers as separate user steps
+#### Scenario: A user configures custom roots
+- **WHEN** the manifest names rules/templates and rules/conventions
+- **THEN** validate and sync use those roots without selecting conventions individually
 
-#### Scenario: A caller uses a retired interface
-- **WHEN** a caller invokes doctor or one of the four former release helper subcommands
-- **THEN** it receives usage exit 2 with guidance to validate, release, or edit the consumer manifest as applicable
-- **AND** the invocation makes no changes
+#### Scenario: Legacy composition fields remain
+- **WHEN** validate encounters entries, schemaVersion, or remote sources
+- **THEN** it reports unsupported configuration without converting or changing the manifest
 
-### Requirement: Node is supplied by the environment
+### Requirement: The internal manifest selects distributed skill directories
 
-The CLI SHALL use the supported Node.js versions declared by its npm package and SHALL NOT install or bundle Node.js. Local-only init, validation, and generation SHALL require neither Git nor network. Git-backed composition and release SHALL require Git.
+The source repository SHALL use agentscli.yml with only a skills list of contained directory paths. The listed directories SHALL determine distributed client skills. Missing/invalid SKILL.md entrypoints, name/directory mismatches, unsafe paths, and duplicate skill destinations SHALL block packaging. This manifest SHALL NOT configure client instruction generation.
 
-#### Scenario: A Node-only environment generates local instructions
-- **WHEN** the installed CLI runs init, validate, and sync without a configured base
-- **THEN** those operations work without Git, Python, Make, a compiler, or network
+#### Scenario: Shared and client-only sources are listed
+- **WHEN** the list names the two shared .agents/skills directories and the client-only asset skill directory
+- **THEN** packaging selects those three directories and excludes the unlisted internal release skill
 
-### Requirement: Initialization creates a usable local project
+#### Scenario: Two entries target the same skill name
+- **WHEN** the build validates the distribution manifest
+- **THEN** it reports the duplicate before assembling package resources
 
-Ordinary init SHALL require no repository, reference, or convention arguments. New setup SHALL create a version-1 manifest, local main/context templates, and packaged agents-write-conventions and agents-update-docs integrations. It SHALL NOT fetch content, register local entries, initialize Git, or generate final documents.
+### Requirement: Successful initialization replaces client configuration
 
-#### Scenario: A new ordinary project initializes
-- **WHEN** agents init runs inside a new project
-- **THEN** it creates agents-compose.yml, templates/AGENTS.tpl.md, templates/docs/conventions-local/contexto-do-projeto.tpl.md, and both .agents/skills/agents-update-docs/SKILL.md and .agents/skills/agents-write-conventions/SKILL.md
-- **AND** its context participates through directory discovery without a placeholder base
-- **AND** AGENTS.md and docs/conventions outputs are not generated
+Every successful init SHALL overwrite agentscli-compose.yml with selected language (default en), templates_dir templates, and conventions_dir docs/conventions. Old values or invalid old manifest content SHALL NOT prevent deliberate replacement. Preflight failures and --dry-run SHALL prevent all writes.
 
-#### Scenario: Existing authored content is encountered
-- **WHEN** init finds a valid version-1 project
-- **THEN** it preserves the manifest, authored sources, and generated documents
-- **AND** it installs only compatible missing setup or reports conflicts before partial writes
+#### Scenario: Init is repeated on customized configuration
+- **WHEN** agentscli init runs with a pt-br client manifest and custom roots
+- **THEN** it replaces the manifest with en and default roots without deleting files under the previous roots
 
-### Requirement: Initialization preview is zero-write
+#### Scenario: Portuguese initialization is requested
+- **WHEN** agentscli init --lang pt-br succeeds
+- **THEN** its manifest contains pt-br and default roots even when an older manifest existed
 
-Init SHALL accept --dry-run in ordinary and base modes and report concrete create/preserve/conflict paths. Preview SHALL perform no file, directory, integration, cache, or Git writes.
+### Requirement: Initialization creates usable instructions without resetting authored content
 
-#### Scenario: A developer previews setup
-- **WHEN** agents init --dry-run runs in an empty directory
-- **THEN** it reports the paths ordinary init would create
-- **AND** the directory remains byte-for-byte unchanged
+First init SHALL create the client manifest, main/context templates, three client skills, AGENTS.md, and initial conventions. It SHALL preserve valid existing templates, regular skill files, and existing generated documents while creating missing setup. Repeated init SHALL NOT recreate intentionally removed convention sources.
 
-### Requirement: Local files determine inclusion
+#### Scenario: A new client initializes
+- **WHEN** init succeeds in an empty project
+- **THEN** the client manifest, editable templates, three client skills, and generated instructions exist
 
-Version 1 SHALL discover every valid local parent family under local.tpl_dir. Manual creation and copying SHALL have identical inclusion semantics. No separate registration command, registry, CLI-created-file history, or local inclusion list SHALL exist.
+#### Scenario: Authored setup already exists
+- **WHEN** init finds customized valid templates and regular skill files
+- **THEN** their content is preserved while the client manifest is replaced
 
-#### Scenario: A developer copies a rule
-- **WHEN** a valid commits.tpl.md is placed under the configured local root and sync runs
-- **THEN** its family is included without another CLI operation or manifest entry
-- **AND** its document is generated under out_dir
+### Requirement: Initialization preview leaves every file unchanged
 
-### Requirement: Configuration remains in the manifest
+Init --dry-run SHALL describe manifest creation/replacement, missing setup/output creation, preserved content, and conflicts using the same requested/default configuration as real initialization. It SHALL create or change no files or directories.
 
-Repository/reference, source/output directories, and remote parent selections SHALL be configured in agents-compose.yml. Changing a consumer's pinned base SHALL be a manifest edit followed by sync; release SHALL NOT change that pin or automatically select all remote rules.
+#### Scenario: Manifest replacement is previewed
+- **WHEN** init --dry-run runs beside an existing client manifest
+- **THEN** it describes replacement while leaving the manifest and all other files unchanged
 
-#### Scenario: A consumer adopts another base version
-- **WHEN** agents.ref is edited to another valid available tag and sync preview runs
-- **THEN** the plan shows document consequences of consuming that version
-- **AND** no set-compose-ref or convention-add invocation is needed
+### Requirement: Every convention template participates automatically
 
-### Requirement: Base modes preserve independent authoring
+Every valid *.tpl.md below templates_dir SHALL participate recursively except the root AGENTS.tpl.md. Each convention SHALL map its relative path into conventions_dir with suffix .md. Ordering SHALL use portable normalized paths and equivalent destinations SHALL fail. Names/directories SHALL create no parent/child relationships.
 
-Init --base and validate --base SHALL support offline shared-base authoring with initialized base identity, without a consumer manifest or agents-update-docs. Init --base SHALL install CLI-packaged agents-write-conventions and agents-update-version, create its owned AGENTS.md, internal identity, consumer main template and empty catalog, with extra convention sources only for an explicitly requested starter. Ordinary init SHALL reject obsolete remote-selection flags.
+#### Scenario: Nested and dotted sources are present
+- **WHEN** testing/unit.tpl.md and policy.details.tpl.md exist below templates_dir
+- **THEN** both receive independent outputs and direct AGENTS entries without registration
 
-#### Scenario: An author creates a base
-- **WHEN** agents init --base runs
-- **THEN** it creates README.md, templates/AGENTS.tpl.md, templates/docs/conventions/README.md, AGENTS.md, .agents/base.json, and both .agents/skills/agents-update-version/SKILL.md and .agents/skills/agents-write-conventions/SKILL.md
-- **AND** it creates no consumer manifest, agents-update-docs integration, Git repository, or final documents
+#### Scenario: Portable destinations collide
+- **WHEN** paths differ only by case or Unicode normalization
+- **THEN** every generation mode rejects the collision before writing
 
-#### Scenario: Old combined setup is requested
-- **WHEN** ordinary init receives repository/reference/convention flags
-- **THEN** it returns usage exit 2 with manifest guidance and preserves project files
+### Requirement: Templates are the sole source of generated instructions
 
-### Requirement: Validation includes applicable environment diagnostics
+Sync SHALL recreate the complete AGENTS.md and every convention from their templates. The main template SHALL have one operational full-line <!-- agentscli:conventions --> comment outside examples. Custom titles/sections and content surrounding that comment SHALL be allowed and preserved; fixed heading wording SHALL NOT determine rendering.
 
-Validate SHALL check applicable Node/Git prerequisites, configuration, integration, templates, and paths without applying project or Git changes. --debug SHALL add detail without changing acceptance. --base SHALL validate the main template/catalog without a consumer manifest. Git-backed input resolution MAY populate the documented cache.
+#### Scenario: A user rearranges the main template
+- **WHEN** titles, sections, and body change around its valid insertion marker
+- **THEN** sync renders the complete new body and convention index without requiring default section titles
 
-#### Scenario: Local files are valid without Git
-- **WHEN** agents validate runs on a local-only version-1 project with Node and valid sources
-- **THEN** absent Git does not cause failure and the command writes no project files or refs
+#### Scenario: An output body was edited directly
+- **WHEN** sync runs with valid source templates
+- **THEN** it replaces the generated-body edit from its template
 
-#### Scenario: A convention lacks its discovery card
-- **WHEN** validate inspects that source
-- **THEN** it reports the source path and missing AGENT-CARD with exit 2 before generation
-- **AND** --debug preserves the same outcome while providing technical detail
+### Requirement: Document format validation distinguishes examples from operational syntax
 
-#### Scenario: The base is independently owned
-- **WHEN** validate --base runs in a valid base without agents-compose.yml
-- **THEN** it validates its main template and entire catalog without creating consumer setup
+Templates SHALL be valid UTF-8 with one operational H1 outside examples. Convention templates SHALL have one complete nonempty AGENT-CARD block outside examples. Rendering SHALL use the H1/card for index discovery, remove the operational card from convention output, and preserve examples and ordinary Markdown.
 
-### Requirement: Results preserve automation contracts
+#### Scenario: A template teaches Markdown syntax
+- **WHEN** examples contain H1 headings, cards, or insertion comments
+- **THEN** they remain literal examples and do not satisfy or duplicate operational structure
 
-The four commands SHALL retain deterministic noninteractive behavior, common JSON envelope fields, optional explicit project root, and existing exit meanings: success 0, sync check divergence 1, usage/validation/conflict 2, and operational failure 3. Results SHALL distinguish planned changes from completed writes.
+### Requirement: Manifest language selects document resource text
 
-#### Scenario: A script requests a preview
-- **WHEN** a supported mutating command runs with --dry-run --json
-- **THEN** the result identifies intended paths or tag and applicable diagnostics without claiming those changes were applied
+The client manifest SHALL be the only stored language setting. Init SHALL default to en and support lowercase --lang pt-br. Newly created document templates and generated notices SHALL use that language; existing authored bodies SHALL be copied literally. All skills SHALL stay English. Bundled resources and skills SHALL NOT prescribe chat language.
 
-### Requirement: Manifest-driven update is separate from authoring
+#### Scenario: Portuguese client content is authored
+- **WHEN** a shared English skill handles a client with language pt-br
+- **THEN** it guides Portuguese template authorship without translating itself or adding a chat-language rule
 
-The agents-update-docs skill SHALL only validate, preview, generate and check documents from the existing manifest and sources. It SHALL NOT author conventions, edit templates or configuration, change pins, initialize setup, or release a base. The CLI SHALL own mechanical validation, planning and generation. Authoring requests SHALL use agents-write-conventions; release requests SHALL use agents-update-version, with their respective scope boundaries.
+#### Scenario: A configured project synchronizes later
+- **WHEN** its manifest contains pt-br
+- **THEN** renderer-added notices use pt-br while authored text remains literal and skills remain English
 
-#### Scenario: The user requests authoring only
-- **WHEN** the agent uses agents-write-conventions to change only a source rule
-- **THEN** it edits the requested source and reports generation as pending without writing outputs or creating tags
+### Requirement: Generated documents identify their editing contract
 
-#### Scenario: The user requests a preview only
-- **WHEN** the agent uses agents-update-docs to preview synchronization
-- **THEN** it reports the sync --dry-run plan and stops without applying it
+Every generated document SHALL start with exactly <!-- agentscli:generated --> followed by a localized source-edit notice naming its template. The first-line marker and other technical identifiers SHALL be language-independent.
 
-#### Scenario: Existing inputs produce an invalid composition
-- **WHEN** agents-update-docs finds an invalid source or manifest
-- **THEN** it reports the blocking input without changing its content or bypassing the generator
+#### Scenario: An output is inspected
+- **WHEN** its template is rendered
+- **THEN** the first line identifies disposable generated output and the readable notice identifies the template editing surface
 
-#### Scenario: Generation follows authorized body-only authoring
-- **WHEN** agents-write-conventions changes only a rule body and agents-update-docs performs separately authorized generation
-- **THEN** it reports the actual changed convention output and unchanged AGENTS.md where the effective discovery and template inputs remain identical
-- **AND** it does not invoke init or release
+### Requirement: Cleanup preserves manual documents and stays inside the current output root
 
-### Requirement: Skill guidance checks installed capabilities
+Sync SHALL create absent outputs, replace marked expected outputs, and remove only stale marked *.md files under the current conventions_dir. Unmarked expected targets SHALL block preflight; other unmarked documents SHALL remain untouched. Marker recognition SHALL require the exact first line. Previous output roots SHALL NOT be cleaned.
 
-When support is not already known, the skill SHALL check the installed CLI's supported operations, flags, and manifest contract before using the proposed workflow. An unsupported requirement SHALL stop the affected operation with an incompatibility report, without CLI installation/update, silent legacy-helper fallback, invented results, or implicit schema migration.
+#### Scenario: A template is renamed or removed
+- **WHEN** sync computes expected outputs
+- **THEN** it updates the index and removes only obsolete marked documents under the current output root
 
-#### Scenario: The installed release interface is older
-- **WHEN** a requested version preview needs release --bump --dry-run but the installed CLI exposes only legacy helpers
-- **THEN** the agent reports that the required preview is unavailable and creates no tag
-- **AND** it neither claims a preview succeeded nor installs a replacement CLI
+#### Scenario: A manual file mentions the generated marker
+- **WHEN** the marker occurs only in its body or an example
+- **THEN** it remains a manual file and blocks generation if it occupies a required output path
 
-### Requirement: Base and consumer roles are exclusive
+### Requirement: The package distributes three complete English client skills
 
-Base initialization SHALL create .agents/base.json with schemaVersion 1 and kind base. A base SHALL NOT contain a consumer manifest or run consumer init, validation or synchronization. Base validation and release SHALL require initialized identity. Role conflicts SHALL fail with PROJECT_ROLE_CONFLICT and exit 2 before writes; invalid identity SHALL report PROJECT_ROLE_INVALID. Role checks SHALL protect subdirectory execution without requiring markers in remote content checkouts.
+Build SHALL distribute the complete directories selected by agentscli.yml: agentscli-write-conventions, agentscli-update-agents, and agentscli-build-agents. Standard English SKILL.md entrypoints and all support files SHALL be included. The internal agentscli-release and OpenSpec skills SHALL be excluded. Runtime resources SHALL require no source checkout.
 
-#### Scenario: Initialization crosses roles
-- **WHEN** consumer init targets a base or base init targets a consumer manifest
-- **THEN** preview and application reject the request before writing any file
+#### Scenario: A shared skill contains references or scripts
+- **WHEN** build assembles package resources
+- **THEN** those support files accompany its canonical SKILL.md without a second manually maintained copy
 
-#### Scenario: A manifest is inserted manually into a base
-- **WHEN** validation, release or any sync mode encounters that mixed root
-- **THEN** the operation fails before changing instructions, cache, setup or tags
+### Requirement: Synchronization restores the complete managed client skill trees
 
-#### Scenario: The caller is inside a base subdirectory
-- **WHEN** a consumer command is run there with or without an explicit root
-- **THEN** the operation cannot fall through to an ancestor consumer manifest or overwrite the base AGENTS.md
+Sync SHALL create or replace each of the three distributed client skill directories from the installed package, removing extra/stale files inside those directories. Direct changes there SHALL be overwritten. Other skill directories SHALL remain untouched. Equal file inventories/bytes SHALL yield no changes; no historical ownership or merge system SHALL be required.
 
-#### Scenario: A directory alias targets a base subdirectory
-- **WHEN** a consumer command targets a symlink or junction outside the base that resolves into its subdirectories
-- **THEN** role discovery follows the physical ancestors and rejects the operation before writes
-- **AND** explicit base initialization cannot initialize that subdirectory as another base
+#### Scenario: A client edits a packaged skill and adds an extra file
+- **WHEN** sync applies the installed package resources
+- **THEN** the skill returns to packaged content, including support files, and the extra file is removed
 
-#### Scenario: A remote content checkout predates role markers
-- **WHEN** a valid version-1 consumer selects that base as an input
-- **THEN** its sources remain consumable without installing metadata, skills or consumer setup into the checkout
+#### Scenario: Another skill exists beside the managed skills
+- **WHEN** sync updates the three managed directories
+- **THEN** that other skill and its files remain unchanged
 
-### Requirement: A base owns its simple AGENTS.md
+### Requirement: Preview and check include document and skill drift
 
-Init --base SHALL create a simple self-contained AGENTS.md from the CLI asset, separate from templates/AGENTS.tpl.md. Its instructions SHALL cover base authorship, skills, validation and reviewed versioning without convention discovery or consumer synchronization. Valid existing regular nonempty UTF-8 instructions SHALL be preserved without rewriting; invalid instructions or unsafe links SHALL block setup before writes.
+Sync preview and --check SHALL use the same validated document/skill plan as application and write nothing. Missing, changed, and extra managed-skill files SHALL be reported alongside document effects. A valid check SHALL return 1 for either kind of drift and 0 only when both sets match.
 
-#### Scenario: A new base is created
-- **WHEN** init --base initializes an empty directory
-- **THEN** seven files are created: role identity, owned AGENTS.md, root/catalog READMEs, consumer main template and two role-specific skills
-- **AND** no consumer manifest or generated convention outputs are created
+#### Scenario: Only a support file is stale
+- **WHEN** documents and SKILL.md match but a managed reference file differs
+- **THEN** check returns 1 and preview describes replacement without writing
 
-#### Scenario: The owner edits base instructions
-- **WHEN** initialization is repeated with valid customized AGENTS.md
-- **THEN** its bytes and timestamp remain unchanged
+### Requirement: Project writes converge without recovery databases
 
-#### Scenario: Instructions are missing
-- **WHEN** base validation detects missing AGENTS.md
-- **THEN** it reports BASE_INSTRUCTIONS_MISSING without writing it
-- **AND** an explicitly requested base init can preview and create the missing default
+All input/path/conflict validation SHALL precede mutation. Individual-file replacement SHALL preserve whole files and reject unsafe aliases. Operational failure SHALL report completed/remaining document and skill effects and advise repeating sync. No locks, ownership database, journal, rollback backup, or mutex record SHALL be maintained.
+
+#### Scenario: A later skill write fails
+- **WHEN** documents or earlier skill files have already been replaced
+- **THEN** the failure reports partial completion and a repeated sync recomputes the remaining work without rollback claims
+
+### Requirement: The source repository keeps direct handwritten instructions
+
+The CLI repository SHALL keep English handwritten AGENTS.md and necessary final conventions, with agentscli.yml but no client manifest or active client template tree. Client CLI operations SHALL reject roots containing the internal manifest. Product scaffolds SHALL remain package data, not this repository's generated instructions.
+
+#### Scenario: A maintainer updates source instructions
+- **WHEN** shared authoring detects only agentscli.yml
+- **THEN** it edits final files directly without running init or sync against this repository
+
+#### Scenario: Client init targets the source repository
+- **WHEN** init detects agentscli.yml in its target root
+- **THEN** it reports the incompatible context before creating a client manifest or changing files
+
+### Requirement: Guide content becomes conventions only when useful
+
+During implementation, the five restored guides SHALL be reviewed before deletion, consulting Git as needed. Only useful current rules SHALL become handwritten English conventions with meaning preserved and disposition recorded in this change. After review/conversion, guides and presentation SHALL be removed and docs SHALL contain only necessary conventions.
+
+#### Scenario: A guide mixes rules and obsolete workflows
+- **WHEN** its content is assessed
+- **THEN** only useful current rules become conventions and obsolete material is discarded
+
+### Requirement: Proposal revision changes planning artifacts only
+
+Proposal revision SHALL edit only this change's proposal, design, tasks, and nine existing delta specs in English. It SHALL preserve restored guides/presentation, source, templates, skills, root instructions, manifests, and permanent specs. It SHALL NOT execute implementation tasks or perform repository rename, commit, push, tag, or publication.
+
+#### Scenario: Only the approved planning update is requested
+- **WHEN** these change artifacts are revised
+- **THEN** all changes stay inside those artifacts and implementation checkboxes remain unchecked

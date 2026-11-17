@@ -2,43 +2,46 @@
 
 ## Why
 
-The project has become a distribution and recovery system for shared instructions instead of a small tool for maintaining one project's instructions. Replace that architecture with project-owned templates, flat conventions, a small CLI, and supporting skills, then deliver the complete experimental product in one first public release.
+The project has become a distribution and recovery system for shared instructions instead of a small tool for maintaining one project's instructions. Replace that architecture with project-owned templates, independent conventions, a small CLI, and supporting skills, then deliver the complete experimental product in one first public release.
 
 ## What Changes
 
-- **BREAKING:** Remove the base/consumer roles, shared or global conventions, subconventions, families, remote composition, content locks, remote caches, ownership records, and recovery journals. Replace the old composition manifest with a three-field project manifest. Do not carry private pre-release formats or deleted changes forward as compatibility requirements.
-- Keep `agents-compose.yml` with only `language`, `templates_dir`, and `conventions_dir`. Every successful `init` overwrites it with the requested language (default `en`) and default directory roots. There are no per-convention selections or format-version fields.
-- Keep `<templates_dir>/AGENTS.tpl.md` and every other valid `*.tpl.md` below the configured template root as editable sources. `sync` regenerates the entire root `AGENTS.md` and all convention outputs, preserving relative paths below `conventions_dir`. Directories and dotted names do not create convention relationships.
-- Expose three command roots: `init`, `validate`, and `sync`. Initialization creates the default templates, ready-to-use generated instructions, and the two supporting skills. Keep useful preview/check and machine-readable results without adding authoring or release subcommands.
-- Add `init --lang pt-br`, using lowercase language identifiers, with `en` as the default. The manifest stores the language; remove the language marker from the main template. Ship complete English and Brazilian Portuguese scaffolds and skills in the first release. The manifest selects the language of created file text only; project instructions and skills do not fix the agent reply language. Maintained product text is English.
-- This CLI source repository does not consume itself: its own `AGENTS.md` and `docs/conventions/` are handwritten in English. Keep no active project manifest or generated instruction/template tree here; bundled scaffolds are package assets only. During implementation, review the five restored guides, using Git as needed, and convert only still-relevant rules into own conventions before deleting the guides and presentation.
-- Keep `agents-write-conventions` and `agents-update-docs`, rewritten for the single-project template workflow. Remove the base-versioning skill from the product and its maintained sources; use a short native maintainer release procedure instead. OpenSpec skills remain development tools.
-- Add repository-only `agents-write-repository-conventions` to create, review, and maintain this CLI repository's handwritten English conventions directly under `docs/conventions/`. It requires no manifest, template, or generation step, and is excluded from the npm scaffold and client installation. The client-facing authoring skill continues to edit templates.
-- Replace persistent ownership with an explicit generated-file marker, bounded output cleanup, full preflight, and safe individual-file replacement. A repeated `sync` converges without journals, hashes of historical output, or rollback machinery.
-- **BREAKING:** Version only lightweight unit tests. Remove integration/end-to-end/process-spawning test suites, historical integration fixtures, and the Python oracle. `npm test`, `npm run check`, Lefthook pre-push, and CI run unit tests only, alongside the normal type/format checks. Do not add installed-package test suites, fake registries, disposable Git test repositories, or expensive default gates.
-- Publish `agents-cli`, npm package `@devel-solid/agents-cli`, and repository `devel-solid/agents-cli` as experimental version `0.1.0` under MIT. Include the reviewed clean-history repository handoff, ordinary Git/npm publication, and actual delivery verification in this same change. Do not stage a Portuguese release followed by a separate English release.
+- **BREAKING:** Remove bases, shared/global conventions, subconventions, families, remote composition, content locks, remote caches, ownership databases, and recovery journals. Do not retain private pre-release formats or deleted changes as compatibility requirements.
+- Use agentscli for the repository, unscoped npm package, and executable. Release experimental 0.1.0 under MIT. Rename the existing repository to devel-solid/agentscli while preserving its Git history; remove the independent-history export/handoff procedure.
+- Keep the client manifest agentscli-compose.yml with exactly language, templates_dir, and conventions_dir. Every successful init overwrites it with the requested language (default en) and default roots. All valid convention templates participate automatically, without per-convention selections.
+- Add the internal agentscli.yml with only a skills directory list. It selects package resources and identifies this source repository; it is not a client manifest and does not make this repository consume itself.
+- Keep the main AGENTS.tpl.md and convention templates editable in the client. Sync recreates the entire AGENTS.md and all convention documents. Preserve custom main-template headings and sections around one agentscli:conventions insertion marker.
+- Expose only init, validate, and sync, with existing useful previews, drift checks, JSON results, and help/version flags. Sync also restores the complete three distributed skill directories from the installed package; previews/checks include their effects.
+- Maintain exactly four product skills: shared agentscli-write-conventions and agentscli-update-agents; client-only agentscli-build-agents; repository-only agentscli-release. Use one source per skill and standard English SKILL.md entrypoints, with supporting resources only when useful.
+- Shared authoring skills use agentscli.yml for direct repository edits and agentscli-compose.yml for client-template edits. If both or neither exist, report the invalid context before writing. AGENTS authorship distinguishes concise project instructions from material that belongs in conventions.
+- Ship en and pt-br templates and generated notices together from the first release. Use lowercase --lang pt-br and default en. Skills stay English while guiding client authorship using its manifest language. Maintained project text is English; no instruction fixes the agent's chat language.
+- This source repository keeps handwritten English AGENTS.md and final conventions, with no client manifest or active client template tree. During implementation, review the five restored guides, convert only useful current rules into conventions, then delete the guides and presentation.
+- Recognize generated documents through agentscli:generated on the first line, preserve manual documents, reject destination conflicts before writing, and clean only stale marked documents under the current output root. Use preflight and safe individual-file replacement; retry sync after partial failure without transaction/recovery machinery.
+- **BREAKING:** Version and execute only lightweight unit tests. Remove integration/process/end-to-end suites, historical fixtures, and the Python oracle. Keep npm test, npm run check, pre-push, and CI unit-only alongside normal type/format checks.
+- Package only compiled runtime code, client templates/skills, README, license, and package metadata. Build copies whole listed skill directories. Install/execution requires no compilation or additional resource download. Keep native Node argument parsing, YAML, and Markdown; remove Ajv without adding a CLI framework.
+- Keep implementation, readiness, repository rename, and actual first publication in this single change. Real remote rename, commit, tag, push, and npm publication wait for corresponding execution authorization; this proposal does not perform them.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `release-publication`: MIT-licensed `0.1.0` package identity, English-first documentation, lightweight release readiness, reviewed independent public history, and verified native Git/npm delivery.
+- release-publication: MIT-licensed agentscli@0.1.0 identity, history-preserving repository rename, internal native release skill, lean package readiness, and verified Git/npm delivery.
 
 ### Modified Capabilities
 
-- `agents-cli`: Installed Node-only command interface, three operations, deterministic results, and a unit-only test policy.
-- `project-instruction-workflows`: Three-field manifest, automatic inclusion below configurable roots, complete regeneration, manifest-overwriting initialization, language selection, two skills, and stateless safe file effects.
-- `convention-authoring`: Template authorship for client projects and a separate repository-only skill for direct curation of this CLI repository's handwritten conventions.
-- `consumer-artifact-contracts`: Retire the complete capability; retain relevant file/path and direct-CLI guarantees in the new project workflow.
-- `consumer-instruction-composition`: Retire the complete capability; replace composition with project template rendering.
-- `managed-document-updates`: Retire durable ownership and transactional recovery; relocate necessary preservation, preview, and safe-write behavior to the project workflow.
-- `reproducible-synchronization`: Retire the complete remote lock/cache/pin capability.
-- `shared-instruction-catalog`: Retire the complete shared catalog and historical stage prerequisites.
+- agents-cli: Installed Node-only command interface, three operations, stable results, English product text, and unit-only test policy. Retain this existing capability path as a specification identifier.
+- project-instruction-workflows: Both manifests, automatic template inclusion, full regeneration, manifest-overwriting initialization, three client skills, skill synchronization, language selection, and stateless file effects.
+- convention-authoring: One shared convention-authoring skill and one shared AGENTS-authoring skill, selecting direct files or templates by manifest context.
+- consumer-artifact-contracts: Retire the capability; retain relevant file/path and direct-CLI guarantees in the project workflow.
+- consumer-instruction-composition: Retire composition in favor of project template rendering.
+- managed-document-updates: Retire durable ownership and transactional recovery; keep preservation, preview, and safe writes in the project workflow.
+- reproducible-synchronization: Retire remote locks, caches, and pins.
+- shared-instruction-catalog: Retire the shared catalog and historical stage prerequisites.
 
 ## Impact
 
-- Simplify `src/cli.ts`, the manifest reader, initialization, Markdown validation, template discovery/rendering, planning, and diagnostics. Remove roles, remote Git resolution, lock/state, base release, transaction engines, and obsolete schemas. Retain the YAML parser for the three-field manifest and remove unused `ajv`.
-- Rework authored skills, default and localized assets, `scripts/package-assets.mjs`, package metadata, the root development instructions, and OpenSpec context. Preserve templates as product assets, not as a shared policy base.
-- Keep documentation lean: the README explains project use and native maintainer publication; the final `docs/` contains only necessary handwritten conventions. Preserve the guides and presentation during planning. During implementation, first assess/convert useful rules, discard obsolete material, and then delete the original guides and presentation without replacements.
-- Replace obsolete specs through this change's deltas and remove empty retired capability files when synchronizing the approved specification set. The six changes already deleted at the user's request remain deleted.
-- All development and readiness work stays in this checkout. Repository creation/export, commits, tags, pushes, and npm publication require their concrete later execution authorization; planning performs none of them. The single change remains incomplete until its authorized first-publication tasks and delivery checks are actually complete.
+- Simplify CLI dispatch, manifest parsing, initialization, Markdown validation, discovery/rendering, planning, and diagnostics. Remove role, remote Git, lock/state, base release, transaction, and obsolete schema machinery. Use Node's native argument parser, retain YAML/Markdown parsing, and remove Ajv without unrelated dependency upgrades.
+- Rework skill sources, package assets, build resource mapping, metadata, root instructions, and OpenSpec context during implementation. Keep shared skills under the repository's skill directory and client-only skill sources under package-template assets.
+- Keep the README concise and the final docs tree limited to necessary conventions. Review/convert useful guide rules before deleting guides and presentation during implementation; preserve all of those files during proposal revision.
+- Reconcile all nine delta specs, including retired-capability migration text. Keep permanent specs unchanged until their authorized synchronization and keep the six previously deleted changes deleted.
+- This update edits only this change's proposal, design, tasks, and existing delta specs, in English. No runtime, documentation, skills, manifests, permanent specs, repository identity, or publication state is changed. All implementation tasks stay unchecked.

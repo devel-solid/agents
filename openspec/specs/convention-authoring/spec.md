@@ -2,152 +2,90 @@
 
 ## Purpose
 
-Let teams author complete convention templates with ordinary file operations and create calculated local Git versions of a validated shared base.
+Guide concise AGENTS instructions and useful independent conventions through shared authoring skills, selecting handwritten files or client templates by manifest context.
 
 ## Requirements
 
-### Requirement: Templates are authored with ordinary file operations
+### Requirement: Client conventions are authored as independent templates
 
-Developers SHALL be able to create or copy sources directly into the configured template root without a CLI authoring command. A valid source SHALL contain one H1, one nonempty complete AGENT-CARD, and its authored body. The sole public v1 manifest SHALL discover local families without registration or manifest edits; explicit entries SHALL select remote parents only.
+Authors SHALL create, edit, rename, or remove convention templates below the client manifest's templates_dir. Each SHALL have one H1 and one complete nonempty AGENT-CARD outside examples. Valid sources SHALL participate without a selection entry, registration command, parent convention, or remote source.
 
-#### Scenario: A developer creates a complete commit rule
-- **WHEN** an editor saves a valid commits.tpl.md under local.tpl_dir in a version-1 consumer
-- **THEN** the next validation/synchronization discovers it
-- **AND** creating that source alone leaves the manifest and generated documents unchanged
+#### Scenario: A client authors a convention
+- **WHEN** commits.tpl.md is saved with valid structure
+- **THEN** validation recognizes it and sync generates its independent output and AGENTS entry
 
-#### Scenario: An author selects a remote family
-- **WHEN** an author adds a remote parent to entries with origin remote and a valid pinned base
-- **THEN** its complete family participates alongside discovered local families
-- **AND** authoring alone does not regenerate documents
+#### Scenario: Independent topics share a filename prefix
+- **WHEN** policy.tpl.md and policy.details.tpl.md both exist
+- **THEN** neither acquires child discovery or inheritance
 
-#### Scenario: An existing rule is copied into a base
-- **WHEN** a valid rule is copied into templates/docs/conventions in a shared base
-- **THEN** validate --base checks it without any new/add/register command
+### Requirement: Shared authoring skills select targets by manifest context
 
-### Requirement: Release calculates the next stable version automatically
+Both shared authoring skills SHALL use agentscli.yml for this repository's direct final-file mode and agentscli-compose.yml for client-template mode. Exactly one SHALL be present. Both or neither SHALL produce a context diagnostic before writes; absent client configuration SHALL NOT imply direct mode.
 
-Release SHALL require --bump patch|minor|major and derive the baseline from the numerically highest stable vMAJOR.MINOR.PATCH tag reachable from HEAD. Without such a tag it SHALL calculate from numerical v0.0.0. Manual current/next-version or SHA inputs SHALL NOT be required or accepted.
+#### Scenario: A maintainer authors in the CLI source repository
+- **WHEN** only agentscli.yml is present
+- **THEN** the skills target handwritten AGENTS.md and final docs/conventions directly
 
-#### Scenario: A minor version follows a stable tag
-- **WHEN** HEAD's highest reachable stable tag is v1.2.3 and release --bump minor runs
-- **THEN** the calculated next tag is v1.3.0
-- **AND** neither agents.ref nor the CLI package version determines the baseline
+#### Scenario: A client customizes instructions
+- **WHEN** only agentscli-compose.yml is present
+- **THEN** the skills target the configured main and convention templates
 
-#### Scenario: The base has no stable version yet
-- **WHEN** release --bump patch runs with no reachable stable version tag
-- **THEN** the calculated tag is v0.0.1 without creating a v0.0.0 tag
+#### Scenario: Context is missing or contradictory
+- **WHEN** both manifests exist or neither exists
+- **THEN** the skills explain the context problem and edit no files
 
-#### Scenario: Tag names or dates would give a different order
-- **WHEN** reachable stable tags include v1.9.0 and v1.10.0 and unrelated/non-version tags also exist
-- **THEN** selection uses v1.10.0 regardless of tag timestamps, lexical ordering, or unrelated-branch tags
-- **AND** annotated and lightweight stable tags are resolved to their target commits
+### Requirement: One convention-authoring skill serves both contexts
 
-### Requirement: Release checks the base and local Git state
+agentscli-write-conventions SHALL be the single convention-authoring skill for the repository and clients. It SHALL curate applicability, actionable rules, valid small examples, exceptions, duplication, and contradictions, selecting final files or templates by context. No separate repository or translated variant SHALL be maintained.
 
-Release SHALL validate the shared base and require initialized base identity, no consumer manifest, Git, an existing HEAD commit, a clean worktree including untracked files, and an absent target tag. It SHALL reject a consumer manifest and require no package.json, origin/main, remote, or npm credentials. Failed checks SHALL preserve files and refs.
+#### Scenario: An own convention is requested
+- **WHEN** the shared skill operates in direct mode
+- **THEN** it edits the final English convention and applicable handwritten discovery references without init or sync
 
-#### Scenario: A content-only base is ready
-- **WHEN** a valid committed clean base has no consumer manifest, package.json, or remote
-- **THEN** release can calculate and create its local version tag
+#### Scenario: A client convention is requested
+- **WHEN** the same skill operates in client mode
+- **THEN** it edits the relevant template using the client manifest language and checks related rule coherence
 
-#### Scenario: Changes have not been committed
-- **WHEN** release finds modified or untracked files
-- **THEN** it reports the failed prerequisite and creates no tag
+### Requirement: One shared AGENTS skill curates content and format
 
-#### Scenario: The target tag already exists on another branch
-- **WHEN** the calculated tag name exists anywhere in the repository
-- **THEN** release reports conflict exit 2 without overwriting it
+agentscli-update-agents SHALL curate the handwritten AGENTS.md or client main template according to context. It SHALL keep concise project orientation, actionable entrypoints, and convention discovery in AGENTS and direct detailed/scoped rules into conventions. It SHALL check the applicable format while allowing customized headings and sections.
 
-### Requirement: Release preview never applies changes
+#### Scenario: A proposed AGENTS rule contains detailed topic-specific guidance
+- **WHEN** the skill reviews that material
+- **THEN** it directs the detail into a convention and keeps only useful orientation/discovery in AGENTS
 
-Release --dry-run SHALL perform the same prerequisites and calculation as application and report baseline, bump, next tag, HEAD, and diagnostics. It SHALL NOT create files, directories, tags, commits, cache entries, or network activity. The preview SHALL NOT reserve its proposed version.
+#### Scenario: The target is the handwritten root AGENTS
+- **WHEN** direct-mode format is reviewed
+- **THEN** no generated-output or template-insertion marker is required
 
-#### Scenario: A maintainer previews a minor release
-- **WHEN** agents release --bump minor --dry-run runs on a valid base with baseline v1.2.3
-- **THEN** it reports next tag v1.3.0 as planned rather than created
-- **AND** all filesystem contents and Git refs remain unchanged
+#### Scenario: The target is the client main template
+- **WHEN** the user changes headings and sections
+- **THEN** the skill preserves structural validity and the single insertion marker without forcing the default body
 
-### Requirement: Application creates only the local tag
+### Requirement: Product skills use one standard English source each
 
-Release without --dry-run SHALL recalculate from current state, recheck HEAD/worktree and target availability, and create one non-forcing local tag at HEAD. It SHALL NOT edit sources/manifests/package versions, regenerate documents, commit, fetch, push, or publish npm content.
+The product SHALL maintain agentscli-write-conventions, agentscli-update-agents, agentscli-build-agents, and agentscli-release as four canonical English skills. Each SHALL use standard SKILL.md with name/description and useful optional support files. No translated or tool-specific copies or fixed chat-language rules SHALL be maintained.
 
-#### Scenario: The release succeeds
-- **WHEN** agents release --bump minor completes all checks with baseline v1.2.3
-- **THEN** local tag v1.3.0 identifies the validated current HEAD
-- **AND** sources, configuration, generated documents, package metadata, and remotes are unchanged
+#### Scenario: Product skill sources are reviewed
+- **WHEN** the four sources and distribution list are inspected
+- **THEN** each skill has one maintained English source and no repository infix or duplicate convention-authoring variant
 
-#### Scenario: State changed after preview
-- **WHEN** a subsequent application sees another reachable version or changed HEAD
-- **THEN** it recalculates and validates the current state rather than forcing the earlier preview result
+### Requirement: Authoring respects requested scope
 
-#### Scenario: A conflicting tag is created concurrently
-- **WHEN** the target tag appears before non-forcing tag creation completes
-- **THEN** the existing tag is preserved and the command fails without a replacement
+Review-only authoring SHALL report findings without edits. Authorized source changes SHALL target only applicable final files or templates. Authorship SHALL NOT imply generation, package publication, or unrelated changes; generation requested alongside authorship SHALL use the installed CLI in client mode without gratuitous extra approvals.
 
-### Requirement: A maintainer skill guides reviewed versioning
+#### Scenario: Only semantic review is requested
+- **WHEN** either shared authoring skill handles the request
+- **THEN** it reports concrete scope/coherence/format findings without writing
 
-The authored agents-update-version skill SHALL interpret impact, justify the bump, obtain release --dry-run results, and present the proposed version, source commit, and scoped effects before its required confirmation. It SHALL use the repository's released baseline rather than agents.ref and SHALL stop if the installed CLI lacks the supported operation. It SHALL NOT be installed into consumers by ordinary init.
+#### Scenario: Client authorship and generation are both requested
+- **WHEN** the user requests the source change and regenerated instructions
+- **THEN** source curation and the authorized client CLI workflow complete within that scope
 
-#### Scenario: A maintainer asks to prepare a release
-- **WHEN** the skill prepares a version plan without confirmation to apply
-- **THEN** it explains the bump and computed version and leaves files, tags, and remotes unchanged
+### Requirement: Distribution separates shared client and internal workflows
 
-#### Scenario: The plan has changed before application
-- **WHEN** a new preview or repository inspection differs from the approved commit, version, or effects
-- **THEN** the skill requests confirmation of a revised plan before executing the mutating release operation
+agentscli.yml SHALL select both shared skills and client-only agentscli-build-agents. The build skill SHALL guide installed-CLI validate/preview/sync/check. Repository-only agentscli-release SHALL guide native CLI versioning/publication and remain outside client installation. OpenSpec skills SHALL remain development tools.
 
-#### Scenario: Only local tag creation is approved
-- **WHEN** the skill applies that approved local release plan
-- **THEN** it invokes the supported release operation without implicitly publishing tags, changing a consumer pin, regenerating documents, or publishing npm content
-
-
-### Requirement: Base initialization installs the versioning skill
-
-Init --base SHALL install agents-update-version from the CLI package into the base's .agents/skills/agents-update-version/. Ordinary init SHALL install agents-write-conventions and agents-update-docs. Base init SHALL also install agents-write-conventions. Base preview SHALL report the skill path without writes. Identical existing files SHALL be preserved; custom content, extra files or unsafe aliases SHALL fail before any setup writes. No manual copying, Git or network SHALL be required.
-
-#### Scenario: An author initializes a base
-- **WHEN** init --base runs in an empty directory
-- **THEN** the base receives packaged agents-update-version/SKILL.md and agents-write-conventions/SKILL.md along with its source scaffold
-- **AND** agents-update-docs and consumer configuration are not installed
-
-#### Scenario: Installation is previewed or repeated
-- **WHEN** an author previews base initialization or repeats an identical setup
-- **THEN** preview makes no filesystem changes and repeat setup preserves skill bytes and timestamps
-
-#### Scenario: The skill contains authored changes
-- **WHEN** the base version skill differs from the packaged source or contains extra files
-- **THEN** init --base reports conflict before creating any other setup file and preserves all existing content
-
-#### Scenario: Consumer initialization targets a base
-- **WHEN** a base already has its marker and consumer init is requested
-- **THEN** the request fails with PROJECT_ROLE_CONFLICT before any setup writes
-
-### Requirement: Both roles install the authoring skill
-
-Both init modes SHALL install CLI-packaged agents-write-conventions under .agents/skills/agents-write-conventions/. They SHALL preserve exact copies and repair missing copies without Git/network. Preview SHALL make no writes. Custom content, extra files or unsafe aliases SHALL block all setup writes. Cross-role initialization SHALL be rejected; sync SHALL NOT refresh skills from content pins.
-
-#### Scenario: The shared authoring skill conflicts
-- **WHEN** either init mode finds customized content, extra files or unsafe aliases in agents-write-conventions
-- **THEN** preview and application fail before writing any other setup file and preserve existing content
-
-#### Scenario: Base initialization targets a consumer
-- **WHEN** a root has a consumer manifest and base init is requested
-- **THEN** the request fails before installing base metadata, instructions or skills
-
-### Requirement: Curation is separate from generation and release
-
-Agents-write-conventions SHALL guide applicability, actionable rules, valid examples, justified exceptions, parent/child structure and related-rule ambiguity, conflict and duplication review. It SHALL locate consumer sources through the manifest and base sources through the base catalog, without allowing a consumer manifest in the base. It SHALL distinguish semantic quality from structural validation and SHALL NOT edit remote cache or generated documents.
-
-#### Scenario: A base author requests a convention
-- **WHEN** the author invokes agents-write-conventions in an initialized base without a consumer manifest
-- **THEN** the agent authors the requested valid source in the base catalog, reviews its meaning and related rules, and uses validate --base where supported
-- **AND** it does not generate consumer outputs, commit, tag or publish implicitly
-
-#### Scenario: A consumer requests local policy maintenance
-- **WHEN** agents-write-conventions receives that request in a consumer
-- **THEN** it edits the requested source under the configured local root and necessary selection only, respecting the sole public v1 contract
-- **AND** it does not shadow a pinned remote convention with a conflicting local copy or implicitly synchronize outputs
-
-#### Scenario: Only a semantic review is requested
-- **WHEN** the user asks to review a convention without requesting edits
-- **THEN** the skill reports concrete findings without modifying sources
+#### Scenario: Client resources are assembled
+- **WHEN** packaging reads the three listed directories
+- **THEN** it includes their whole trees and excludes agentscli-release and OpenSpec

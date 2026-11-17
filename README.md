@@ -1,96 +1,149 @@
-# agents
+# agentscli
 
-Cria e atualiza arquivos de instruções para agentes de IA a partir de templates Markdown.
+Generate a project's `AGENTS.md` and conventions from editable Markdown templates.
+Experimental version **0.1.0**, licensed under MIT. Requires Node.js 22, 24, or 26.
 
-A equipe escreve as regras. O manifesto define as pastas e, quando necessário, uma base Git compartilhada. A CLI valida as fontes e gera `AGENTS.md` e os documentos de convenções.
+## Use
 
-## Quatro comandos
+Install the CLI, then run it inside your project:
 
-| Comando | Uso | Efeito |
+~~~sh
+npm install --global agentscli
+agentscli init --dry-run
+agentscli init
+agentscli validate
+agentscli sync --dry-run
+agentscli sync
+agentscli sync --check
+~~~
+
+Use `agentscli init --lang pt-br` for Brazilian Portuguese document templates and
+generated notices. The default is `en`. Skills, CLI help, and diagnostics stay English.
+Authored template text is preserved literally.
+
+The client manifest `agentscli-compose.yml` contains exactly:
+
+~~~yaml
+language: pt-br
+templates_dir: templates
+conventions_dir: docs/conventions
+~~~
+
+Every successful `init` overwrites that manifest using the requested language
+(default `en`) and default roots. It creates missing templates, skills, and initial
+documents while preserving valid existing templates, regular skill files, and
+generated documents. Repeated initialization does not recreate intentionally
+removed convention sources. Previous custom roots are not cleaned.
+
+## Edit templates, then synchronize
+
+~~~text
+templates/AGENTS.tpl.md       -> AGENTS.md
+templates/project.tpl.md      -> docs/conventions/project.md
+templates/testing/unit.tpl.md -> docs/conventions/testing/unit.md
+~~~
+
+All convention `*.tpl.md` files participate automatically, including nested and
+dotted names. An empty set is valid. No per-file registration or inheritance exists.
+
+The main template needs one H1 and one full-line insertion comment outside examples.
+Other headings, sections, and text are yours to customize:
+
+~~~markdown
+# Project instructions
+
+Keep project-wide orientation here.
+
+<!-- agentscli:conventions -->
+~~~
+
+Each convention template needs one H1 and one nonempty discovery card outside examples:
+
+~~~markdown
+# Testing
+
+<!-- AGENT-CARD START -->
+Read when changing tests.
+<!-- AGENT-CARD END -->
+
+Keep tests focused on observable behavior.
+~~~
+
+The card becomes part of the AGENTS index and is removed from the convention body.
+Generated documents start with `<!-- agentscli:generated -->` and a source-edit notice.
+`sync` replaces their entire content; put customizations in templates.
+
+`validate` checks inputs, Markdown structure, paths, and destination conflicts.
+`sync --dry-run` previews changes without writes. `sync --check` returns 1 for document
+or managed-skill drift and 0 when current. Common options: `--repo-root <directory>`,
+`--json`, `--help`; use `--version` by itself.
+
+Unmarked documents occupying required output paths block all writes. Move useful
+content into a template and resolve the destination before retrying. Other manual
+documents remain untouched. Only stale marked Markdown below the **current**
+conventions root is removed. Unsafe paths and file aliases are rejected.
+
+Inputs and destinations are checked before writing. Files are replaced individually.
+A failure can leave some documents or skills updated; diagnostics report completed
+and remaining changes. Repeat `sync` to finish. Concurrent writes are unsupported.
+
+JSON results contain `schemaVersion`, `command`, `ok`, `changes`, and `diagnostics`.
+Exit codes: 0 success, 1 check drift, 2 usage/validation/conflict, 3 operational failure.
+
+## Skills
+
+| Skill | This repository | Client project |
 | --- | --- | --- |
-| `agents init` | Preparar um projeto | Cria manifesto versão 1, templates principal/contexto e as skills `agents-write-conventions` e `agents-update-docs`. |
-| `agents validate` | Conferir configuração, fontes e ambiente | Aponta problemas sem gerar documentos. |
-| `agents sync` | Gerar ou atualizar as instruções | Aplica documentos e metadados em uma transação recuperável, protegendo edições diretas. |
-| `agents release --bump minor` | Versionar uma base | Calcula a próxima versão e cria somente sua tag local no commit atual. |
+| `agentscli-write-conventions` | Edit final conventions | Edit convention templates |
+| `agentscli-update-agents` | Edit handwritten AGENTS | Edit the main template |
+| `agentscli-build-agents` | — | Validate, preview, synchronize, check |
+| `agentscli-release` | Native CLI versioning/publication | — |
 
-Node.js 22, 24 ou 26 deve estar instalado. O fluxo local não exige Git, rede, Python ou Make. Git é necessário para consumir uma base Git e para criar versões.
+Shared authoring skills select context using exactly one manifest:
+`agentscli.yml` means direct repository authorship; `agentscli-compose.yml` means client
+templates. Both or neither produces a diagnostic before edits. AGENTS stays concise;
+detailed or scoped rules belong in conventions.
 
-## Do projeto vazio aos documentos
+Client skills are installed under `.agents/skills`. **Sync fully restores the three
+distributed directories**, including support files and removal of extra files.
+Direct skill edits are overwritten. Other skills remain untouched. Previews and checks
+include skill changes. The CLI also works without loading skills.
 
-Com a CLI instalada, execute dentro do projeto:
+## Develop and release
 
-```bash
-agents init --dry-run
-agents init
-# Crie uma regra no editor ou copie um template existente:
-cp ../regras/commits.tpl.md templates/docs/conventions-local/
-agents validate
-agents sync --dry-run
-agents sync
-agents sync --check
-```
+This repository keeps handwritten English AGENTS and conventions. It does not consume
+itself: do not run client `init` or `sync` here. `agentscli.yml` only selects whole
+skill directories for packaging and identifies direct authoring:
 
-`init` prepara as fontes, sem gerar documentos. `sync --dry-run` lista os arquivos previstos sem gravá-los. `sync --check` retorna 0 quando estão atuais ou 1 quando há diferenças. Fontes inválidas e conflitos impedem a geração.
+~~~yaml
+skills:
+  - .agents/skills/agentscli-write-conventions
+  - .agents/skills/agentscli-update-agents
+  - assets/templates/skills/agentscli-build-agents
+~~~
 
-O primeiro `sync` registra a propriedade dos documentos em `.agents/agents-state.json`; arquivos existentes só são adotados se corresponderem exatamente à geração esperada após normalizar quebras de linha. Mantenha esse registro junto dos documentos no Git. Alterações devem ser feitas nas fontes: uma edição direta da saída causa conflito. Uma saída retirada da composição só é removida se estiver registrada e inalterada.
+Shared skills have one source under `.agents/skills`; the client-only build skill lives
+under `assets/templates/skills`. Build copies listed trees into `dist/assets/skills`
+and both document locales into `dist/assets/templates`. Internal release/OpenSpec skills
+and the internal manifest are excluded from the package.
 
-O manifesto usa somente `schemaVersion: 1`, declarado explicitamente. Todos os templates locais válidos da pasta configurada participam da geração; `entries` seleciona somente pais remotos. Não há cadastro de regras locais por comando.
-
-## Compartilhar uma base
-
-```bash
-agents init --base
-# Escreva regras em templates/docs/conventions/.
-agents validate --base
-```
-
-A base começa com seu próprio `AGENTS.md` editável, a identificação interna `.agents/base.json`, um template principal, um catálogo vazio e duas skills em `.agents/skills/`: `agents-write-conventions` para autoria e `agents-update-version` para versionamento. `--starter minimal` copia duas regras de exemplo opcionais. Manifesto consumidor, motor e repositório Git não são criados pelo comando.
-
-A base não tem manifesto consumidor e não executa `sync`. Seu `AGENTS.md` orienta o trabalho na base; `templates/AGENTS.tpl.md` é destinado aos consumidores. `init --base` cria sete arquivos e preserva um `AGENTS.md` existente válido. Os dois papéis não podem ser combinados.
-
-Depois de manter a base em um repositório Git com os arquivos commitados:
-
-```bash
-agents release --bump minor --dry-run
-agents release --bump minor
-```
-
-A CLI descobre a maior tag estável alcançável a partir de HEAD e calcula o aumento. Sem versão anterior, parte numericamente de `v0.0.0`. `patch`, `minor` e `major` aumentam partes distintas. A prévia não grava nada; a aplicação cria uma tag local, sem commit, push, mudança no manifesto ou publicação npm.
-
-Os consumidores configuram a base, a tag desejada e as regras remotas no manifesto. Isso é separado de criar uma versão da própria base.
-
-O primeiro `sync` também cria `agents-lock.json`, que fixa o commit e a integridade do conteúdo remoto. Repetir o comando mantém esse commit mesmo se a tag mudar. Para adotar conteúdo novo, edite explicitamente `agents.ref` para uma nova versão ou commit, revise `agents sync --dry-run` e aplique `agents sync`. Isso não atualiza a CLI.
-
-```bash
-agents sync --frozen --check
-agents sync --offline --check
-agents validate --debug --offline --json
-```
-
-`--frozen` exige um lock existente compatível; `--offline` usa somente cache verificado, sem rede. Prévia e check preservam documentos e metadados; operações online podem preencher o cache ignorado. Se houver uma transação interrompida, `sync --dry-run` mostra a recuperação, `sync` restaura o estado anterior e para. Execute outro `sync` para gerar. Veja os [limites e cuidados de recuperação](docs/guides/manutencao-do-repositorio-agents.md#recuperar-uma-sincronizacao).
-
-## Três skills
-
-| Skill | Instalada por | Responsabilidade |
-| --- | --- | --- |
-| `agents-write-conventions` | `init` e `init --base` | Criar, revisar e manter o conteúdo: escopo, clareza, exemplos e coerência entre convenções. |
-| `agents-update-docs` | `init` no consumidor | Validar, simular e gerar documentos pelo manifesto existente, sem editar regras ou configuração. |
-| `agents-update-version` | `init --base` na base | Analisar impacto, justificar o aumento, mostrar a prévia e exigir confirmação antes dos efeitos de release. |
-
-Todas vêm do pacote CLI e ficam em `.agents/skills/<nome>/SKILL.md` do repositório correspondente, sem cópia manual. A autoria não implica geração ou versionamento. A CLI valida a estrutura, enquanto a skill de escrita orienta a curadoria do conteúdo. Os comandos também funcionam diretamente no terminal, sem carregar skills.
-
-## Referências e desenvolvimento
-
-- [Contrato completo de manifesto e templates](docs/guides/contratos-de-composicao.md)
-- [Integração em um consumidor](docs/guides/integracao-em-repositorio-consumidor.md)
-- [Manutenção e versionamento](docs/guides/manutencao-do-repositorio-agents.md)
-- [Testes e evidências](docs/guides/validacao-node-cli.md)
-
-```bash
+~~~sh
 npm ci
 npm run setup
-npm run check # tipos, formatação e somente testes unitários
+npm run check
+npm run build
+npm pack --dry-run
 npm pack --pack-destination .tmp
-```
+~~~
 
-O build compila TypeScript e empacota os assets autorais. O tarball contém o executável, o schema v1, os scaffolds e a integração pública. Nenhum passo de desenvolvimento publica uma release real. `agents --help` lista as opções; `agents --version` informa a versão da CLI, independente das tags da base.
+`npm test` runs only lightweight unit tests with isolated data or mocked boundaries.
+`check`, pre-push, and CI add type/format checks to that same unit gate. Build and
+archive inspection are delivery checks. The package contains compiled runtime/client
+resources, README, license, and metadata; installation performs no compilation or
+resource download.
+
+Use `agentscli-release` for native Git/npm versioning and publication. Review the source
+commit, version/tag, archive contents, and integrity before delivery. Rename the existing
+repository to `devel-solid/agentscli` preserving history. Commit, rename, tag, push, and
+publish only within the corresponding authorization. Verify remote/registry identity
+before retrying an ambiguous delivery; published tags and versions are immutable.

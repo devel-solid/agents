@@ -1,201 +1,124 @@
-import { readFileSync } from 'node:fs';
-import { Ajv, type ErrorObject } from 'ajv';
-import { LineCounter, parseDocument, type Document } from 'yaml';
-import { safeJoin, validateRelativePath } from './paths.js';
-import { assertConsumerRoot } from './roles.js';
+import { parseDocument, stringify } from 'yaml';
+import { portableKey, relativePath } from './paths.js';
 
-export interface ConventionEntry {
-  origin: 'remote';
-  from: string;
-}
-export interface Manifest {
-  schemaVersion: 1;
-  agents?: { repository: string; ref: string };
-  outputs: {
-    'AGENTS.md': {
-      include: {
-        conventions: {
-          out_dir: string;
-          local: { tpl_dir: string };
-          remote: { tpl_dir: string };
-          entries: ConventionEntry[];
-        };
-      };
-    };
-  };
-}
-export interface ErrorDetails {
-  field?: string;
-  location?: { path: string; line: number; column: number };
-  remediation?: string;
-}
 export class EngineError extends Error {
-  readonly field?: string;
-  readonly location?: ErrorDetails['location'];
-  readonly remediation?: string;
   constructor(
-    readonly code: string,
+    public code: string,
     message: string,
-    readonly exitCode = 2,
-    details: ErrorDetails = {},
+    public exitCode = 2,
+    public path?: string,
   ) {
     super(message);
-    this.name = 'EngineError';
-    Object.assign(this, details);
   }
 }
-export interface LoadedManifest {
-  data: Manifest;
-  source: string;
-  path: string;
-  document: Document.Parsed;
+export type Language = 'en' | 'pt-br';
+export interface Manifest {
+  language: Language;
+  templates_dir: string;
+  conventions_dir: string;
 }
-const validator = new Ajv({ allErrors: true, strict: true }).compile(
-  JSON.parse(
-    readFileSync(
-      new URL('../schemas/agents-compose.v1.schema.json', import.meta.url),
-      'utf8',
-    ),
-  ) as object,
-);
-
-function schemaField(error: ErrorObject): string[] {
-  const parts = error.instancePath
-    .split('/')
-    .filter(Boolean)
-    .map((p) => p.replace(/~1/g, '/').replace(/~0/g, '~'));
-  const name =
-    error.params['additionalProperty'] ?? error.params['missingProperty'];
-  if (typeof name === 'string') parts.push(name);
-  return parts;
+export const MANIFEST = 'agentscli-compose.yml';
+export const INTERNAL_MANIFEST = 'agentscli.yml';
+export function language(value = 'en'): Language {
+  const normalized = value.toLowerCase();
+  if (normalized !== 'en' && normalized !== 'pt-br')
+    throw new EngineError('LANGUAGE', 'Supported languages are en and pt-br.');
+  return normalized;
 }
-export function parseManifest(
-  source: string,
-  path = 'agents-compose.yml',
-): LoadedManifest {
-  const lineCounter = new LineCounter();
-  const document = parseDocument(source, {
-    lineCounter,
-    uniqueKeys: true,
-    strict: true,
-    keepSourceTokens: true,
-  });
-  const parseIssue = document.errors[0] ?? document.warnings[0];
-  if (parseIssue) {
-    const position = lineCounter.linePos(parseIssue.pos[0]);
+export function defaultManifest(value?: string): Manifest {
+  return {
+    language: language(value),
+    templates_dir: 'templates',
+    conventions_dir: 'docs/conventions',
+  };
+}
+export function parseManifest(text: string): Manifest {
+  const document = parseDocument(text, { uniqueKeys: true });
+  if (document.errors.length)
     throw new EngineError(
       'MANIFEST_YAML',
-      `YAML inválido em ${path}:${position.line}:${position.col}: ${parseIssue.code}.`,
+      `Invalid YAML: ${document.errors[0]!.message}`,
       2,
-      {
-        location: { path, line: position.line, column: position.col },
-        remediation:
-          'Use um único documento YAML 1.2, sem chaves duplicadas, tags customizadas ou aliases excessivos.',
-      },
+      MANIFEST,
     );
-  }
-  let data: unknown;
+  let value: unknown;
   try {
-    data = document.toJS({ maxAliasCount: 100 });
+    value = document.toJS({ maxAliasCount: 0 });
   } catch {
-    throw new EngineError('MANIFEST_YAML', `Aliases excessivos em ${path}.`);
-  }
-  if (!validator(data)) {
-    const error = validator.errors![0]!;
-    const parts = schemaField(error);
-    let node = document.getIn(parts, true);
-    if (!node) node = document.getIn(parts.slice(0, -1), true);
-    const offset =
-      node && typeof node === 'object' && 'range' in node
-        ? ((node as { range?: number[] }).range?.[0] ?? 0)
-        : 0;
-    const position = lineCounter.linePos(offset);
-    const field = parts.join('.') || '(raiz)';
     throw new EngineError(
-      'MANIFEST_SCHEMA',
-      `Campo inválido ou não suportado: ${field} (${path}:${position.line}:${position.col}).`,
+      'MANIFEST_YAML',
+      'YAML aliases are not supported.',
       2,
-      {
-        field,
-        location: { path, line: position.line, column: position.col },
-        remediation:
-          'Declare schemaVersion: 1; fontes locais são descobertas pela pasta e entries aceita somente origin: remote.',
-      },
+      MANIFEST,
     );
   }
-  const manifest = data as Manifest;
-  for (const [field, value] of [
-    ['agents.repository', manifest.agents?.repository],
-    ['agents.ref', manifest.agents?.ref],
-  ] as const) {
-    if (value === undefined) continue;
-    if (!value.trim() || value.trim() !== value || /[\r\n\0]/u.test(value))
-      throw new EngineError('MANIFEST_SCHEMA', `Valor inválido: ${field}.`, 2, {
-        field,
-      });
-  }
-  const config = manifest.outputs['AGENTS.md'].include.conventions;
-  for (const [field, value] of [
-    ['out_dir', config.out_dir],
-    ['local.tpl_dir', config.local.tpl_dir],
-    ['remote.tpl_dir', config.remote.tpl_dir],
-  ] as const)
-    validateRelativePath(value, field);
-  for (const [index, entry] of config.entries.entries()) {
-    const source = validateRelativePath(
-      entry.from,
-      `entries.${index}.from`,
-      false,
-    );
-    if (!source.endsWith('.tpl.md'))
-      throw new EngineError(
-        'MANIFEST_SOURCE',
-        `entries.${index}.from deve terminar em .tpl.md.`,
-        2,
-        { field: `entries.${index}.from` },
-      );
-    const base = config.remote.tpl_dir;
-    if (source.startsWith(`${base}/`))
-      throw new EngineError(
-        'MANIFEST_SOURCE',
-        `entries.${index}.from deve ser relativo ao tpl_dir, sem repeti-lo.`,
-        2,
-        { field: `entries.${index}.from` },
-      );
-  }
-  return { data: manifest, source, path, document };
-}
-export function loadManifest(repoRoot: string): LoadedManifest {
-  assertConsumerRoot(repoRoot);
-  const path = safeJoin(repoRoot, 'agents-compose.yml', 'manifesto');
-  let source: string;
-  try {
-    source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
-      readFileSync(path),
-    );
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      throw new EngineError(
-        'MANIFEST_MISSING',
-        `Manifesto ausente: ${path}.`,
-        2,
-        {
-          remediation:
-            'Execute agents init para preparar o projeto e depois configure o manifesto, se necessário.',
-        },
-      );
-    if (error instanceof TypeError)
-      throw new EngineError(
-        'MANIFEST_UTF8',
-        `Manifesto não é UTF-8 válido: ${path}.`,
-        2,
-        { location: { path, line: 1, column: 1 } },
-      );
+  if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new EngineError(
-      'MANIFEST_READ',
-      `Não foi possível ler ${path} como UTF-8.`,
-      3,
+      'MANIFEST_FIELDS',
+      'Expected language, templates_dir, and conventions_dir.',
+      2,
+      MANIFEST,
     );
-  }
-  return parseManifest(source, path);
+  const fields = value as Record<string, unknown>;
+  const keys = ['language', 'templates_dir', 'conventions_dir'];
+  if (
+    Object.keys(fields).length !== 3 ||
+    keys.some((key) => typeof fields[key] !== 'string') ||
+    Object.keys(fields).some((key) => !keys.includes(key))
+  )
+    throw new EngineError(
+      'MANIFEST_FIELDS',
+      'Use exactly language, templates_dir, and conventions_dir; legacy composition is not supported.',
+      2,
+      MANIFEST,
+    );
+  const selected = language(fields.language as string);
+  if (selected !== fields.language)
+    throw new EngineError(
+      'LANGUAGE',
+      'Manifest language must be lowercase.',
+      2,
+      MANIFEST,
+    );
+  const templates = rootDirectory(fields.templates_dir as string);
+  const conventions = rootDirectory(fields.conventions_dir as string);
+  const a = portableKey(templates),
+    b = portableKey(conventions);
+  if (a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`))
+    throw new EngineError(
+      'ROOT_OVERLAP',
+      'Template and convention roots must not overlap.',
+      2,
+      MANIFEST,
+    );
+  return {
+    language: selected,
+    templates_dir: templates,
+    conventions_dir: conventions,
+  };
+}
+function rootDirectory(value: string): string {
+  const normalized = relativePath(value);
+  if (
+    normalized
+      .split('/')
+      .some((part) =>
+        ['.git', '.agents', '.cache', 'node_modules'].includes(
+          portableKey(part),
+        ),
+      ) ||
+    ['agents.md', MANIFEST, INTERNAL_MANIFEST].includes(
+      portableKey(normalized.split('/')[0]!),
+    )
+  )
+    throw new EngineError(
+      'ROOT_RESERVED',
+      `Reserved directory: ${value}.`,
+      2,
+      MANIFEST,
+    );
+  return normalized;
+}
+export function serializeManifest(manifest: Manifest): string {
+  return stringify(manifest);
 }

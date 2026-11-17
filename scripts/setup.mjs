@@ -3,11 +3,11 @@ import { createRequire } from 'node:module';
 
 const major = Number(process.versions.node.split('.')[0]);
 if (![22, 24, 26].includes(major)) {
-  console.error('Instale Node.js LTS 22, 24 ou 26 e execute npm run setup.');
+  console.error('Install Node.js 22, 24, or 26, then run npm run setup.');
   process.exit(2);
 }
 if (spawnSync('git', ['--version'], { stdio: 'inherit' }).status !== 0) {
-  console.error('Instale Git e disponibilize seu executável no PATH.');
+  console.error('Install Git and make its executable available on PATH.');
   process.exit(2);
 }
 const require = createRequire(import.meta.url);

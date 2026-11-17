@@ -2,148 +2,98 @@
 
 ## Purpose
 
-Provide a supported, installable command-line interface for composing shared agent instructions without exposing implementation script paths.
+Provide a small installed command-line interface for generating a project's instructions from its own templates and packaged supporting skills.
 
 ## Requirements
 
-### Requirement: Runtime implementation follows the accepted content stage
+### Requirement: The installed CLI runs with Node alone
 
-Runtime implementation SHALL start only after `simplify-shared-conventions` has been validated, accepted by the user, synchronized into permanent specifications, and archived. Its authored-candidate gate SHALL suffice without requiring an external content release or a later modernization stage.
+The package SHALL expose agentscli using its declared Node.js runtime lines. Init, validate, and sync SHALL use installed package resources and project files without Git, Python, Make, a compiler, a development checkout, or runtime network access. Installation SHALL require no lifecycle build or additional resource download.
 
-#### Scenario: Catalog simplification is not yet accepted
-- **WHEN** runtime implementation is about to begin
-- **THEN** the workflow reports the unmet content-stage prerequisite and stops before implementing the CLI
+#### Scenario: A project has only Node and the installed CLI
+- **WHEN** the developer initializes, validates, and synchronizes the project
+- **THEN** the operations use packaged resources and project templates without external tools or network resource lookup
 
-### Requirement: A packaged command runs without Python
+#### Scenario: A user installs the published artifact
+- **WHEN** npm installs the prepared package
+- **THEN** its executable and resources are ready without compiling TypeScript or fetching setup resources through install scripts
 
-The tool SHALL expose the executable `agents` from a public-npm-ready package. Its packed artifact SHALL support local installation and npm execution with Node.js and Git, without Python, Make, a source checkout, or a TypeScript compiler on the consumer machine.
+### Requirement: The public interface has three operations
 
-#### Scenario: A fresh consumer installs the packed artifact
-- **WHEN** the package tarball is installed in an environment containing a supported Node.js runtime and Git but no Python or Make
-- **THEN** `agents --version`, `agents --help`, and the documented consumer commands run from the installed artifact
-- **AND** no runtime dependency is resolved from the development checkout
+The CLI SHALL expose only init, validate, and sync, with help/version flags. It SHALL retain --repo-root and --json, init --lang/--dry-run, and sync --dry-run/--check. Removed release/base/remote options and misplaced or incompatible options SHALL fail without writes.
 
-### Requirement: Initialization is explicit and preserves existing documents
+#### Scenario: Public help is requested
+- **WHEN** agentscli --help runs
+- **THEN** it describes the three operations and their manifest, template, document, and skill effects
 
-Parameter-free agents init SHALL create a local-only manifest with explicit schemaVersion: 1, main/context templates, and the packaged agents-write-conventions and agents-update-docs integrations. It SHALL discover local families through the configured directory, preserve valid existing v1 manifests and documents, reject integration conflicts before partial writes, and remain idempotent.
+#### Scenario: An obsolete option is requested
+- **WHEN** a caller requests release, --base, or a removed remote option
+- **THEN** the CLI reports actionable usage failure without changing files
 
-#### Scenario: A consumer already has a valid manifest
-- **WHEN** `agents init` is run beside a valid version-1 `agents-compose.yml`
-- **THEN** its bytes and the existing `AGENTS.md` remain unchanged
-- **AND** the packaged integration is installed or a precise conflict is reported
+### Requirement: Initialization preserves authored inputs while replacing client configuration
+
+Every successful init SHALL replace agentscli-compose.yml with requested/default language and default roots. It SHALL create missing setup/initial outputs and preserve valid existing templates, regular skill files, and existing generated documents until sync. An unmarked required document destination SHALL block preflight.
 
 #### Scenario: Initialization is repeated
-- **WHEN** initialization succeeds and is repeated without input changes
-- **THEN** no existing source, manifest, integration, or document is rewritten
+- **WHEN** init encounters an initialized project
+- **THEN** it replaces the manifest while preserving valid existing templates, skills, and generated documents
 
-#### Scenario: A new consumer selects the simplified content base
-- **WHEN** a new local v1 project is initialized and its author explicitly adds a pinned base and remote selections to the manifest
-- **THEN** its manifest selects the two initial shared conventions and consumer-owned local context
-- **AND** it does not copy or mandate this repository's local operational, language, commit, testing, or skill policies
+#### Scenario: Handwritten content occupies an output destination
+- **WHEN** an unmarked AGENTS.md would be overwritten by initialization
+- **THEN** init fails before setup writes and explains preserving useful content in the template and resolving the destination
 
-#### Scenario: A new consumer selects a company-owned base
-- **WHEN** the author initializes locally and configures the selected company repository, ref, and remote parent entries in the manifest
-- **THEN** its manifest selects those families and its own local context without assuming our repository or starter filenames
-- **AND** validation rejects invalid remote configuration before generating documents
+### Requirement: Validation and synchronization share one project plan
 
-### Requirement: A company can initialize an independently owned content base
+Validate, sync, sync --dry-run, and sync --check SHALL share source/path/conflict validation. Preview and check SHALL write nothing. Check SHALL return 1 for valid document or managed-skill drift; preview SHALL describe the same planned effects with exit 0. Invalid input SHALL fail before writes.
 
-`agents init --base` SHALL scaffold its owned AGENTS.md, role marker, consumer main template, empty catalog/readmes, and CLI-packaged agents-write-conventions plus agents-update-version under their .agents/skills/<name>/ directories. It SHALL require no Git/network or consumer manifest and perform no Git/publication operations. --starter minimal SHALL add editable copies of the two neutral starter conventions.
+#### Scenario: Only a managed skill has drifted
+- **WHEN** documents match but a packaged skill file differs or is missing
+- **THEN** sync --check reports drift with exit 1 and preview describes the skill repair without writing
 
-#### Scenario: A company creates a base from the installed package
-- **WHEN** `agents init --base` runs in a fresh directory with Node.js and the installed CLI
-- **THEN** the scaffold can be validated and edited without our content repository, Git, npm metadata, or engine scripts in the base
-- **AND** packaged agents-write-conventions and agents-update-version are installed, while no repository, remote, commit, tag, lock, consumer ownership record, agents-update-docs, or generated consumer document is created
+#### Scenario: A source is invalid
+- **WHEN** validation finds an invalid template or unsafe managed destination
+- **THEN** preview, check, and sync report the same blocking diagnostic without changing files
 
-#### Scenario: Starter content is explicitly requested
-- **WHEN** `agents init --base --starter minimal` succeeds
-- **THEN** the company receives editable copies of the minimal template and two accepted neutral starter conventions
-- **AND** their future content/versioning is independent of npm upgrades and the tool's upstream catalog
+### Requirement: Results have stable JSON and exit semantics
 
-### Requirement: Base initialization preserves authored files
+Commands SHALL support a JSON envelope with schemaVersion, command, ok, changes, and diagnostics. Exit codes SHALL be 0 for success, 1 for check drift, 2 for usage/validation/conflicts, and 3 for operational failures. JSON stdout SHALL contain one document and distinguish planned effects from completed writes.
 
-Base initialization SHALL validate its full target plan before writes, preserve unrelated files, leave exact existing targets unchanged, and reject conflicting targets before mutation. It SHALL support `--repo-root`, `--dry-run`, and `--json`. Init SHALL NOT accept consumer-selection flags; --starter SHALL require base mode.
+#### Scenario: A caller requests JSON preview
+- **WHEN** sync --dry-run --json describes document and skill effects
+- **THEN** stdout is one JSON result describing planned changes without claiming completed writes
 
-#### Scenario: A company has edited a scaffold target
-- **WHEN** reinitialization encounters different bytes at a planned target
-- **THEN** it reports a conflict and preserves every existing file without partially installing the remaining scaffold
+#### Scenario: A file operation fails
+- **WHEN** a planned write cannot complete
+- **THEN** exit 3 identifies partial completion and unfinished work without claiming success
 
-#### Scenario: Initialization is previewed or repeated
-- **WHEN** a company previews base initialization or repeats the same successful initialization
-- **THEN** preview writes no files and an identical repeated initialization performs no rewrites
+### Requirement: Validation checks project inputs without repairs
 
-### Requirement: Base authors can validate the whole catalog independently
+Validate SHALL check root, client manifest, language, template structure, safe paths, and destination conflicts without generating or installing anything. Malformed Markdown SHALL identify source locations. Missing skills alone SHALL NOT block direct validation or synchronization.
 
-`agents validate --base` SHALL require valid base identity and owned AGENTS.md without a consumer manifest, and validate the scaffold template and every convention family under its source root using the shared source/path contracts. It SHALL accept an empty catalog, reject invalid or orphan sources, report source locations, and require no consumer manifest, Git, or network. It SHALL NOT generate documents or create setup.
+#### Scenario: A convention lacks its discovery card
+- **WHEN** validate inspects that template
+- **THEN** it identifies the source and structural error with exit 2 without changing files
 
-#### Scenario: An unselected convention is invalid
-- **WHEN** base validation inspects a catalog containing an invalid source that no consumer currently selects
-- **THEN** it reports that source as invalid without changing the base
+#### Scenario: Client skills are absent
+- **WHEN** valid client templates exist without the distributed skills
+- **THEN** direct validation is available and sync can recreate the missing skills
 
-#### Scenario: A company uses its own larger catalog
-- **WHEN** the base contains valid custom families with more than two parents and none of our starter filenames
-- **THEN** base validation succeeds and consumers can select those families through the standard manifest
+### Requirement: Maintained CLI text is English
 
-### Requirement: npm delivery is independent of instruction-base ownership
+CLI help, diagnostics, and maintained developer documentation SHALL be English from 0.1.0. Init --lang SHALL select project document resource text without changing command names or prescribing the agent's chat language. All distributed skills SHALL remain English.
 
-The npm artifact SHALL contain the CLI and required schema, integration, reference, and scaffolding assets. Company bases SHALL be consumable as Git-hosted content without an npm package, copied engine, or access to modify our repository. The tool SHALL NOT require our catalog or contact it when a different base is selected.
+#### Scenario: Portuguese instructions are requested
+- **WHEN** agentscli init --lang pt-br runs
+- **THEN** new project templates/notices use Portuguese while CLI text, technical identifiers, and skills remain English
 
-#### Scenario: Two projects use one company base
-- **WHEN** two projects use the installed CLI with the company's tagged content-only base and their own selections
-- **THEN** each generates its selected shared instructions and local context without downloading tool code from the base
-- **AND** no access to our content repository or publication of the company's rules on npm is required
+### Requirement: Versioned and default tests are lightweight units only
 
-### Requirement: Validation preview and synchronization share a result model
+The repository SHALL version only lightweight unit tests and small unit data. npm test, npm run check, pre-push, and CI SHALL execute only units as their test workload. Integration/end-to-end/installed-package suites, subprocess/Git/registry tests, historical fixture matrices, and the Python oracle SHALL be absent.
 
-The CLI SHALL expose `validate`, `sync`, `sync --dry-run`, and `sync --check` using the same validated composition and rendering behavior. Dry run and check SHALL NOT change published documents, authored sources, manifest, or installed integration. Online source-cache activity SHALL be disclosed separately from project changes.
+#### Scenario: A default gate executes
+- **WHEN** npm test, npm run check, pre-push, or CI runs
+- **THEN** tests use isolated values or mocked boundaries without external processes, network, package installation, or disposable Git environments
 
-#### Scenario: Generated documents have drifted
-- **WHEN** check mode finds expected document changes with valid source inputs and no ownership or target-precondition conflict
-- **THEN** it reports their paths and returns exit code 1 without changing them
-- **AND** dry run reports the same intended document changes with exit code 0
-
-#### Scenario: Composition is invalid
-- **WHEN** a source or destination fails validation
-- **THEN** preview and normal synchronization report the same validation error before publishing any document
-
-### Requirement: Command results support humans and automation
-
-Commands SHALL provide help and `--json` output with an envelope containing `schemaVersion`, `command`, `ok`, `changes`, and `diagnostics`. Exit codes SHALL be 0 for success, 1 for check drift, 2 for usage, validation, prerequisite or conflict errors, and 3 for operational failures. JSON stdout SHALL contain one document without raw subprocess output.
-
-#### Scenario: Git is unavailable
-- **WHEN** a command that requires Git runs without an available Git executable
-- **THEN** it returns exit code 2 with an actionable prerequisite diagnostic
-- **AND** normal output has no traceback and JSON mode contains the same diagnostic in its envelope
-
-### Requirement: Validation explains applicable prerequisites
-
-Agents validate SHALL inspect Node, applicable Git prerequisites, root, manifest, source paths, and integration compatibility without repairing or installing anything. Local-only composition SHALL not require Git. Debug output SHALL add technical detail without changing validation acceptance.
-
-#### Scenario: A consumer has an unsupported manifest version
-- **WHEN** validate inspects that consumer
-- **THEN** it identifies the incompatible version and source location
-- **AND** it preserves the manifest and documents
-
-### Requirement: A base release creates one calculated local tag
-
-Agents release --bump patch|minor|major SHALL calculate from reachable stable Git tags, validate the base and committed clean state, and create one non-forcing local tag at HEAD. Dry-run SHALL report the same calculation without writes. No current/next version parameters, consumer manifest, npm metadata, remote, or publication SHALL be required.
-
-#### Scenario: A maintainer previews and applies a release
-- **WHEN** the maintainer selects minor with baseline v1.2.3
-- **THEN** preview reports v1.3.0 without changes and application creates its local tag
-- **AND** neither operation edits consumer pins or publishes externally
-
-### Requirement: The installed package is verified across supported platforms
-
-The project SHALL test its installed artifact and meaningful candidate regression scenarios on Windows and Linux with its declared supported Node.js LTS lines. CI and the local pre-push gate SHALL exercise behavior rather than relying only on configuration-text assertions.
-
-#### Scenario: A candidate CLI is ready for stage acceptance
-- **WHEN** the candidate tarball is tested against the accepted neutral/local source fixtures configured with the public v1 contract
-- **THEN** generated convention documents preserve the expected UTF-8/LF content, discovery structure and paths; the main index follows automatic local ordering then explicit remote ordering, with its intentional difference from private-format fixtures recorded separately
-- **AND** a repeated sync produces no document changes
-- **AND** the evidence is presented for user review before starting the next change
-
-#### Scenario: No external consumer exists before launch
-- **WHEN** the runtime-stage gate is evaluated
-- **THEN** disposable fresh and configured projects supply installation and behavior evidence
-- **AND** no real consumer migration, private-version support, or creation of the future public repository is required
+#### Scenario: The test tree is reviewed
+- **WHEN** obsolete test material is removed
+- **THEN** only meaningful lightweight units/data remain and no opt-in integration suite or expanded acceptance matrix is introduced

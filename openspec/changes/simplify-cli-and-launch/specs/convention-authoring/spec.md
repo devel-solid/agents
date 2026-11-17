@@ -2,56 +2,89 @@
 
 ## ADDED Requirements
 
-### Requirement: Project conventions are authored as independent templates
+### Requirement: Client conventions are authored as independent templates
 
-Authors SHALL create, copy, edit, rename, or remove convention templates below the manifest templates_dir. Each independent template SHALL contain exactly one H1 and one complete nonempty AGENT-CARD outside code examples. The next validation or generation SHALL discover it without a per-convention manifest entry, registration command, parent file, or remote source.
+Authors SHALL create, edit, rename, or remove convention templates below the client manifest's templates_dir. Each SHALL have one H1 and one complete nonempty AGENT-CARD outside examples. Valid sources SHALL participate without a selection entry, registration command, parent convention, or remote source.
 
-#### Scenario: An author creates a complete rule
-- **WHEN** a valid commits.tpl.md is saved in the convention template directory
-- **THEN** validate recognizes it and the next sync generates its document and discovery entry
-- **AND** saving the source alone does not invoke generation
-
-#### Scenario: A template teaches Markdown syntax
-- **WHEN** its fenced example contains headings and example card markers
-- **THEN** those examples do not count as operational H1 or card markers and remain intact in its generated body
+#### Scenario: A client authors a convention
+- **WHEN** commits.tpl.md is saved with valid structure
+- **THEN** validation recognizes it and sync generates its independent output and AGENTS entry
 
 #### Scenario: Independent topics share a filename prefix
 - **WHEN** policy.tpl.md and policy.details.tpl.md both exist
-- **THEN** they are separate conventions with direct index entries and neither acquires child discovery
+- **THEN** neither acquires child discovery or inheritance
 
-### Requirement: The authoring skill curates project templates
+### Requirement: Shared authoring skills select targets by manifest context
 
-Agents-write-conventions SHALL guide applicability, actionable rules, small valid examples, real exceptions, and related-rule coherence. It SHALL edit the requested templates and distinguish structural validity from semantic quality. Review-only requests SHALL not edit sources. Authorship alone SHALL not publish packages; generation SHALL follow the scope requested through the installed CLI.
+Both shared authoring skills SHALL use agentscli.yml for this repository's direct final-file mode and agentscli-compose.yml for client-template mode. Exactly one SHALL be present. Both or neither SHALL produce a context diagnostic before writes; absent client configuration SHALL NOT imply direct mode.
 
-#### Scenario: A project requests a convention
-- **WHEN** the skill handles source authorship
-- **THEN** it edits the relevant project template, reviews related rules, and reports the checks actually performed
-- **AND** it introduces no base, family, remote content source, or repository-independent policy
+#### Scenario: A maintainer authors in the CLI source repository
+- **WHEN** only agentscli.yml is present
+- **THEN** the skills target handwritten AGENTS.md and final docs/conventions directly
 
-#### Scenario: Only a semantic review is requested
-- **WHEN** the author requests findings without edits
-- **THEN** the skill reports concrete issues without changing sources
+#### Scenario: A client customizes instructions
+- **WHEN** only agentscli-compose.yml is present
+- **THEN** the skills target the configured main and convention templates
 
-#### Scenario: Authoring and generation are requested together
-- **WHEN** the user asks to update a convention and its generated instructions
-- **THEN** the skills complete source curation and authorized CLI generation without inventing an additional approval step
+#### Scenario: Context is missing or contradictory
+- **WHEN** both manifests exist or neither exists
+- **THEN** the skills explain the context problem and edit no files
 
-### Requirement: The CLI repository has its own direct authoring skill
+### Requirement: One convention-authoring skill serves both contexts
 
-The source repository SHALL maintain agents-write-repository-conventions for creating, reviewing, and maintaining handwritten docs/conventions and discovery references in its own AGENTS.md. The skill SHALL write English artifacts and require no manifest, template, init, or sync. It SHALL remain repository-only and SHALL NOT be packaged or installed into client projects.
+agentscli-write-conventions SHALL be the single convention-authoring skill for the repository and clients. It SHALL curate applicability, actionable rules, valid small examples, exceptions, duplication, and contradictions, selecting final files or templates by context. No separate repository or translated variant SHALL be maintained.
 
-#### Scenario: A maintainer creates an own convention
-- **WHEN** the repository-only skill handles an authoring request
-- **THEN** it edits the relevant handwritten English convention and discovery reference directly
-- **AND** it does not invoke client initialization or generation
+#### Scenario: An own convention is requested
+- **WHEN** the shared skill operates in direct mode
+- **THEN** it edits the final English convention and applicable handwritten discovery references without init or sync
 
-#### Scenario: A maintainer requests review only
-- **WHEN** the repository-only skill receives a review-only request
-- **THEN** it reports findings without changing conventions or instructions
+#### Scenario: A client convention is requested
+- **WHEN** the same skill operates in client mode
+- **THEN** it edits the relevant template using the client manifest language and checks related rule coherence
 
-#### Scenario: Client skills are packaged
-- **WHEN** the package scaffold resources are assembled
-- **THEN** they contain agents-write-conventions and agents-update-docs but exclude agents-write-repository-conventions
+### Requirement: One shared AGENTS skill curates content and format
+
+agentscli-update-agents SHALL curate the handwritten AGENTS.md or client main template according to context. It SHALL keep concise project orientation, actionable entrypoints, and convention discovery in AGENTS and direct detailed/scoped rules into conventions. It SHALL check the applicable format while allowing customized headings and sections.
+
+#### Scenario: A proposed AGENTS rule contains detailed topic-specific guidance
+- **WHEN** the skill reviews that material
+- **THEN** it directs the detail into a convention and keeps only useful orientation/discovery in AGENTS
+
+#### Scenario: The target is the handwritten root AGENTS
+- **WHEN** direct-mode format is reviewed
+- **THEN** no generated-output or template-insertion marker is required
+
+#### Scenario: The target is the client main template
+- **WHEN** the user changes headings and sections
+- **THEN** the skill preserves structural validity and the single insertion marker without forcing the default body
+
+### Requirement: Product skills use one standard English source each
+
+The product SHALL maintain agentscli-write-conventions, agentscli-update-agents, agentscli-build-agents, and agentscli-release as four canonical English skills. Each SHALL use standard SKILL.md with name/description and useful optional support files. No translated or tool-specific copies or fixed chat-language rules SHALL be maintained.
+
+#### Scenario: Product skill sources are reviewed
+- **WHEN** the four sources and distribution list are inspected
+- **THEN** each skill has one maintained English source and no repository infix or duplicate convention-authoring variant
+
+### Requirement: Authoring respects requested scope
+
+Review-only authoring SHALL report findings without edits. Authorized source changes SHALL target only applicable final files or templates. Authorship SHALL NOT imply generation, package publication, or unrelated changes; generation requested alongside authorship SHALL use the installed CLI in client mode without gratuitous extra approvals.
+
+#### Scenario: Only semantic review is requested
+- **WHEN** either shared authoring skill handles the request
+- **THEN** it reports concrete scope/coherence/format findings without writing
+
+#### Scenario: Client authorship and generation are both requested
+- **WHEN** the user requests the source change and regenerated instructions
+- **THEN** source curation and the authorized client CLI workflow complete within that scope
+
+### Requirement: Distribution separates shared client and internal workflows
+
+agentscli.yml SHALL select both shared skills and client-only agentscli-build-agents. The build skill SHALL guide installed-CLI validate/preview/sync/check. Repository-only agentscli-release SHALL guide native CLI versioning/publication and remain outside client installation. OpenSpec skills SHALL remain development tools.
+
+#### Scenario: Client resources are assembled
+- **WHEN** packaging reads the three listed directories
+- **THEN** it includes their whole trees and excludes agentscli-release and OpenSpec
 
 ## REMOVED Requirements
 

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import type { Root, RootContent } from 'mdast';
@@ -6,148 +5,144 @@ import { EngineError } from './manifest.js';
 
 export const CARD_START = '<!-- AGENT-CARD START -->';
 export const CARD_END = '<!-- AGENT-CARD END -->';
-export function normalizeText(text: string): string {
-  return text.replace(/\r\n?/gu, '\n');
-}
-export function readText(path: string): string {
+export const INSERTION = '<!-- agentscli:conventions -->';
+export const GENERATED = '<!-- agentscli:generated -->';
+export const normalizeText = (text: string): string =>
+  text.replace(/\r\n?/gu, '\n');
+export function decode(bytes: Uint8Array, path: string): string {
   try {
     return normalizeText(
-      new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(path)),
+      new TextDecoder('utf-8', { fatal: true }).decode(bytes),
     );
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      throw new EngineError('SOURCE_MISSING', `Fonte ausente: ${path}.`, 2, {
-        location: { path, line: 1, column: 1 },
-      });
-    throw new EngineError(
-      'SOURCE_READ',
-      `Não foi possível ler a fonte UTF-8: ${path}.`,
-      2,
-      { location: { path, line: 1, column: 1 } },
-    );
+  } catch {
+    throw new EngineError('SOURCE_UTF8', `Invalid UTF-8: ${path}.`, 2, path);
   }
 }
 export function parseMarkdown(text: string): Root {
   return unified().use(remarkParse).parse(text);
 }
-export interface ParsedSource {
-  title: string;
-  cardLines: string[];
-  body: string;
+interface Structure {
   text: string;
+  title: string;
+  lines: string[];
+  markers: (marker: string) => number[];
 }
-export function validateMarkdown(text: string, path: string): ParsedSource {
-  text = normalizeText(text);
-  const tree = parseMarkdown(text);
+function structure(input: string, path: string): Structure {
+  const text = normalizeText(input),
+    tree = parseMarkdown(text),
+    lines = text.split('\n');
   const headings: RootContent[] = [];
-  const htmlRanges: Array<[number, number]> = [];
+  const html: Array<[number, number]> = [];
   function visit(node: {
     type: string;
     depth?: number;
     position?: { start: { offset?: number }; end: { offset?: number } };
     children?: unknown[];
   }): void {
-    if (node.type === 'code' || node.type === 'inlineCode') return;
+    if (
+      node.type === 'code' ||
+      node.type === 'inlineCode' ||
+      node.type === 'blockquote'
+    )
+      return;
     if (node.type === 'heading' && node.depth === 1)
       headings.push(node as RootContent);
-    if (node.type === 'html')
-      htmlRanges.push([
+    if (node.type === 'html') {
+      const value = text.slice(
         node.position!.start.offset!,
         node.position!.end.offset!,
-      ]);
+      );
+      if ([CARD_START, CARD_END, INSERTION].includes(value.trim()))
+        html.push([node.position!.start.offset!, node.position!.end.offset!]);
+    }
     for (const child of node.children ?? [])
       visit(child as Parameters<typeof visit>[0]);
   }
   visit(tree);
-  const lines = text.split('\n');
-  const offsets: number[] = [];
-  let offset = 0;
-  for (const line of lines) {
-    offsets.push(offset);
-    offset += line.length + 1;
-  }
-  const starts: number[] = [],
-    ends: number[] = [];
-  lines.forEach((line, index) => {
-    const markerOffset =
-      offsets[index]! + line.length - line.trimStart().length;
-    if (
-      !htmlRanges.some(
-        ([start, end]) => markerOffset >= start && markerOffset <= end,
-      )
-    )
-      return;
-    if (line.trim() === CARD_START) starts.push(index);
-    if (line.trim() === CARD_END) ends.push(index);
-  });
-  function fail(code: string, message: string, line = 1): never {
-    throw new EngineError(code, `${path}:${line}: ${message}`, 2, {
-      location: { path, line, column: 1 },
-    });
-  }
   if (headings.length !== 1)
-    fail(
+    throw new EngineError(
       'SOURCE_H1',
-      'a fonte deve conter exatamente um heading Markdown de nível 1 fora de exemplos.',
-      headings[1]?.position?.start.line ?? 1,
+      `${path}:1: Expected exactly one H1 outside examples.`,
+      2,
+      path,
     );
-  if (starts.length !== 1 || ends.length !== 1)
-    fail(
+  function inlineText(node: { value?: string; children?: unknown[] }): string {
+    return (
+      node.value ??
+      (node.children ?? [])
+        .map((child) => inlineText(child as Parameters<typeof inlineText>[0]))
+        .join('')
+    );
+  }
+  const title =
+    inlineText(headings[0]! as Parameters<typeof inlineText>[0]).trim() ||
+    'Convention';
+  function markers(marker: string): number[] {
+    let offset = 0;
+    const found: number[] = [];
+    lines.forEach((line, index) => {
+      const start = offset + line.length - line.trimStart().length;
+      if (
+        line.trim() === marker &&
+        html.some(([a, b]) => start >= a && start < b)
+      )
+        found.push(index);
+      offset += line.length + 1;
+    });
+    return found;
+  }
+  return { text, title, lines, markers };
+}
+export function validateTemplate(
+  text: string,
+  path: string,
+): { text: string; insertion: number } {
+  const parsed = structure(text, path),
+    found = parsed.markers(INSERTION);
+  if (found.length !== 1)
+    throw new EngineError(
+      'TEMPLATE_MARKER',
+      `${path}:1: Expected exactly one full-line ${INSERTION} outside examples.`,
+      2,
+      path,
+    );
+  return { text: parsed.text, insertion: found[0]! };
+}
+export interface ParsedConvention {
+  title: string;
+  card: string;
+  body: string;
+}
+export function validateConvention(
+  text: string,
+  path: string,
+): ParsedConvention {
+  const parsed = structure(text, path),
+    starts = parsed.markers(CARD_START),
+    ends = parsed.markers(CARD_END);
+  if (starts.length !== 1 || ends.length !== 1 || starts[0]! >= ends[0]!)
+    throw new EngineError(
       'SOURCE_CARD',
-      'a fonte deve conter exatamente um bloco AGENT-CARD fora de exemplos.',
-      (starts[1] ?? ends[1] ?? 0) + 1,
+      `${path}:1: Expected one complete AGENT-CARD outside examples.`,
+      2,
+      path,
     );
   const start = starts[0]!,
-    end = ends[0]!;
-  if (start >= end) fail('SOURCE_CARD', 'AGENT-CARD malformado.', start + 1);
-  const cardLines = lines
-    .slice(start + 1, end)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (!cardLines.length) fail('SOURCE_CARD', 'AGENT-CARD vazio.', start + 1);
-  const heading = headings[0]!;
-  const headingLine = lines[heading.position!.start.line - 1]!;
-  const title = headingLine
-    .replace(/^ {0,3}#\s+/u, '')
-    .replace(/\s+#+\s*$/u, '')
-    .trim();
-  let removeEnd = end + 1;
-  while (removeEnd < lines.length && !lines[removeEnd]!.trim()) removeEnd++;
+    end = ends[0]!,
+    card = parsed.lines
+      .slice(start + 1, end)
+      .join('\n')
+      .trim();
+  if (!card)
+    throw new EngineError(
+      'SOURCE_CARD',
+      `${path}:${start + 1}: AGENT-CARD must not be empty.`,
+      2,
+      path,
+    );
   const body =
-    (
-      text.slice(0, offsets[start]) +
-      text.slice(offsets[removeEnd] ?? text.length)
-    ).trimEnd() + '\n';
-  return { title, cardLines, body, text };
-}
-export function validateMarkdownFile(path: string): ParsedSource {
-  return validateMarkdown(readText(path), path);
-}
-export function validateTemplate(text: string, path: string): void {
-  const tree = parseMarkdown(normalizeText(text));
-  const h1 = tree.children.filter(
-    (node) => node.type === 'heading' && node.depth === 1,
-  );
-  if (h1.length !== 1)
-    throw new EngineError(
-      'TEMPLATE_H1',
-      `${path}: o template deve conter exatamente um H1.`,
-      2,
-      { location: { path, line: 1, column: 1 } },
-    );
-  const discovery = tree.children.filter(
-    (node) =>
-      node.type === 'heading' &&
-      node.depth === 2 &&
-      text
-        .slice(node.position!.start.offset, node.position!.end.offset)
-        .trim() === '## Quando ler as conventions',
-  );
-  if (discovery.length > 1)
-    throw new EngineError(
-      'TEMPLATE_DISCOVERY',
-      `${path}: a seção "## Quando ler as conventions" está duplicada fora de exemplos.`,
-      2,
-      { location: { path, line: 1, column: 1 } },
-    );
+    [...parsed.lines.slice(0, start), ...parsed.lines.slice(end + 1)]
+      .join('\n')
+      .trimEnd() + '\n';
+  return { title: parsed.title, card, body };
 }

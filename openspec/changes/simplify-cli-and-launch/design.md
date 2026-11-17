@@ -2,158 +2,176 @@
 
 ## Context
 
-See `proposal.md` for scope and motivation. The current package is `@devel-solid/agents@3.0.2`. Its 18 source modules include remote resolution, roles, schema-backed manifests, content locks, ownership, Git release, and a large transaction implementation. Rendering recognizes Portuguese discovery headings and regenerates complete documents. Initialization currently prepares inputs without generating the project documents.
+See proposal.md for motivation and scope. The current private package is @devel-solid/agents@3.0.2. It includes roles, remote resolution, content locks, ownership state, base versioning, and a transaction engine. Replace those mechanisms rather than carrying them into a private-format migration layer.
 
-The existing `npm test` runner selects only `tests/unit`; the larger `tests/node` and historical Python/composition fixtures are not that gate. The user now explicitly requires only lightweight unit tests to remain versioned and to run in every default test entrypoint. The old four archived and two active changes have already been deleted. Existing permanent specs still describe the old system and are replaced through this change.
+The existing default test runner already selects tests/unit, but historical process/integration suites and fixtures remain versioned. They must be removed during implementation. Four archived and two active changes were previously deleted at the user's request and remain deleted.
 
-Confirmed decisions: templates are the authoring surface for **both** AGENTS and conventions; regenerate all outputs; no bases or subconventions; lowercase `--lang pt-br`; English default; MIT; experimental `0.1.0`; one proposal from simplification through the complete first public release.
+This revision changes planning artifacts only. The restored guides, presentation, runtime, templates, skills, root instructions, permanent specs, and Git/npm identity remain untouched until the corresponding implementation or delivery work is authorized.
 
 ## Goals / Non-Goals
 
-**Goals:** A small deterministic file generator, a directly usable init result, two client skills plus one repository-only authoring skill, predictable generated-file handling, lightweight unit gates, and ordinary package publication.
+**Goals:** A small deterministic generator, two small manifests with distinct purposes, reusable authoring skills, explicitly replaceable client skills, unit-only gates, and one complete native first release.
 
-**Non-Goals:** Shared policy distribution, remote content, configurable composition graphs, generated-body merging, private-format migration, a new CLI release engine, a multilingual service, integration suites, a test registry, or a second language rollout.
+**Non-Goals:** Bases, global policy distribution, subconventions, remote instruction sources, composition graphs, generated-body merges, multilingual skills, a release engine, integration suites, independent public history, or a second language rollout.
 
 ## Decisions
 
-### 1. Keep a three-field manifest and automatic inclusion
+### 1. Use two small manifests with separate responsibilities
 
-The project manifest remains agents-compose.yml with exactly three required fields:
+The client manifest is agentscli-compose.yml with exactly three required fields:
 
-```yaml
+~~~yaml
 language: pt-br
 templates_dir: templates
 conventions_dir: docs/conventions
-```
+~~~
 
-Use en by default. The directory fields are nonempty relative project directories; reject unsafe or overlapping roots. There is no schemaVersion, source origin, pin, entry list, or convention selection. Retain yaml and directly validate these three values without Ajv or an additional schema system.
+Support en and pt-br, with en as default. Require nonempty relative directory roots contained in the project and reject overlapping or unsafe roots, unknown fields, invalid YAML, and unsupported languages. There is no schemaVersion, source origin, version pin, or inclusion list. Retain YAML parsing and directly validate the few fields without Ajv.
 
-```text
-<templates_dir>/AGENTS.tpl.md                -> AGENTS.md
-<templates_dir>/<relative-name>.tpl.md       -> <conventions_dir>/<relative-name>.md
-.agents/skills/agents-write-conventions/SKILL.md
-.agents/skills/agents-update-docs/SKILL.md
-```
+The source repository's agentscli.yml has only a skills list:
 
-Templates remain available and editable in the project. The CLI regenerates the entire AGENTS body, not just an output index. Direct edits to marked output are disposable; all customization goes into templates. This implements the user's final clarification and removes the need to merge generated-body edits.
+~~~yaml
+skills:
+  - .agents/skills/agentscli-write-conventions
+  - .agents/skills/agentscli-update-agents
+  - assets/templates/skills/agentscli-build-agents
+~~~
 
-Discover every valid *.tpl.md recursively below templates_dir except the root AGENTS.tpl.md, which is the main template. Preserve each convention's relative path under conventions_dir. Directories and names such as policy.details.tpl.md never create parent/child relationships. There is no inclusion list. Sort portable normalized relative paths, reject case/Unicode collisions, and retain path protection. An empty convention set is valid.
+This internal manifest drives build-time distribution and identifies the direct-authoring context. It does not select conventions or configure instruction generation. Validate contained directory paths, existing standard SKILL.md entrypoints, matching skill names, and duplicate destinations before packaging. Do not add origins, runtime resource downloads, skill versions, locale settings, or a plugin registry.
 
-The first setup includes templates/AGENTS.tpl.md and templates/project-context.tpl.md. Do not recreate intentionally removed conventions on repeated init. This CLI source repository is not a target project: keep its own AGENTS.md and conventions handwritten in English, no active agents-compose.yml, and no active project template tree. Keep product scaffolds only in package asset resources.
+The source repository has no client manifest and no active client template tree. Its own AGENTS.md and docs/conventions remain handwritten in English. Bundled client templates remain product assets. Client CLI operations reject a root containing the internal manifest instead of initializing the source repository as its own client.
 
-### 2. Use minimal, language-neutral template syntax
+### 2. Discover independent templates and regenerate whole documents
 
-Validate UTF-8 and exactly one H1 per template outside examples. The main template has one insertion placeholder; language comes only from the manifest:
+Map client files as follows:
 
-```markdown
-# AGENTS.md
+~~~text
+<templates_dir>/AGENTS.tpl.md          -> AGENTS.md
+<templates_dir>/<relative>.tpl.md     -> <conventions_dir>/<relative>.md
+~~~
 
-## Project
-Describe this project here.
+Include every valid *.tpl.md recursively below templates_dir except its root main template. Preserve relative paths, sort portable normalized paths, reject equivalent case/Unicode destinations, and allow an empty convention set. Nested directories and dotted filenames create no parent/child semantics.
 
-## Working on this project
-Read the applicable conventions and use the project's own verification commands.
+Validate UTF-8 and one H1 outside examples. Allow arbitrary main-template titles, sections, and prose; do not depend on translated headings or fixed wording. Require one operational full-line insertion comment outside examples:
 
-## Conventions
-<!-- agents:conventions -->
-```
+~~~markdown
+<!-- agentscli:conventions -->
+~~~
 
-The insertion marker must be an operational full-line comment outside examples. Replace it with the index while preserving template content before and after it. Do not parse translated section titles or store language in a template marker.
+Replace that marker with the convention index while preserving all surrounding template content. The default body is a starting point, not a mandatory section schema.
 
-Convention templates retain the existing `AGENT-CARD START` / `AGENT-CARD END` comments with nonempty discovery text and one H1. Extract their title and card into the flat AGENTS index, remove the operational card from the generated convention body, and preserve examples and ordinary Markdown. Index links use the stable relative output paths; ordering and formatting are deterministic. Keep `remark-parse`/`unified` for correct Markdown boundaries rather than introducing ad hoc example detection.
+Convention templates retain one complete, nonempty AGENT-CARD START / AGENT-CARD END block outside examples and one H1. Extract title and card into the independent index, remove the operational card from the output convention body, and preserve ordinary Markdown/examples. Keep remark-parse and unified for real Markdown boundaries.
 
-### 3. Scope language selection to initial resources and project instructions
+Regenerate the entire AGENTS.md and every convention body from templates. Direct output edits are disposable. No body merge, automatic import of existing handwritten output, or private-format converter is introduced.
 
-Support `en` and `pt-br` resources from the first release. Normalize identifiers to lowercase; reject unsupported values before writes. `init` defaults to `en`; `init --lang pt-br` selects Brazilian Portuguese templates and skill prose. Technical filenames, command names, comments used as parser markers, and the two skill identifiers remain stable.
+### 3. Keep product text English and localize project resources
 
-The manifest language is authoritative for scaffolds and generated notices. Cards and authored bodies are copied, not translated; the setting controls created file text only. No scaffold, own instruction file, or skill prescribes a fixed agent reply language. The source repository keeps its maintained instruction files in English. Do not infer locale from prose or introduce another locale configuration file.
+Ship English and Brazilian Portuguese templates/notices together in 0.1.0. Init defaults to en and supports --lang pt-br; normalize identifiers to lowercase and reject unsupported values before writing. File names, skill names, option names, cards, and parser comments are language-independent.
 
-Every successful init overwrites agents-compose.yml using the selected language, defaulting to en, and default roots templates and docs/conventions. It does not preserve the previous manifest language or custom roots. Preserve existing template/skill content without silently translating it. Later validate/sync read the current manifest, including user-edited roots. Public text and the concise README are English from the first release.
+The client manifest is the only stored language configuration. It controls newly created templates and renderer-added prose. Existing authored template text is preserved literally rather than translated. All four canonical skills and their maintained support resources are English; shared authoring instructions direct the agent to use the client's manifest language when creating client content.
 
-### 4. Keep the public command surface small
+Maintain the repository's own prose, CLI help/diagnostics, README, and development artifacts in English. Do not prescribe an agent chat language in any scaffold, skill, AGENTS.md, or convention. The tool/environment controls communication.
 
-| Command | Supported command-specific options | Effect |
+### 4. Keep a three-command interface and one predictable plan
+
+| Command | Command-specific options | Effect |
 | --- | --- | --- |
-| `agents init` | `--lang`, `--dry-run` | Replace the manifest and prepare missing templates/skills/documents |
-| `agents validate` | none | Validate inputs, locale, paths, and destination conflicts |
-| `agents sync` | `--dry-run` or `--check` | Generate the complete marked document set or inspect its effects |
+| agentscli init | --lang, --dry-run | Replace the client manifest and create missing setup/initial outputs |
+| agentscli validate | none | Validate client inputs and safe destinations without writes |
+| agentscli sync | --dry-run or --check | Regenerate documents and restore distributed skills, or inspect drift |
 
-Keep common --repo-root, --json, --help and standalone --version. The current directory is the default root; validate/sync read its reduced manifest. Reject removed/misplaced options. Remove release, --base, --starter, --offline, --frozen, remote flags, and old provenance/debugging options.
+Keep common --repo-root, --json, --help and standalone --version. Default to the current project root. Remove release, --base, --starter, --offline, --frozen, remote, provenance, and debugging options. Use Node's native argument parser instead of another CLI framework.
 
-Retain the small JSON envelope and exit meanings already understood by callers: success 0, valid check drift 1, usage/validation/conflict 2, operational failure 3. Preview describes planned creates/updates/removals; application reports completed effects. `validate` does not mean the generated files are current; `sync --check` supplies that assertion.
+Retain the small JSON envelope (schemaVersion, command, ok, changes, diagnostics) and exit meanings: success 0, valid check drift 1, usage/validation/conflict 2, operational failure 3. Preview and check describe the same document and skill effects as sync and write nothing. Validate checks structural input/path validity; sync --check checks output and packaged-skill freshness. Missing client skills alone do not block direct CLI use.
 
-### 5. Make init safe and useful immediately
+Every successful init overwrites agentscli-compose.yml with the selected/default language and default roots templates and docs/conventions, even when the previous manifest is invalid or customized. Prior source/output roots are not cleaned. Preserve valid existing templates, regular skill files, and existing generated documents during init; create missing setup and initial outputs. Do not recreate intentionally removed convention sources on repeated init. Init --dry-run reports the same manifest replacement and setup effects without writes.
 
-Build the complete init plan before writes. Replace the manifest on every successful invocation, even if an existing manifest is invalid, using the new requested/default configuration. Validate the planned configuration and targets before applying it. First init also creates the main/context templates, two skills and initial documents. Preserve existing valid templates, skills and generated documents; sync applies later template changes. --dry-run never overwrites the manifest or anything else.
+### 5. Recognize disposable outputs without ownership databases
 
-Preserve differing skill files and report them as different content, not as proven customization. Do not introduce skill-version hashes, automatic merges, or another update flag. Document manual replacement after preserving custom edits when a user wants a newer bundled skill. Sync never changes skills.
+Every generated document starts with exactly:
 
-An unmarked existing AGENTS or convention occupying a required generated destination is a conflict before setup writes. Preserve it and explain how to move its useful content into the template and explicitly resolve the destination. There is no silent import/adoption or private-version converter in `0.1.0`.
+~~~markdown
+<!-- agentscli:generated -->
+~~~
 
-### 6. Recognize generated files without historical ownership
+Follow it with a localized notice naming the source template. Recognize the marker only on the first line, never from body text or code examples. This is a disposable-output contract, not cryptographic ownership.
 
-Every generated document has the exact first line `<!-- agents:generated -->`, followed by a short localized notice naming its template as the editing surface. Recognize that marker only on the first line, never from examples or body text. This is an explicit disposable-output contract, not a record of previous bytes or provenance.
+Create absent outputs and replace marked expected outputs. An unmarked expected AGENTS.md or convention destination blocks preflight and instructs the user to preserve useful content in its template and resolve the collision. Preserve all unrelated manual documents.
 
-Create absent destinations and replace marked expected outputs. Unmarked collisions block the plan; unrelated files remain untouched. Recursively remove stale marked *.md files only inside the currently configured conventions_dir. Never clean previous output roots after a manifest edit or delete source/skill files. Directories express paths only, not convention relationships.
+Remove stale marked *.md files only inside the currently configured conventions_dir. Do not clean previous output roots after a manifest edit. Compare expected UTF-8/LF bytes and skip unchanged outputs; init manifest replacement is an explicit exception. There is no durable output inventory, hash history, journal, or adoption database.
 
-Compare bytes with expected UTF-8/LF output and skip unchanged generated documents. The init manifest replacement is an explicit exception. Remove old composition/lock/ownership schemas and Ajv; retain yaml for the three-field manifest. Do not add persistent recovery state.
+### 6. Maintain four skills from single English sources
 
-### 7. Replace the transaction engine with preflight and individual-file replacement
+| Skill | Source | Use in source repository | Client installation |
+| --- | --- | --- | --- |
+| agentscli-write-conventions | .agents/skills/agentscli-write-conventions | Final conventions | Convention templates |
+| agentscli-update-agents | .agents/skills/agentscli-update-agents | Handwritten AGENTS.md | Main AGENTS template |
+| agentscli-build-agents | assets/templates/skills/agentscli-build-agents | Not a repository workflow | Installed CLI validate/preview/sync/check |
+| agentscli-release | .agents/skills/agentscli-release | Native CLI versioning/publication | Excluded |
 
-Validate every source, destination, planned deletion, filesystem collision, and unsafe link before applying changes. Preserve the relevant containment checks from `paths.ts`; do not allow a target symlink/junction or hard-link write to modify a different file. The simplest supported contract rejects unsafe aliases rather than trying to repair them.
+The two shared authoring skills select direct files when only agentscli.yml exists and client templates when only agentscli-compose.yml exists. If both or neither exist, report the context problem before writing. Do not fall back to guessing from directory names, prose language, or missing client configuration.
 
-Create missing source/skill setup without overwriting existing author files. For generated documents, write a temporary file beside the destination and safely replace that one destination, cleaning temporary files on ordinary failures. Write convention outputs, then AGENTS, then remove obsolete marked outputs. Recheck destination classification immediately before mutation. Keep temporary artifacts transient and excluded by the applicable development ignore patterns.
+Convention authorship covers scope, actionable rules, small examples, exceptions, duplication, and contradictions. AGENTS authorship curates short project-wide orientation, actionable entrypoints, and convention discovery; move detailed or scoped rules into conventions. Validate the applicable format without imposing generation markers on this repository's handwritten AGENTS.md. Review-only requests change no files; authorized source edits do not imply publication.
 
-The operation is not an atomic multi-file transaction. On operational failure report completed and remaining effects with exit 3. The next sync recomputes from templates and converges; do not add a journal, backup database, lock record, automatic rollback, or publication recovery engine. Concurrent mutating invocations are unsupported and are documented as such.
+Use standard SKILL.md with name/description matching its directory, concise instructions, and optional references/scripts/assets only as needed. Maintain no tool-specific or translated variants and no separate repository convention-authoring skill. Shared sources are copied during build, not maintained again in package assets.
 
-### 8. Keep only two product skills and explicit localized package assets
+The client-only build skill runs the installed CLI within requested scope; it does not silently install/upgrade it. The repository-only release skill guides native version changes, unit gates, build/package inspection, authorized Git/npm delivery, and verification. It does not reintroduce a release subcommand or publication engine. OpenSpec skills remain development tools, outside the product's four-skill inventory and client installation.
 
-`agents-write-conventions` owns source curation: applicability, rules, examples, duplication, and contradictions. `agents-update-docs` owns validate/preview/sync/check through the installed CLI. Both explain the generated-output contract and operate within the user's requested scope without gratuitous extra confirmations.
+### 7. Synchronize whole managed skill directories
 
-This source repository also needs its own authoring workflow because its conventions are handwritten. Add `.agents/skills/agents-write-repository-conventions/SKILL.md`, with English guidance for directly creating, reviewing, and maintaining `docs/conventions/*.md` and their discovery references in the handwritten root AGENTS.md. Reuse the content-quality principles, not the client generation procedure. The internal skill requires no manifest, template, init, or sync; it maintains English artifacts without adding a fixed chat-language instruction. Root AGENTS.md directs maintainers to this internal skill. It remains in the public source repository but is excluded from packaged assets and client initialization. A review-only request changes no files.
+Build reads agentscli.yml and copies each listed directory recursively, including SKILL.md and all support resources. Assemble runtime resources under dist/assets/skills/<skill-name> and localized templates under dist/assets/templates/<language>. Runtime lookup is relative to the installed package; it does not read the source repository's distribution manifest.
 
-Remove the base-only agents-update-version source and distributed copy. Put essential native maintainer publication guidance in the README. The OpenSpec skills remain development tooling and are not installed in target projects.
+Sync restores the complete three listed client skill directories under .agents/skills using the installed package. Create missing files, replace changed content, and remove extra/stale files inside those exact managed directories. Those directories are CLI-managed; direct edits are overwritten. Other skill directories, including OpenSpec, are untouched. Document this explicitly rather than inferring customization from bytes.
 
-Keep authored skill sources and locale companions under .agents/skills. Keep English/Portuguese scaffolds as package data under assets, never as this repository's own active templates. Package the selected skill prose under standard SKILL.md entrypoints. Use one explicit resource mapping, remove stale base/starter assets, and keep no checkout-only runtime reference.
+The document marker applies to documents, not skill files. The packaged list of destination directory names bounds skill replacement; no skill ownership database, hashes of historical versions, automatic merge, or update flag is needed. Compare inventories/bytes so an unchanged sync is a no-op. Include skill creation, replacement, and removal in previews, --check, JSON changes, and partial-failure reporting.
 
-The package mapping includes exactly the two client skills. Do not copy the repository-only skill into assets or install it in target projects.
+### 8. Preflight all writes and converge after interruption
 
-### 9. Keep all tests small and unit-only
+Validate sources, manifest, planned output/skill effects, collisions, containment, and unsafe links before any mutation. Preserve relevant path protections, including symlink/junction and hard-link checks, for both output and managed-skill writes/removals. Reject unsafe aliases instead of repairing them.
 
-Retain `tests/unit` as the test home. Test pure option/root/locale handling, Markdown/template parsing, independent filename discovery and collision detection, index/document rendering, planning/cleanup classification, and individual-file writer error reporting using small in-memory values and mocked filesystem boundaries. Test meaningful observable decisions; do not mirror implementation text or spawn the compiled CLI.
+After successful preflight, perform init setup if needed, write conventions, write AGENTS.md, apply managed-skill updates for sync, and remove obsolete managed files. Recheck destinations immediately before mutation. Write replacement files via temporary siblings and safe individual-file replacement, cleaning temporary files on ordinary failures.
 
-Remove `tests/node` integration/process suites, their helpers, historical composition fixtures/snapshots, disposable Git scenarios, and the Python oracle. Move only useful isolated assertions into unit tests. Keep lightweight test data only when needed by those units. No fake registry, subprocess, real npm install, end-to-end fixture matrix, release rehearsal suite, or opt-in integration suite is introduced.
+Do not promise atomic multi-file or whole-directory replacement. On operational failure report completed and remaining effects with exit 3. A repeated sync recomputes expected document/skill contents and converges. No backups, transaction journal, mutex record, automatic rollback, or publication recovery engine is added. Concurrent mutating invocations remain unsupported.
 
-npm test stays unit-only; npm run check adds types/formatting; pre-push invokes that check. Preserve the existing lightweight CI workload without introducing a platform/version acceptance matrix. Build and package inspection are delivery operations, not hidden integration gates.
+### 9. Keep source documentation and tests lean
 
-### 10. Complete one public launch using native Git/npm
+During implementation, review the five restored guides before deleting them: contratos-de-composicao.md, dependencias-node-cli.md, integracao-em-repositorio-consumidor.md, manutencao-do-repositorio-agents.md, and validacao-node-cli.md. Consult Git as needed, preserve the meaning of useful current rules in handwritten English conventions, and record disposition in this change. Discard obsolete workflows and inventories instead of turning them into rules.
 
-Use product `agents-cli`, package `@devel-solid/agents-cli`, future repository `devel-solid/agents-cli`, executable `agents`, version `0.1.0`, tag `v0.1.0`, and MIT. Update package/lockfile metadata and public links; add `LICENSE` and retain required attribution for any retained third-party material. Do not use private version `3.0.2` or instruction-content tags as a release baseline.
+Use the shared skills in direct-authoring mode for own conventions/AGENTS. Keep only necessary conventions in docs after removing the reviewed guides and presentation. Put essential use/development/publication information in the concise English README; add no replacement guide or presentation.
 
-Finish code, English documentation, both locale resources, unit gates, build, and package-content inspection here. Present a concrete final snapshot, source/artifact identities, target, commit/tag/version, file inventory, and publication effects for the later authorization required by this repository's instructions. This proposal is not that authorization.
+Version only lightweight unit tests and small unit data. Use pure parser/render/planner assertions and mocked filesystem boundaries for manifests, contexts, package mapping, safe writes, and failures. Remove process/integration/end-to-end suites, historical fixtures/snapshots, disposable Git scenarios, and the Python oracle. No fake registry, real package installation, network/subprocess tests, or opt-in integration suite is retained.
 
-After approval, retain access to this development checkout, create the reviewed public snapshot with independent history, and carry this single pending change so its delivery tasks can finish there. Rebuild/package against final public metadata and inspect the resulting allowlist. Publish the reviewed commit/tag and exact tarball using native account access. Do not copy the current `.git`, private refs, deleted changes, caches, obsolete output, or integration fixtures.
+Keep npm test unit-only; npm run check adds types/formatting; Lefthook pre-push and the existing lightweight CI invoke the same gate. Add focused units alongside each implementation area, then review the overall unit-only boundary. No expanded platform/version matrix is introduced.
 
-Use an authenticated native npm publishing method available at release time. OIDC is optional infrastructure, not a CLI feature or a prerequisite guessed for a nonexistent package; account/scope permissions are checked without collecting secrets in chat. After publication, verify public commit/tag, npm metadata, and `dist.integrity` against the artifact. These are delivery checks, not an installed-package test suite. For ambiguous responses inspect native remote state; never force a conflicting tag or republish an immutable version.
+### 10. Deliver the ready-to-run package with existing history
 
-The change covers all implementation and first delivery. Do not mark it complete or archive it merely because local planning/readiness succeeds. No separate English change or second public release is required.
+Use repository devel-solid/agentscli, unscoped npm package agentscli, executable agentscli, version 0.1.0, tag v0.1.0, and MIT. Replace active old identities in metadata, links, examples, and project markers. Keep existing capability identifiers and removed-requirement headers where needed to address historical specifications correctly.
+
+Rename the existing repository and update its remote/public metadata during the authorized delivery step. Preserve Git history, branches, and tags; do not export another checkout, initialize independent history, purge historical objects, or force-push to implement the rename.
+
+Use a package files allowlist for compiled runtime code and required dist/assets resources, with README, LICENSE, and package metadata. Exclude source-only skills, the internal manifest, OpenSpec, tests, source maps, obsolete assets, and development checkout paths. Keep prepack building the runtime/resources. No install-time compiler, prepare/postinstall asset fetch, or network resource lookup is required.
+
+The release skill uses native Git/npm. Choose version changes without incidental commit/tag side effects before authorization, inspect npm pack --dry-run contents and the actual candidate archive, then identify the exact commit/tag/tarball/integrity for delivery review. Build/package inspection are delivery operations, not disguised integration tests.
+
+A public registry lookup on 2026-11-17 returned 404 for agentscli; this is not a reservation or guaranteed permission to publish. Recheck names, account access, remote refs, and native authentication at the actual release. OIDC is optional infrastructure, not mandatory first-release scope. Never collect secrets in chat or embed them in artifacts.
+
+After corresponding authorization, perform the repository rename, reviewed commit/tag/push, and exact npm artifact publication. Verify the public commit/tag and registry identity/integrity. Resolve ambiguous responses by inspecting remote state; do not replace conflicting published tags/versions. This change remains pending until actual authorized first delivery is verified.
 
 ## Risks / Trade-offs
 
-- **Generated-output edits are discarded:** Templates are the documented source; stable notices and previews make the effect explicit.
-- **A marker is not cryptographic ownership:** Recognize only an exact first-line marker inside the configured output root; preserve unmarked files and reject collisions.
-- **An interrupted update can leave a mixed generation:** Preserve whole individual files, report partial work, and let the next sync converge. No transaction-wide rollback is promised.
-- **Unit-only tests do not establish installed end-to-end behavior:** Respect that limit in evidence and release claims; inspect package contents and actual registry delivery without introducing a hidden integration gate.
-- **Skill content can lag after a CLI upgrade:** Preserve authored skill files and document explicit replacement; do not infer whether different bytes are old or customized.
-- **External publication permissions or names can block delivery:** Verify them when preparing the concrete launch; keep delivery tasks pending rather than changing scope or inventing completion.
+- **Generated edits are discarded:** Templates are the source; managed client skills are replaced from the installed package. Document both overwrite contracts.
+- **A document marker is not cryptographic ownership:** Bound cleanup by the current output root and exact first-line marker; preserve unmarked files.
+- **A failed operation can leave mixed output:** Preserve whole individual files, report partial completion, and retry sync to converge without rollback.
+- **Unit-only evidence has limits:** Report only actual unit/build/artifact checks, without claiming installed end-to-end verification.
+- **External permissions or name restrictions can block delivery:** Keep real publication tasks open and report the account action needed; do not change the architecture to work around access.
 
 ## Migration Plan
 
-1. Replace the old engine/contracts/assets with the reduced-manifest workflow and unit-only tests.
-2. During implementation, review the restored guides contratos-de-composicao.md, dependencias-node-cli.md, integracao-em-repositorio-consumidor.md, manutencao-do-repositorio-agents.md, and validacao-node-cli.md, consulting Git as needed. Convert only useful current rules into handwritten English docs/conventions, preserve their meaning, and record disposition in this change. Keep essential usage in the README; discard obsolete procedures and historical reports. After that review/conversion, delete the five guides and presentation. During proposal revisions, leave these restored files unchanged and create no conventions.
-3. Keep the source repository's AGENTS.md/conventions handwritten, English, and separate from target scaffolds. Do not generate its instructions or create its own manifest.
-4. Synchronize approved specification deltas through the public OpenSpec workflow when requested, update retained capability purposes, and remove empty retired capability files. Keep the user's deleted changes deleted.
-5. Pass the unit-only check, build the candidate, inspect package resources/metadata, and present release readiness.
-6. Perform only the later authorized snapshot handoff and native publication; verify actual public identities and artifact integrity before closing this same change.
+1. Replace the old client contracts/engine with the reduced manifest, automatic templates, native argument parsing, markers, safe writes, and unit cases.
+2. Add the internal distribution manifest, four canonical skills, whole-directory build resources, and managed client-skill sync.
+3. Keep own instructions handwritten; review/convert useful guide rules, rewrite maintained text in English, then delete reviewed guides and presentation.
+4. Remove obsolete tests/fixtures and old dependencies, finish the concise README, and verify unit-only default gates. Synchronize approved deltas and remove empty retired capability files only through the requested OpenSpec workflow; keep deleted changes deleted.
+5. Pass npm run check, build, inspect package contents and candidate identity, and present concrete release readiness.
+6. With corresponding execution authorization, rename the existing repository without rewriting history, publish the reviewed source/tag/artifact, and verify actual first delivery before completing the change.
 
-Before publication, rollback is ordinary source revision in the development checkout. After publication, corrections require a new package version; do not rewrite an existing published identity. There is no external project migration obligation for the private pre-release composition formats.
+Before publication, correct defects with ordinary source revisions. After publication, issue a new version for corrections rather than rewriting an immutable published identity. Proposal revision executes none of these implementation/delivery steps.

@@ -1,43 +1,114 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
-import { join } from 'node:path';
+import { containedPath } from './paths.js';
 import { EngineError } from './manifest.js';
-import { portableKey, resolvedPath, safeJoin } from './paths.js';
+import {
+  checkRoot,
+  assertClientContext,
+  disk,
+  inspect,
+  removeFile,
+  replaceFile,
+  type FileSystem,
+} from './io.js';
+import { loadResources, plan, type Effect, type Resources } from './plan.js';
 
-/** Cache and recovery data are disposable/host-specific, including this ignore rule. */
-export function ensureRuntimeIgnored(repoRoot: string): void {
-  const root = resolvedPath(repoRoot),
-    directory = safeJoin(root, '.cache/agents', 'runtime');
-  const path = safeJoin(root, '.cache/agents/.gitignore', 'runtime');
-  if (
-    portableKey(directory) !== portableKey(join(root, '.cache/agents')) ||
-    portableKey(path) !== portableKey(join(root, '.cache/agents/.gitignore'))
-  )
-    throw new EngineError(
-      'RUNTIME_PATH',
-      'O runtime não pode usar links ou aliases.',
-      3,
-    );
-  mkdirSync(directory, { recursive: true });
+export type Command = 'init' | 'validate' | 'sync';
+export interface ExecuteOptions {
+  repoRoot: string;
+  language?: string;
+  dryRun?: boolean;
+  check?: boolean;
+}
+export interface Change {
+  path: string;
+  action: 'create' | 'update' | 'delete';
+  status?: 'completed' | 'pending';
+}
+export interface Diagnostic {
+  code: string;
+  message: string;
+  path?: string;
+}
+export interface RuntimeResult {
+  schemaVersion: 1;
+  command: Command;
+  ok: boolean;
+  changes: Change[];
+  diagnostics: Diagnostic[];
+}
+export interface Dependencies {
+  io?: FileSystem;
+  resources?: Resources;
+}
+export async function execute(
+  command: Command,
+  options: ExecuteOptions,
+  dependencies: Dependencies = {},
+): Promise<{ exitCode: number; result: RuntimeResult }> {
+  const result: RuntimeResult = {
+    schemaVersion: 1,
+    command,
+    ok: true,
+    changes: [],
+    diagnostics: [],
+  };
+  const io = dependencies.io ?? disk;
+  let effects: Effect[] = [];
+  let completed = 0;
+  let applying = false;
   try {
-    writeFileSync(path, '*\n', { encoding: 'utf8', flag: 'wx' });
+    const root = checkRoot(io, options.repoRoot);
+    assertClientContext(io, root);
+    effects = plan(
+      io,
+      root,
+      command,
+      dependencies.resources ?? loadResources(),
+      options.language,
+    );
+    if (command === 'validate') return { exitCode: 0, result };
+    result.changes = effects.map(({ path, action }) => ({
+      path,
+      action,
+      status: 'pending',
+    }));
+    if (options.dryRun || options.check) {
+      if (command === 'init' && options.dryRun)
+        result.diagnostics.push({
+          code: 'INIT_PRESERVED',
+          message:
+            'Existing valid templates, regular skill files, and marked outputs are preserved. Only missing setup is created; the client manifest is overwritten with the selected language and default roots.',
+        });
+      const exitCode = options.check && effects.length ? 1 : 0;
+      result.ok = exitCode === 0;
+      return { exitCode, result };
+    }
+    applying = true;
+    for (const effect of effects) {
+      if (effect.action === 'delete') {
+        if (effect.directory) {
+          if (inspect(io, root, effect.path, 'directory'))
+            io.rmdir(containedPath(root, effect.path));
+        } else removeFile(io, root, effect.path, effect.previous);
+      } else
+        replaceFile(io, root, effect.path, effect.content!, effect.previous);
+      result.changes[completed]!.status = 'completed';
+      completed++;
+    }
+    return { exitCode: 0, result };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    if (
-      !existsSync(path) ||
-      !statSync(path).isFile() ||
-      statSync(path).nlink > 1 ||
-      readFileSync(path, 'utf8') !== '*\n'
-    )
-      throw new EngineError(
-        'RUNTIME_IGNORE',
-        'A regra de exclusão do runtime está alterada ou insegura. Preserve evidências e restaure .cache/agents/.gitignore para uma linha com *.',
-        3,
-      );
+    result.ok = false;
+    const known = error instanceof EngineError;
+    result.diagnostics.push({
+      code: known ? error.code : 'IO_FAILURE',
+      message:
+        error instanceof Error ? error.message : 'File operation failed.',
+      ...(known && error.path ? { path: error.path } : {}),
+    });
+    if (applying)
+      result.diagnostics.push({
+        code: 'RETRY_SYNC',
+        message: `${completed} of ${effects.length} effects completed. Fix the reported problem and ${command === 'init' ? 'repeat agentscli init with the same options to finish setup, then run agentscli sync' : 'run agentscli sync again to finish'}; no rollback was performed.`,
+      });
+    return { exitCode: applying ? 3 : known ? error.exitCode : 3, result };
   }
 }

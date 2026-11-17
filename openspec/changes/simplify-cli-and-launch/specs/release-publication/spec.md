@@ -2,78 +2,90 @@
 
 ## Purpose
 
-Deliver the complete experimental CLI as a small, MIT-licensed public npm package and an independently initialized public source repository using ordinary maintainer operations.
+Deliver the complete experimental agentscli product as a small MIT-licensed npm package, preserving the existing source history and using ordinary native Git/npm maintainer operations.
 
 ## ADDED Requirements
 
 ### Requirement: The first public artifact has one explicit identity
 
-The maintained product SHALL be agents-cli, the package @devel-solid/agents-cli, and the public repository devel-solid/agents-cli. The executable SHALL remain agents. The initial version SHALL be 0.1.0 under MIT, with license text and repository/package metadata included. Private version 3.0.2 and old content tags SHALL NOT determine the initial version.
+The product, repository name, unscoped npm package, and executable SHALL be agentscli. Public repository links SHALL use devel-solid/agentscli. The initial version SHALL be 0.1.0 under MIT with consistent package/lockfile metadata and license text. Private 3.0.2 and old content tags SHALL NOT determine the initial version.
 
-#### Scenario: The initial release candidate is prepared
-- **WHEN** the candidate metadata and archive are inspected
-- **THEN** product, package, repository links, version, executable, and MIT license agree on the approved public identity
+#### Scenario: Initial release metadata is inspected
+- **WHEN** the candidate archive and maintained metadata are reviewed
+- **THEN** package, executable, repository links, version, and license agree on agentscli@0.1.0 under MIT
 
-### Requirement: The first release includes the complete language experience
+### Requirement: The first release includes both document languages and English skills
 
-The first public artifact SHALL include English product text/documentation and complete en and pt-br project scaffolds and skills. The concise README SHALL describe the final manifest/template workflow and native publication. Before delivery, guides SHALL be reviewed for useful rules and then removed with the presentation; docs SHALL contain only necessary own conventions. English SHALL ship in the first release.
+The first artifact SHALL include English product text, en and pt-br project document templates/notices, and the three English client skills. The concise English README SHALL explain the final workflow and publication. No later English change or release SHALL be required.
 
-#### Scenario: Initial publication readiness is reviewed
-- **WHEN** the 0.1.0 release candidate is presented
-- **THEN** its documented default is English and init --lang pt-br is available in the same candidate
-- **AND** no base/consumer, shared-catalog, or subconvention journey remains in maintained product instructions
+#### Scenario: Language readiness is reviewed
+- **WHEN** the 0.1.0 candidate is presented
+- **THEN** en is the default, --lang pt-br is available, all three client skills are English, and no chat-language policy is added
 
-### Requirement: Release readiness uses unit-only tests and ordinary artifact inspection
+### Requirement: The published package contains only delivery resources
 
-Readiness SHALL require passing lightweight unit-only default gates, build, and inspection of the npm package file list and metadata. It SHALL NOT require an integration suite, disposable Git repositories, fake registries, package-installation tests, Python oracle, or resource-heavy acceptance matrix. Build and native packaging SHALL remain delivery operations rather than hidden integration-test gates.
+The npm package SHALL contain compiled runtime code, client templates and complete distributed skill trees, README, license, and package metadata. Internal skills/manifest, OpenSpec, tests, obsolete assets, and development-checkout references SHALL be excluded. Installation SHALL require no compilation or extra setup-resource downloads.
+
+#### Scenario: Package contents are inspected
+- **WHEN** npm pack --dry-run and the candidate archive are reviewed
+- **THEN** the required runtime/client resources and metadata are present and repository-only material is absent
+
+### Requirement: Readiness uses unit-only gates and ordinary artifact inspection
+
+Readiness SHALL require passing lightweight unit/type/format gates, build, and package file/metadata inspection. It SHALL NOT require integration, installed-package, subprocess, Git/registry test suites, disposable environments, or a resource-heavy matrix. Native build/packaging SHALL remain delivery operations.
 
 #### Scenario: The candidate is ready for delivery review
-- **WHEN** unit gates and build pass and the package contents are inspected
-- **THEN** readiness evidence identifies the exact candidate and its required assets without claiming unperformed installation or integration tests
+- **WHEN** unit gates, build, and package inspection pass
+- **THEN** evidence identifies the candidate without claiming unperformed installation or integration tests
 
-### Requirement: Public source begins with reviewed independent history
+### Requirement: Repository rename preserves existing history
 
-The first public source repository SHALL be created from an explicitly reviewed final-file snapshot with independent Git history. It SHALL exclude the private .git history, deleted changes, caches, temporary artifacts, obsolete base content, and integration-test fixtures. The current development checkout and its history SHALL remain available until the handoff is verified.
+The existing source repository SHALL be renamed to devel-solid/agentscli with remote URLs and public references updated. Existing Git history and refs SHALL be preserved. The rename SHALL NOT export an independent-history snapshot, initialize a replacement repository, purge history, reset the checkout, or force-push.
 
-#### Scenario: A clean public source handoff is authorized
-- **WHEN** the reviewed inventory is exported and the new repository initialized
-- **THEN** its root history is independent and its source matches the approved snapshot
-- **AND** the current checkout is not reset, force-pushed, or deleted
+#### Scenario: The authorized rename completes
+- **WHEN** the existing repository is renamed and its remote is updated
+- **THEN** the new identity exposes the preserved commit history and refs without an independent public-history handoff
 
-### Requirement: Publication uses a concrete native maintainer procedure
+### Requirement: An internal skill guides native CLI versioning and publication
 
-The maintainer SHALL use ordinary Git and npm operations for the reviewed source commit, v0.1.0 tag, and exact package artifact. The procedure SHALL NOT add public release commands, publication-plan engines, multiple content streams, or recovery journals. Repository creation, commits, tags, pushes, and npm publication SHALL wait for their concrete later authorization.
+Repository-only agentscli-release SHALL guide CLI version changes, unit gates, build/package inspection, concrete commit/tag/artifact review, authorized Git/npm delivery, and verification. It SHALL NOT be installed in clients or add a release command, publication engine, content-release stream, or recovery journal.
 
-#### Scenario: Planning or implementation readiness completes
-- **WHEN** all local artifacts or code are ready but external execution is not yet authorized
-- **THEN** no repository creation, commit, tag, push, or npm publication occurs
-- **AND** the actual delivery tasks remain incomplete in this same change
+#### Scenario: A maintainer prepares a release
+- **WHEN** the internal release skill handles the request
+- **THEN** it uses native Git/npm within the requested authorization and presents concrete source/artifact identities before external delivery
 
-### Requirement: Actual delivery is verified without republishing immutable versions
+### Requirement: Delivery effects wait for corresponding authorization
 
-After authorized publication, the maintainer SHALL verify the public repository commit/tag and registry name, version, visibility, and artifact integrity against the candidate. An ambiguous publication response SHALL be resolved by inspecting those native systems. A conflicting existing version or tag SHALL stop delivery without replacing published identities.
+Repository rename, commit, tag, push, and npm publication SHALL wait for their corresponding execution authorization. Planning and local readiness SHALL perform none of those effects. The delivery procedure SHALL identify the reviewed source commit, v0.1.0 tag, exact artifact, and expected public effects.
 
-#### Scenario: The npm publication response is lost
-- **WHEN** registry metadata for @devel-solid/agents-cli@0.1.0 is inspected
-- **THEN** matching artifact integrity is treated as successful delivery and mismatched content stops the procedure
-- **AND** the version is not blindly republished or replaced
+#### Scenario: Local readiness is complete without publication authorization
+- **WHEN** the candidate is ready but external effects are not authorized
+- **THEN** those effects do not occur and actual delivery tasks remain pending
 
-#### Scenario: Delivery has not occurred
-- **WHEN** only unit results and local package inspection exist
-- **THEN** the change reports local readiness and leaves actual publication and remote verification pending
+### Requirement: Delivery verification respects immutable identities
 
-### Requirement: Account prerequisites are checked without collecting secrets
+After authorized publication, the maintainer SHALL verify public commit/tag and registry name/version/visibility/integrity against the candidate. Ambiguous responses SHALL be resolved by inspecting native remote state. Conflicting existing tags or versions SHALL stop delivery without replacement.
 
-The later release procedure SHALL verify repository availability, npm scope permissions, and an available native publishing authentication method. Credentials SHALL NOT be embedded in commands, logs, plans, or artifacts. Missing permissions SHALL remain explicit external delivery blockers without changing the product architecture.
+#### Scenario: The publication response is lost
+- **WHEN** registry metadata for agentscli@0.1.0 is inspected
+- **THEN** matching integrity confirms delivery, mismatching content blocks it, and no blind republish occurs
 
-#### Scenario: The publisher lacks the required npm permission
-- **WHEN** publication preflight detects the missing permission
-- **THEN** it reports the required account action without requesting a token in chat or adding a publication service to the CLI
+#### Scenario: Only local package evidence exists
+- **WHEN** change completion is reviewed
+- **THEN** it reports local readiness and leaves actual publication/remote verification open
+
+### Requirement: Account and name prerequisites are checked without collecting secrets
+
+Release preparation SHALL verify repository access, npm package-name eligibility/account permission, and native authentication. A previous public-registry 404 SHALL NOT count as reservation or guaranteed publishability. Credentials SHALL NOT appear in chat, commands, logs, plans, or artifacts. Missing permission SHALL remain an explicit delivery blocker.
+
+#### Scenario: A name lookup returned no package but publication is restricted
+- **WHEN** the actual release checks detect a restriction
+- **THEN** delivery stops with the required account action rather than claiming the name was reserved or adding a publication service
 
 ### Requirement: This change owns implementation through first delivery
 
-This single change SHALL cover simplification, source/specification cleanup, languages, skills, unit tests, documentation, package readiness, clean public handoff, and the actual first release. Completion SHALL require actual authorized delivery verification; a later English change or a local rehearsal SHALL NOT substitute for that delivery.
+This single change SHALL cover simplification, four canonical skills, both manifests, both document locales, unit tests, lean documentation, package readiness, history-preserving rename, and actual first release. Completion SHALL require verified authorized delivery rather than local readiness alone.
 
-#### Scenario: The package is ready but not published
-- **WHEN** the change status is reviewed
-- **THEN** delivery checkboxes remain open and the change is not represented as fully delivered
+#### Scenario: The artifact is ready but unpublished
+- **WHEN** change progress is reviewed
+- **THEN** publication tasks remain open and the change is not represented as fully delivered

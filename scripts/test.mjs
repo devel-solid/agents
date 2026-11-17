@@ -6,8 +6,7 @@ const tests = readdirSync(new URL('../tests/unit/', import.meta.url))
   .filter((file) => file.endsWith('.test.mjs'))
   .sort()
   .map((file) => new URL(`../tests/unit/${file}`, import.meta.url));
-if (!tests.length)
-  throw new Error('Nenhum teste unitário encontrado em tests/unit.');
+if (!tests.length) throw new Error('No unit tests found in tests/unit.');
 const result = spawnSync(
   process.execPath,
   ['--test', ...tests.map(fileURLToPath)],

@@ -4,83 +4,95 @@
 
 ### Requirement: The installed CLI runs with Node alone
 
-The package SHALL expose `agents` using its declared Node.js runtime lines. Project initialization, validation, and generation SHALL run without Git, network, Python, Make, a compiler, or a development checkout. Runtime assets SHALL come from the installed package.
+The package SHALL expose agentscli using its declared Node.js runtime lines. Init, validate, and sync SHALL use installed package resources and project files without Git, Python, Make, a compiler, a development checkout, or runtime network access. Installation SHALL require no lifecycle build or additional resource download.
 
 #### Scenario: A project has only Node and the installed CLI
 - **WHEN** the developer initializes, validates, and synchronizes the project
-- **THEN** the operations use packaged resources and project templates without external tool or network access
+- **THEN** the operations use packaged resources and project templates without external tools or network resource lookup
 
-### Requirement: Initialization preserves authored project inputs
+#### Scenario: A user installs the published artifact
+- **WHEN** npm installs the prepared package
+- **THEN** its executable and resources are ready without compiling TypeScript or fetching setup resources through install scripts
 
-Initialization SHALL create missing setup and initial outputs, preserve valid existing templates and installed skills, and preserve existing generated documents until synchronization is requested. An unmarked file occupying a required generated destination SHALL cause a preflight conflict. Every successful init SHALL replace the reduced manifest; other valid existing authored files SHALL be preserved.
+### Requirement: The public interface has three operations
+
+The CLI SHALL expose only init, validate, and sync, with help/version flags. It SHALL retain --repo-root and --json, init --lang/--dry-run, and sync --dry-run/--check. Removed release/base/remote options and misplaced or incompatible options SHALL fail without writes.
+
+#### Scenario: Public help is requested
+- **WHEN** agentscli --help runs
+- **THEN** it describes the three operations and their manifest, template, document, and skill effects
+
+#### Scenario: An obsolete option is requested
+- **WHEN** a caller requests release, --base, or a removed remote option
+- **THEN** the CLI reports actionable usage failure without changing files
+
+### Requirement: Initialization preserves authored inputs while replacing client configuration
+
+Every successful init SHALL replace agentscli-compose.yml with requested/default language and default roots. It SHALL create missing setup/initial outputs and preserve valid existing templates, regular skill files, and existing generated documents until sync. An unmarked required document destination SHALL block preflight.
 
 #### Scenario: Initialization is repeated
-- **WHEN** init encounters an unchanged initialized project
-- **THEN** the manifest is replaced using the requested/default configuration while valid existing templates, skills and generated documents are preserved
+- **WHEN** init encounters an initialized project
+- **THEN** it replaces the manifest while preserving valid existing templates, skills, and generated documents
 
-#### Scenario: Authored content already occupies a generated destination
-- **WHEN** an unmarked AGENTS.md would be overwritten by initial generation
-- **THEN** init reports the conflict before writing any setup and directs the author to preserve that content in the template
+#### Scenario: Handwritten content occupies an output destination
+- **WHEN** an unmarked AGENTS.md would be overwritten by initialization
+- **THEN** init fails before setup writes and explains preserving useful content in the template and resolving the destination
 
-### Requirement: Validation and synchronization use one project plan
+### Requirement: Validation and synchronization share one project plan
 
-The CLI SHALL derive validate, sync, sync --dry-run, and sync --check from the same source and destination validation. Preview and check SHALL write nothing. Check SHALL return 1 for valid generated-document drift; preview SHALL describe the same planned document effects with exit 0. Invalid inputs SHALL fail before writes.
+Validate, sync, sync --dry-run, and sync --check SHALL share source/path/conflict validation. Preview and check SHALL write nothing. Check SHALL return 1 for valid document or managed-skill drift; preview SHALL describe the same planned effects with exit 0. Invalid input SHALL fail before writes.
 
-#### Scenario: Generated documents have drifted
-- **WHEN** the templates are valid but generated documents differ
-- **THEN** check identifies the affected paths with exit 1 and preview reports the same create, update, or removal actions without writing
+#### Scenario: Only a managed skill has drifted
+- **WHEN** documents match but a packaged skill file differs or is missing
+- **THEN** sync --check reports drift with exit 1 and preview describes the skill repair without writing
 
 #### Scenario: A source is invalid
-- **WHEN** validation detects an invalid template or unsafe destination
-- **THEN** preview, check, and sync return the same blocking diagnostic without changing any document
+- **WHEN** validation finds an invalid template or unsafe managed destination
+- **THEN** preview, check, and sync report the same blocking diagnostic without changing files
 
 ### Requirement: Results have stable JSON and exit semantics
 
-Commands SHALL provide help and optional --json output with schemaVersion, command, ok, changes, and diagnostics. Exit codes SHALL be 0 for success, 1 for sync check drift, 2 for usage/validation/conflicts, and 3 for operational failures. JSON stdout SHALL contain one document and distinguish planned effects from completed writes.
+Commands SHALL support a JSON envelope with schemaVersion, command, ok, changes, and diagnostics. Exit codes SHALL be 0 for success, 1 for check drift, 2 for usage/validation/conflicts, and 3 for operational failures. JSON stdout SHALL contain one document and distinguish planned effects from completed writes.
 
-#### Scenario: An unsupported operation is requested
-- **WHEN** a caller requests release or a removed option
-- **THEN** the CLI returns exit 2 and an actionable diagnostic without changing files
+#### Scenario: A caller requests JSON preview
+- **WHEN** sync --dry-run --json describes document and skill effects
+- **THEN** stdout is one JSON result describing planned changes without claiming completed writes
 
 #### Scenario: A file operation fails
-- **WHEN** synchronization cannot complete a planned write
-- **THEN** the CLI returns exit 3, identifies incomplete work, and does not claim the generation completed
+- **WHEN** a planned write cannot complete
+- **THEN** exit 3 identifies partial completion and unfinished work without claiming success
 
-### Requirement: Validation checks project templates without repairs
+### Requirement: Validation checks project inputs without repairs
 
-Validate SHALL check the project root, reduced manifest, supported language, template structure, input/output paths, and destination conflicts without generating or installing anything. It SHALL report source locations for malformed Markdown. Missing skills alone SHALL NOT prevent valid direct CLI use.
+Validate SHALL check root, client manifest, language, template structure, safe paths, and destination conflicts without generating or installing anything. Malformed Markdown SHALL identify source locations. Missing skills alone SHALL NOT block direct validation or synchronization.
 
 #### Scenario: A convention lacks its discovery card
 - **WHEN** validate inspects that template
-- **THEN** it identifies the template path and structural error with exit 2 without changing files
+- **THEN** it identifies the source and structural error with exit 2 without changing files
 
-#### Scenario: Skills are absent
-- **WHEN** the project has valid templates but no installed supporting skill
-- **THEN** validation and synchronization remain available directly from the terminal
+#### Scenario: Client skills are absent
+- **WHEN** valid client templates exist without the distributed skills
+- **THEN** direct validation is available and sync can recreate the missing skills
 
-### Requirement: Maintained CLI text is English from the first release
+### Requirement: Maintained CLI text is English
 
-CLI help, diagnostics, and maintained developer documentation SHALL be English from version 0.1.0. The init --lang option SHALL select created file text without changing command names, technical markers, or public option names. It SHALL NOT prescribe the agent's reply language.
+CLI help, diagnostics, and maintained developer documentation SHALL be English from 0.1.0. Init --lang SHALL select project document resource text without changing command names or prescribing the agent's chat language. All distributed skills SHALL remain English.
 
-#### Scenario: Portuguese project instructions are requested
-- **WHEN** init --lang pt-br runs
-- **THEN** project resources are Portuguese while the CLI interface and technical identifiers remain English
+#### Scenario: Portuguese instructions are requested
+- **WHEN** agentscli init --lang pt-br runs
+- **THEN** new project templates/notices use Portuguese while CLI text, technical identifiers, and skills remain English
 
-### Requirement: Versioned and default tests are lightweight unit tests only
+### Requirement: Versioned and default tests are lightweight units only
 
-The repository SHALL version only lightweight unit tests and small unit data. npm test, npm run check, Lefthook pre-push, and CI SHALL execute only unit tests as their test workload. No integration, end-to-end, installed-package, subprocess/Git/registry test suite, Python oracle, or costly fixture matrix SHALL be retained or introduced.
+The repository SHALL version only lightweight unit tests and small unit data. npm test, npm run check, pre-push, and CI SHALL execute only units as their test workload. Integration/end-to-end/installed-package suites, subprocess/Git/registry tests, historical fixture matrices, and the Python oracle SHALL be absent.
 
-#### Scenario: A developer runs a default gate
-- **WHEN** npm test, npm run check, pre-push, or CI executes
-- **THEN** its tests are limited to lightweight units with mocked boundaries and no external process, network, package installation, or disposable Git environment
+#### Scenario: A default gate executes
+- **WHEN** npm test, npm run check, pre-push, or CI runs
+- **THEN** tests use isolated values or mocked boundaries without external processes, network, package installation, or disposable Git environments
 
-#### Scenario: The obsolete test tree is removed
-- **WHEN** the simplified repository is reviewed
-- **THEN** retained tests cover the new contract as units and historical integration suites and fixtures are absent
-
-#### Scenario: CI runs the default gate
-- **WHEN** the existing lightweight CI workload executes
-- **THEN** it runs the same unit/type/format checks without an expanded acceptance matrix or installed-artifact scenarios
+#### Scenario: The test tree is reviewed
+- **WHEN** obsolete test material is removed
+- **THEN** only meaningful lightweight units/data remain and no opt-in integration suite or expanded acceptance matrix is introduced
 
 ## REMOVED Requirements
 

@@ -1,7 +1,12 @@
 schema: spec-driven
 
 context: |
-  This repository centralizes shared agent instructions, conventions, and skills.
+  This repository develops agentscli, a small CLI that generates client AGENTS.md
+  and conventions from project-owned templates. The internal agentscli.yml selects
+  distributed skills; this repository is not a client and keeps handwritten English
+  AGENTS.md and docs/conventions. Use agentscli-write-conventions and
+  agentscli-update-agents for direct authorship, and agentscli-release for requested
+  native Git/npm release work.
   All OpenSpec artifacts in this repository use en-US for natural-language content,
   artifact names, change names, capability names, spec names, requirements,
   scenarios, designs, and tasks.

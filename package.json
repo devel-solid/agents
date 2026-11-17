@@ -1,18 +1,21 @@
 {
-  "name": "@devel-solid/agents",
-  "version": "3.0.2",
-  "description": "Composição de instruções para agentes a partir de bases Git independentes.",
+  "name": "agentscli",
+  "version": "0.1.0",
+  "description": "Generate project AGENTS.md and conventions from editable Markdown templates.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devel-solid/agentscli.git"
+  },
+  "homepage": "https://github.com/devel-solid/agentscli#readme",
+  "bugs": "https://github.com/devel-solid/agentscli/issues",
   "type": "module",
   "bin": {
-    "agents": "dist/cli.js"
+    "agentscli": "dist/cli.js"
   },
   "files": [
     "dist/**/*.js",
-    "schemas/*.schema.json",
-    "assets/",
-    "docs/guides/contratos-de-composicao.md",
-    "docs/guides/integracao-em-repositorio-consumidor.md",
-    "docs/guides/manutencao-do-repositorio-agents.md"
+    "dist/assets/"
   ],
   "publishConfig": {
     "access": "public"
@@ -20,8 +23,8 @@
   "scripts": {
     "build": "node scripts/clean-dist.mjs && tsc && node scripts/package-assets.mjs",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write src scripts tests/node tests/unit schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
-    "format:check": "prettier --check src scripts tests/node tests/unit schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
+    "format": "prettier --write src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml lefthook.yml agentscli.yml",
+    "format:check": "prettier --check src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml lefthook.yml agentscli.yml",
     "test": "tsc && node scripts/test.mjs",
     "check": "npm run typecheck && npm run format:check && npm test",
     "setup": "node scripts/setup.mjs",
@@ -32,7 +35,6 @@
     "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
   },
   "dependencies": {
-    "ajv": "8.20.0",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
     "yaml": "2.9.1"
