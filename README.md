@@ -1,53 +1,84 @@
-# Base de instruções para agentes
+# agents
 
-Este repositório centraliza instruções e conventions reutilizáveis. Os projetos consumidores fixam uma versão da base e usam `update-docs` para gerar seus documentos.
+Cria e atualiza arquivos de instruções para agentes de IA a partir de templates Markdown.
 
-```text
-fontes + agents-compose.yml
-  |
-  +-> update-docs
-        +-> AGENTS.md
-        +-> diretório publicado de conventions
-        +-> .agents/skills/update-docs/ (autoatualização)
+A equipe escreve as regras. O manifesto define as pastas e, quando necessário, uma base Git compartilhada. A CLI valida as fontes e gera `AGENTS.md` e os documentos de convenções.
+
+## Quatro comandos
+
+| Comando | Uso | Efeito |
+| --- | --- | --- |
+| `agents init` | Preparar um projeto | Cria manifesto versão 2, templates principal/contexto e as skills `agents-write-conventions` e `agents-update-docs`. |
+| `agents validate` | Conferir configuração, fontes e ambiente | Aponta problemas sem gerar documentos. |
+| `agents sync` | Gerar ou atualizar as instruções | Grava somente os documentos cujo conteúdo mudou. |
+| `agents release --bump minor` | Versionar uma base | Calcula a próxima versão e cria somente sua tag local no commit atual. |
+
+Node.js 22, 24 ou 26 deve estar instalado. O fluxo local não exige Git, rede, Python ou Make. Git é necessário para consumir uma base Git e para criar versões.
+
+## Do projeto vazio aos documentos
+
+Com a CLI instalada, execute dentro do projeto:
+
+```bash
+agents init --dry-run
+agents init
+# Crie uma regra no editor ou copie um template existente:
+cp ../regras/commits.tpl.md templates/docs/conventions-local/
+agents validate
+agents sync --dry-run
+agents sync
+agents sync --check
 ```
 
-## Leituras principais
+`init` prepara as fontes, sem gerar documentos. `sync --dry-run` lista os arquivos previstos sem gravá-los. `sync --check` retorna 0 quando estão atuais ou 1 quando há diferenças. Fontes inválidas e conflitos impedem a geração.
 
-| Objetivo | Leia |
-|---|---|
-| Manter a base | [Guia de manutenção](docs/guides/manutencao-do-repositorio-agents.md) |
-| Integrar outro projeto | [Guia de integração](docs/guides/integracao-em-repositorio-consumidor.md) |
-| Entender o manifesto | [Contrato dos artefatos](docs/conventions/contratos-de-artefatos-para-repositorios-consumidores.md) |
+Na versão 2 do manifesto, todos os templates locais válidos da pasta configurada participam da geração. Não há cadastro de regras por comando. A versão 1 continua usando suas entradas explícitas e não é convertida automaticamente.
 
-## Modelo
+## Compartilhar uma base
 
-`agents.repository` identifica a base e `agents.ref` fixa sua versão. Entradas `origin: local` usam fontes do consumidor; entradas `origin: remote` usam o checkout fixado, inclusive neste repositório. Não existe modo `agents.root` nem publicação declarativa de skills em `outputs.skills`.
-
-```yaml
-agents:
-  repository: https://github.com/devel-solid/agents.git
-  ref: v4.0.1
+```bash
+agents init --base
+# Escreva regras em templates/docs/conventions/.
+agents validate --base
 ```
 
-O exemplo usa `v4.0.1`, que inclui a correção de recuperação do cache no Windows. O novo contrato foi introduzido em `v4.0.0`; a tag `v3.0.2` usa o contrato anterior.
+A base começa com seu próprio `AGENTS.md` editável, a identificação interna `.agents/base.json`, um template principal, um catálogo vazio e duas skills em `.agents/skills/`: `agents-write-conventions` para autoria e `agents-update-version` para versionamento. `--starter minimal` copia duas regras de exemplo opcionais. Manifesto consumidor, motor e repositório Git não são criados pelo comando.
 
-## Estrutura
+A base não tem manifesto consumidor e não executa `sync`. Seu `AGENTS.md` orienta o trabalho na base; `templates/AGENTS.tpl.md` é destinado aos consumidores. `init --base` cria sete arquivos e preserva um `AGENTS.md` existente válido. Os dois papéis não podem ser combinados.
 
-| Caminho | Papel |
-|---|---|
-| `templates/AGENTS.tpl.md` | template de instruções |
-| `templates/docs/conventions/` | fontes compartilhadas |
-| `templates/docs/conventions-local/` | fontes locais |
-| `agents-compose.yml` | origem, referência e composição |
-| `AGENTS.md` e `docs/conventions/` | documentos gerados |
-| `.agents/skills/update-docs/` | sincronização e bootstrap |
-| `.agents/skills/update-version/` | publicação de versões da base |
-| `.agents/skills/openspec-*/` | workflows gerados pelo OpenSpec 2.0.0 |
+Depois de manter a base em um repositório Git com os arquivos commitados:
 
-Altere as fontes e use a skill `update-docs` para materializar documentos. As skills próprias são mantidas diretamente em `.agents/skills/`.
+```bash
+agents release --bump minor --dry-run
+agents release --bump minor
+```
 
-## OpenSpec
+A CLI descobre a maior tag estável alcançável a partir de HEAD e calcula o aumento. Sem versão anterior, parte numericamente de `v0.0.0`. `patch`, `minor` e `major` aumentam partes distintas. A prévia não grava nada; a aplicação cria uma tag local, sem commit, push, mudança no manifesto ou publicação npm.
 
-Use o OpenSpec global 2.0.0. As skills incluem `openspec-propose`, `openspec-explore`, `openspec-apply-change`, `openspec-update-change`, `openspec-sync-specs` e `openspec-archive-change`.
+Os consumidores configuram a base, a tag desejada e as regras remotas no manifesto. Isso é separado de criar uma versão da própria base.
 
-O fluxo preserva specs em `openspec/specs/` e changes concluídas em `openspec/changes/archive/`. Para atualizar as skills, confira `openspec update --dry-run` antes de executar `openspec update`. O idioma continua definido em `openspec/config.yaml`.
+## Três skills
+
+| Skill | Instalada por | Responsabilidade |
+| --- | --- | --- |
+| `agents-write-conventions` | `init` e `init --base` | Criar, revisar e manter o conteúdo: escopo, clareza, exemplos e coerência entre convenções. |
+| `agents-update-docs` | `init` no consumidor | Validar, simular e gerar documentos pelo manifesto existente, sem editar regras ou configuração. |
+| `agents-update-version` | `init --base` na base | Analisar impacto, justificar o aumento, mostrar a prévia e exigir confirmação antes dos efeitos de release. |
+
+Todas vêm do pacote CLI e ficam em `.agents/skills/<nome>/SKILL.md` do repositório correspondente, sem cópia manual. A autoria não implica geração ou versionamento. A CLI valida a estrutura, enquanto a skill de escrita orienta a curadoria do conteúdo. Os comandos também funcionam diretamente no terminal, sem carregar skills.
+
+## Referências e desenvolvimento
+
+- [Contrato completo de manifesto e templates](docs/guides/contratos-de-composicao.md)
+- [Integração em um consumidor](docs/guides/integracao-em-repositorio-consumidor.md)
+- [Manutenção e versionamento](docs/guides/manutencao-do-repositorio-agents.md)
+- [Testes e evidências](docs/guides/validacao-node-cli.md)
+
+```bash
+npm ci
+npm run setup
+npm run check
+npm pack --pack-destination .tmp
+```
+
+O build compila TypeScript e empacota os assets autorais. O tarball contém o executável, os dois schemas, os scaffolds e a integração pública. Nenhum passo de desenvolvimento publica uma release real. `agents --help` lista as opções; `agents --version` informa a versão da CLI, independente das tags da base.

@@ -1,69 +1,40 @@
 # Composição de Instruções para Repositórios Consumidores
 
 <!-- AGENT-CARD START -->
-Leia este documento ao alterar instruções compartilhadas em um repositório consumidor.
-Use este documento para distinguir fonte de verdade, manifesto de composição e artefatos finais publicados.
+Leia este documento ao alterar instruções compartilhadas, o manifesto ou fontes de conventions e subconventions.
+Use este documento para distinguir fontes e saídas, selecionar famílias e localizar o contrato da versão da ferramenta utilizada.
 <!-- AGENT-CARD END -->
 
-Este documento explica como um repositório consumidor deve interpretar a composição entre arquivos-fonte, manifesto de composição e artefatos finais publicados. Antes de alterar uma `convention` ou `subconvention`, identifique se o alvo citado é fonte, manifesto ou artefato publicado.
-
-## Modelo de composição
+## Fonte, seleção e publicação
 
 ```text
-arquivos-fonte + manifesto de composição
-  |
-  +-> fluxo público de sincronização/publicação
-        |
-        +-> AGENTS.md
-        +-> <conventions.out_dir>/<convention>.md
-        +-> <conventions.out_dir>/<convention>.<subconvention>.md
+fontes .tpl.md + agents-compose.yml
+  -> fluxo público de geração autorizado pelo projeto
+       -> AGENTS.md + conventions e subconventions publicadas
 ```
 
-## Papéis de cada camada
+| Camada | Responsabilidade |
+|---|---|
+| Fontes `.tpl.md` | Conteúdo autoral editável nas raízes declaradas no manifesto |
+| `agents-compose.yml` | Raízes, destino, versão do contrato e base/entradas remotas opcionais |
+| Documentos gerados | Instrução ativa e saídas derivadas; não editar manualmente |
 
-| Camada | Papel | Edição manual |
-|---|---|---|
-| arquivos-fonte | definem o conteúdo autoral em arquivos `.tpl.md` mantidos pelo repositório | permitida quando o pedido for alterar o conteúdo autoral |
-| manifesto de composição | declara quais entradas participam da publicação final | permitida quando o pedido exigir incluir, remover, renomear, reordenar ou trocar a origem de entradas |
-| `AGENTS.md` publicado | instrução ativa derivada da composição | proibida |
-| `conventions` e `subconventions` finais publicadas | documentação normativa derivada da composição | proibida |
+- Antes de alterar uma instrução publicada, localize sua fonte pela configuração do manifesto. Pedidos de mudança em saídas devem ser implementados nessas fontes.
+- Na versão 2, `local.tpl_dir` determina as famílias locais: criar ou copiar um template válido nessa pasta basta. `entries` seleciona somente pais remotos, com `origin: remote` e `from` relativo a `remote.tpl_dir`. `out_dir` define o destino publicado.
+- Uma base Git é opcional na versão 2. Quando configurada, `agents.repository/ref` fixa seu template principal e as fontes remotas; sem base, o template principal é local. Na versão 1, a base é obrigatória e `entries` seleciona pais locais e remotos explicitamente. Não converta contratos implicitamente.
+- Use o fluxo público de sincronização do projeto para materializar saídas quando autorizado; quando esse fluxo for a skill `agents-update-docs`, use essa skill. Autoria sozinha não autoriza publicação quando a política local separar essas etapas. O fluxo de release é definido por cada projeto.
 
-## Regra central
+## Fontes e descoberta
 
-- Comece toda mudança em `conventions` identificando se o alvo é fonte, manifesto ou artefato final publicado.
-- Faça alterações autorais nos arquivos-fonte `.tpl.md` aplicáveis.
-- Faça mudanças de inclusão, remoção, renomeação, reordenação ou origem no manifesto de composição aplicável.
-- Trate `AGENTS.md`, `conventions` finais e `subconventions` finais como saídas derivadas.
-- Não edite manualmente esses arquivos publicados para refletir mudanças em `conventions`, mesmo quando a mudança parecer pequena ou localizada.
-- Se a pessoa pedir alteração em um arquivo final publicado, interprete esse pedido como mudança na fonte ou no manifesto aplicáveis.
-- Quando a dúvida for sobre qual arquivo mexer, descubra primeiro se o pedido altera conteúdo autoral ou a composição da publicação.
+- Cada fonte deve ter exatamente um H1 e um bloco `<!-- AGENT-CARD START -->` / `<!-- AGENT-CARD END -->` não vazio, fora de exemplos de código cercado ou indentado. O card resume quando ler e como usar; o corpo normativo fica fora dele.
+- Nomeie uma família como `<raiz>.tpl.md` e `<raiz>.<subtema>.tpl.md`, com apenas um nível de filho e ambos no mesmo diretório. Todo filho depende do pai correspondente.
+- A publicação preserva o caminho relativo e troca `.tpl.md` por `.md`. `AGENTS.md` descobre os pais; siga a seção `Quando ler as subconventions` do pai para ler os filhos acionados antes de decidir ou trabalhar. Um filho não se torna obrigatório para tarefas que não o acionam.
+- Distinga literais fixos por contrato, campos configurados, valores derivados, exemplos, valores atuais e saídas externas. Cite os campos do manifesto para valores configuráveis, sem transformar exemplos em caminhos obrigatórios.
 
-## Como aplicar uma mudança
+## Base compartilhada e referência da ferramenta
 
-1. Identifique se o alvo citado pela pessoa é fonte, manifesto ou artefato final publicado.
-2. Se o alvo for um artefato final publicado, localize a fonte correspondente e o manifesto que o inclui na publicação.
-3. Edite apenas a fonte e o manifesto que realmente precisam mudar.
-4. Se for necessário materializar artefatos publicados, use o fluxo público de sincronização/publicação configurado no repositório.
-5. Se o pedido cobrir apenas autoria e a política local separar autoria de publicação, conclua a autoria e informe qual fluxo público deve publicar ou sincronizar os artefatos depois. Não execute publicação ou sincronização fora do escopo autorizado.
+Cada empresa pode manter seu template e suas famílias em uma base Git própria, pública ou privada, versionada independentemente da ferramenta. Este catálogo inicial oferece duas conventions opcionais; esse limite não restringe bases de empresas nem famílias locais.
 
-## Fluxo público de sincronização/publicação
+Para campos, formatos, schemas versões 1 e 2 e exemplos completos, consulte `docs/guides/contratos-de-composicao.md` no pacote instalado da **ferramenta fornecedora do gerador, da mesma versão utilizada na composição**. A referência acompanha a CLI para uso offline; uma base de empresa ou um consumidor não precisa copiá-la nem conter código do motor.
 
-- A materialização de `AGENTS.md` e dos artefatos publicados em `conventions.out_dir` no manifesto `agents-compose.yml` deve usar o fluxo público configurado no repositório.
-- Quando a skill `update-docs` for esse fluxo público no consumidor, use a skill `update-docs`.
-- Execute os passos da skill escolhida para concluir a geração local dentro do escopo pedido.
-- No repositório `agents`, a distribuição das fontes compartilhadas aos consumidores segue o fluxo de release da skill `update-version`.
-
-## Sinais de interpretação correta
-
-- Pedido para alterar texto normativo de uma `convention` publicada: muda a fonte correspondente, não o arquivo final.
-- Pedido para adicionar, remover, renomear ou reordenar uma `convention` publicada: muda o manifesto de composição aplicável.
-- Pedido para corrigir `AGENTS.md` publicado: verifica se a correção nasce em template-base, em fonte publicada ou no manifesto que controla a lista de `conventions`.
-- Pedido para publicar ou sincronizar artefatos derivados: usa o fluxo público local, não edição manual dos arquivos finais.
-
-## O que evitar
-
-- Tratar arquivo publicado como fonte de verdade só porque ele é o arquivo aberto no editor.
-- Corrigir `AGENTS.md` final diretamente para "ganhar tempo".
-- Alterar `subconventions` finais publicadas como se fossem independentes da `convention` pai.
-- Pular o fluxo público de sincronização/publicação depois de ajustar a fonte ou o manifesto.
-- Usar o fluxo de release para uma mudança pedida apenas no checkout local.
+Sem `schemaVersion`, o manifesto permanece na versão 1; novos projetos usam `schemaVersion: 2`. Todos os comandos usam a mesma validação YAML/schema. A integração `agents-update-docs` pertence ao pacote instalado por `agents init`, não ao pin de conteúdo; `sync` nunca executa scripts da base nem substitui motor ou skill. Os destinos incluem `AGENTS.md`, equivalência de maiúsculas/minúsculas e links resolvidos; arquivos não selecionados ou alheios são preservados nesta etapa.

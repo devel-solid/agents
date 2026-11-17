@@ -1,79 +1,68 @@
-# Integração em Repositório Consumidor
+# Integração em um repositório consumidor
 
-Use este guia para adotar a base em outro projeto. Para trabalhar na própria base, consulte o [guia de manutenção](manutencao-do-repositorio-agents.md).
+O ambiente precisa de Node.js 22, 24 ou 26 e da CLI instalada. Git só é necessário quando o manifesto aponta para uma base Git. Em uma instalação npm local, use `npm exec --no -- agents` em vez de `agents`, sem permitir download de uma ferramenta ausente.
 
-## Pré-requisitos
+## Preparar
 
-| Ferramenta | Uso |
-|---|---|
-| Python >=3.10 | bootstrap e sincronização |
-| Git | acesso à versão fixada da base |
+Dentro do projeto:
 
-## 1. Declare fontes e publicação
-
-Crie `agents-compose.yml` na raiz do consumidor:
-
-```yaml
-agents:
-  repository: https://github.com/devel-solid/agents.git
-  ref: v4.0.1
-
-outputs:
-  AGENTS.md:
-    include:
-      conventions:
-        out_dir: docs/conventions
-        local:
-          tpl_dir: templates/docs/conventions-local
-        remote:
-          tpl_dir: templates/docs/conventions
-        entries:
-          - origin: local
-            from: contexto-do-projeto.tpl.md
-          - origin: remote
-            from: padrao-de-mensagem-de-commit.tpl.md
+```bash
+agents init --dry-run
+agents init
 ```
 
-O exemplo usa `v4.0.1`, que contém o novo contrato e a correção de recuperação do cache no Windows. Não use `v3.0.2` neste exemplo: ela contém o esquema anterior.
-
-- `agents.repository/ref` identifica o checkout fixado.
-- `out_dir` define o destino dos documentos.
-- `local.tpl_dir` e `remote.tpl_dir` definem as raízes das fontes.
-- `entries[].from` aponta para um arquivo-pai `.tpl.md`, relativo à raiz da origem. Subdiretórios são preservados na publicação.
-- Declare os dois blocos de origem, mesmo quando não houver entradas locais.
-- Não use `agents.root`, `agents.source`, `agents.bootstrap` ou `outputs.skills`.
-
-## 2. Escreva as fontes locais
-
-No exemplo, crie `templates/docs/conventions-local/contexto-do-projeto.tpl.md`. Cada fonte deve ter exatamente um título H1 e um bloco `AGENT-CARD` não vazio. O corpo normativo fica fora do cartão.
-
-## 3. Faça o bootstrap
-
-Obtenha `bin/agents-bootstrap.py` da mesma tag declarada em `agents.ref`, coloque-o no consumidor e execute na raiz:
-
-```sh
-python3 bin/agents-bootstrap.py
-```
-
-No Windows, use `python` quando esse for o executável Python instalado.
-
-O bootstrap instala apenas `.agents/skills/update-docs/`, sem gerar documentos. Depois, invoque a skill `update-docs` para sincronizar a documentação. Não há distribuição automática de outras skills pelo manifesto.
-
-## 4. Sincronize e atualize
+Um projeto novo recebe cinco arquivos:
 
 ```text
-alterar fontes ou manifesto
-  |
-  +-> update-docs
-        +-> garantir checkout de agents.repository/ref
-        +-> autoatualizar update-docs
-        +-> gerar conventions e AGENTS.md
+projeto/
+├── .agents/
+│   └── skills/
+│       ├── agents-update-docs/
+│       │   └── SKILL.md
+│       └── agents-write-conventions/
+│           └── SKILL.md
+├── templates/
+│   ├── docs/
+│   │   └── conventions-local/
+│   │       └── contexto-do-projeto.tpl.md
+│   └── AGENTS.tpl.md
+└── agents-compose.yml
 ```
 
-Para adotar uma nova versão, atualize `agents.ref`, invoque `update-docs` e revise o diff antes de commitar no consumidor. A referência deve existir no remoto antes da sincronização.
+A prévia não cria arquivos ou diretórios. A aplicação preserva arquivos válidos existentes; conflitos de integração ou destinos impedem a escrita. O init não cria Git nem gera os documentos finais.
 
-## OpenSpec opcional
+## Escrever ou copiar uma regra
 
-Use o OpenSpec 2.0.0 do ambiente para gerar suas skills em `.agents/skills/`. O fluxo de arquivamento sincroniza os deltas em `openspec/specs/` e preserva a change em `openspec/changes/archive/`, conforme o workflow de `openspec-archive-change`.
+Edite o contexto do projeto e crie uma fonte válida na pasta `local.tpl_dir`. Se já recebeu o arquivo de outro lugar, copie-o. Exemplo:
 
-As antigas conventions `fluxo-openspec-com-archive.tpl.md` e `fluxo-openspec-com-remocao-direta.tpl.md` não fazem parte deste contrato. Remova essas entradas ao migrar o manifesto e use as skills do OpenSpec.
+```bash
+cp ../regras/commits.tpl.md templates/docs/conventions-local/
+agents validate
+agents sync --dry-run
+agents sync
+agents sync --check
+```
+
+O resultado inclui `AGENTS.md`, `docs/conventions/contexto-do-projeto.md` e `docs/conventions/commits.md`. O manifesto concentra os caminhos; não é preciso registrar cada template local na versão 2.
+
+`validate` confere estrutura e ambiente. `sync --dry-run` lista os documentos previstos; `sync` grava somente o conteúdo alterado. `sync --check` preserva os arquivos e retorna 1 quando falta gerar alguma saída. Um template inválido bloqueia a geração sem editar documentos manualmente.
+
+## Adotar uma base Git opcional
+
+Configure `agents.repository`, `agents.ref` e as entradas remotas no manifesto. Escolha as regras desejadas; não há seleção automática de todo o catálogo remoto. Leia o [contrato completo](contratos-de-composicao.md) para exemplos v1/v2.
+
+Uma mudança do pin é uma edição do manifesto, seguida de prévia e geração. Criar uma tag na base não altera automaticamente todos os consumidores. Acesso a bases privadas usa o Git e o credential helper já configurados; não grave credenciais no manifesto.
+
+## Trabalhar com o agente
+
+Use `agents-write-conventions` para criar, revisar e manter as regras locais: ela identifica a fonte, orienta o escopo, escreve exemplos e verifica ambiguidades, duplicações e contradições. Um pedido apenas de autoria não gera documentos. Um pedido apenas de revisão não altera fontes.
+
+Use `agents-update-docs` para atualizar documentos conforme o manifesto e as fontes existentes. Ela valida, mostra a prévia, gera quando autorizado e confere a atualidade. Não edita convenções, templates, configuração ou pins. Uma falha é relatada para correção na etapa de autoria, sem reparo implícito. Um pedido só de prévia termina sem aplicação.
+
+O init consumidor instala ambas em `.agents/skills/`. Na base, `init --base` instala `agents-write-conventions` e `agents-update-version`, esta última para preparar e aplicar versões aprovadas. As três vêm do pacote CLI; nenhuma exige cópia manual. Cópias idênticas são preservadas e personalizações ou arquivos extras nas skills do papel solicitado impedem toda a escrita do setup. Skills exclusivas do outro papel permanecem intactas.
+
+Os comandos também podem ser usados diretamente no terminal sem carregar skills. Não carregue código ou skills do checkout remoto como implementação do motor.
+
+## Base e consumidor são separados
+
+Execute este fluxo no projeto consumidor, não na base. A CLI rejeita `init`, `validate` consumidor e todas as modalidades de `sync` dentro de uma base identificada. Na base, use `validate --base` e `release`; seu `AGENTS.md` é próprio e editável. Não insira um manifesto consumidor na base. O marcador de papel é da raiz de trabalho e não é exigido das bases Git remotas antigas usadas como fonte.
