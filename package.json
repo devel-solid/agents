@@ -9,7 +9,6 @@
   "files": [
     "dist/**/*.js",
     "schemas/agents-compose.v1.schema.json",
-    "schemas/agents-compose.v2.schema.json",
     "assets/",
     "docs/guides/contratos-de-composicao.md"
   ],

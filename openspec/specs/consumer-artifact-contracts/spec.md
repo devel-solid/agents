@@ -8,7 +8,7 @@ Define the manifest and source-file contracts that consumers use to generate sha
 
 ### Requirement: Consumers declare a pinned instruction source
 
-Version 1 SHALL continue requiring `agents.repository/ref`. Version 2 SHALL allow `agents` to be absent for local-only generation. When present, repository and reference MUST both be nonempty and remote content SHALL resolve from that pinned base. The manifest SHALL remain the sole configuration source, without `agents.root`, `agents.source`, multiple remotes, or a separate CLI registry.
+The sole public manifest format SHALL require `schemaVersion: 1` and allow `agents` to be absent for local-only generation. When present, repository and reference MUST both be nonempty and remote content SHALL resolve from that pinned base. The manifest SHALL remain the sole configuration source, without `agents.root`, `agents.source`, multiple remotes, or a separate CLI registry.
 
 #### Scenario: A consumer declares the shared source
 - **WHEN** a consumer configures its instruction source
@@ -16,16 +16,16 @@ Version 1 SHALL continue requiring `agents.repository/ref`. Version 2 SHALL allo
 - **AND** remote convention sources are resolved from that pinned checkout
 
 #### Scenario: A new project starts locally
-- **WHEN** a version-2 manifest omits `agents` and has no remote entries
+- **WHEN** a version-1 manifest omits `agents` and has no remote entries
 - **THEN** it is valid without a placeholder base and local families are discovered under the declared source root
 
 #### Scenario: Remote entries have no base
-- **WHEN** a version-2 manifest declares remote entries without repository/reference
+- **WHEN** a version-1 manifest declares remote entries without repository/reference
 - **THEN** validation rejects the configuration before generating documents
 
-#### Scenario: A version-1 source is missing
-- **WHEN** a version-1 manifest omits its required base configuration
-- **THEN** it remains invalid rather than receiving version-2 semantics
+#### Scenario: A configured base is incomplete
+- **WHEN** an `agents` block omits repository or reference
+- **THEN** validation rejects the incomplete source configuration
 
 #### Scenario: A company provides its own instruction base
 - **WHEN** a valid manifest selects a company-owned repository and its custom families
@@ -34,18 +34,18 @@ Version 1 SHALL continue requiring `agents.repository/ref`. Version 2 SHALL allo
 
 ### Requirement: Convention publication paths are configurable
 
-The manifest SHALL declare `out_dir`, `local.tpl_dir`, `remote.tpl_dir`, and `entries` under `outputs.AGENTS.md.include.conventions`. Version 1 SHALL retain explicit local/remote parent entries. Version 2 SHALL discover local parents from `local.tpl_dir` and use `entries` only for remote parents. Publication MUST preserve source subdirectories and replace `.tpl.md` with `.md` under `out_dir`.
+The manifest SHALL declare `out_dir`, `local.tpl_dir`, `remote.tpl_dir`, and `entries` under `outputs.AGENTS.md.include.conventions`. Local parents SHALL be discovered from `local.tpl_dir`; `entries` SHALL select only remote parents with `origin: remote`. Publication MUST preserve source subdirectories and replace `.tpl.md` with `.md` under `out_dir`.
 
 #### Scenario: A nested source is published
-- **WHEN** a version-1 entry, version-2 discovered local parent, or remote entry refers to `policies/example.tpl.md`
+- **WHEN** a discovered local parent or explicit remote entry refers to `policies/example.tpl.md`
 - **THEN** its output is `policies/example.md` under the configured publication directory
 
 #### Scenario: Two entries target the same output
 - **WHEN** declared or discovered families produce the same final publication path
 - **THEN** synchronization fails before overwriting published documents
 
-#### Scenario: A version-2 local entry duplicates filesystem configuration
-- **WHEN** a version-2 manifest contains an `origin: local` entry
+#### Scenario: A version-1 local entry duplicates filesystem configuration
+- **WHEN** a version-1 manifest contains an `origin: local` entry
 - **THEN** validation reports that local inclusion is determined by `local.tpl_dir`
 - **AND** it does not silently ignore or double-include the entry
 
@@ -63,7 +63,7 @@ The manifest SHALL declare `out_dir`, `local.tpl_dir`, `remote.tpl_dir`, and `en
 
 ### Requirement: Convention families have explicit source structure
 
-Each convention source SHALL have one H1 and one nonempty AGENT-CARD outside code examples. Children SHALL use the parent's filename root and directory with one extra filename component. Explicit version-1/remote selections MUST name the parent; version-2 local parents SHALL be discovered by directory. Publication MUST preserve authored Markdown bytes except for established transformations.
+Each convention source SHALL have one H1 and one nonempty AGENT-CARD outside code examples. Children SHALL use the parent's filename root and directory with one extra filename component. Explicit remote selections MUST name the parent; local parents SHALL be discovered by directory. Publication MUST preserve authored Markdown bytes except for established transformations.
 
 #### Scenario: A parent has child conventions
 - **WHEN** `policy.tpl.md` and `policy.details.tpl.md` form a source family
@@ -102,15 +102,15 @@ Each convention source SHALL have one H1 and one nonempty AGENT-CARD outside cod
 
 ### Requirement: Every command uses one manifest contract
 
-All manifest consumers SHALL use one validated YAML contract. An omitted schemaVersion SHALL mean version 1; explicit version 2 SHALL permit an optional base and directory-discovered locals. Unknown fields and unsupported versions SHALL fail with source locations. Packaged schemas SHALL describe both contracts for editor use. Release SHALL not interpret a consumer pin as its own version.
+The CLI and editors SHALL use only `schemas/agents-compose.v1.schema.json`: required `schemaVersion: 1`, optional pinned base, automatic local discovery, and remote-only entries. Missing/unsupported versions, explicit local entries, and unknown fields SHALL fail with source locations without conversion. Release SHALL keep consumer pins separate from base versions.
 
 #### Scenario: A reference contains an inline comment
 - **WHEN** the manifest declares `ref: v1.2.3 # pinned version`
 - **THEN** bootstrap, validation, synchronization, all interpret the ref as `v1.2.3`
 
-#### Scenario: Version-1 configuration omits its optional schema version
-- **WHEN** a valid initial public manifest has no `schemaVersion`
-- **THEN** it is interpreted as version 1 without rewriting the file
+#### Scenario: The schema version is missing or unsupported
+- **WHEN** a manifest omits `schemaVersion` or declares a value other than integer 1
+- **THEN** validation rejects it without rewriting the file
 
 #### Scenario: A removed field is present
 - **WHEN** a manifest declares `agents.root`, `agents.source`, `agents.bootstrap`, or `outputs.skills`
@@ -119,10 +119,10 @@ All manifest consumers SHALL use one validated YAML contract. An omitted schemaV
 
 ### Requirement: The base configuration determines main-template authority
 
-Version-2 local-only generation SHALL use the consumer's `templates/AGENTS.tpl.md`. A configured pinned base SHALL supply its own main template. Preview SHALL identify that effective template and its document consequences. The local fallback SHALL be preserved, and editing the manifest alone SHALL not regenerate documents.
+Version-1 local-only generation SHALL use the consumer's `templates/AGENTS.tpl.md`. A configured pinned base SHALL supply its own main template. Preview SHALL identify that effective template and its document consequences. The local fallback SHALL be preserved, and editing the manifest alone SHALL not regenerate documents.
 
 #### Scenario: A local project generates its main document
-- **WHEN** a valid local-only version-2 project synchronizes
+- **WHEN** a valid local-only version-1 project synchronizes
 - **THEN** it uses its local main template and discovered local families without remote resolution
 
 #### Scenario: A project later declares a shared base
@@ -130,17 +130,17 @@ Version-2 local-only generation SHALL use the consumer's `templates/AGENTS.tpl.m
 - **THEN** the plan identifies the pinned main template and current inputs
 - **AND** local sources and existing documents remain unchanged until real synchronization
 
-### Requirement: Versioned schemas preserve explicit behavior
+### Requirement: One public schema defines local discovery and remote selection
 
-The package SHALL describe versions 1 and 2 separately and apply common source/path protections to both. An omitted version SHALL mean version 1. Version 1 SHALL keep explicit inclusion; version 2 SHALL use local discovery and explicit remote entries. Unsupported versions, unknown fields, and invalid source configurations SHALL fail before publication.
+The shipped v1 schema and CLI SHALL agree on required version, optional pinned base, automatic local discovery, and explicit remote-only selections. No private-format compatibility branch or fallback schema SHALL exist. JSON result and base-role marker versions SHALL remain independent contracts.
 
 #### Scenario: A new configuration is validated
-- **WHEN** a manifest declares version 2
+- **WHEN** a manifest declares `schemaVersion: 1`
 - **THEN** editor and CLI validation agree on local discovery and remote-only entries
 
-#### Scenario: An existing project adds an unselected local file
-- **WHEN** its manifest remains version 1
-- **THEN** the file does not become selected merely because version 2 supports directory discovery
+#### Scenario: A local template is added
+- **WHEN** a valid parent is created under the configured local root
+- **THEN** it participates without a manifest entry
 
 ### Requirement: Consumer pins and base release versions stay distinct
 

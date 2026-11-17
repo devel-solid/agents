@@ -131,7 +131,7 @@ export function copyTree(sourceRoot, destinationRoot) {
 
 export function manifest(repository, ref, entries, options = {}) {
   return {
-    ...(options.version ? { schemaVersion: options.version } : {}),
+    schemaVersion: 1,
     agents: { repository, ref },
     outputs: {
       'AGENTS.md': {

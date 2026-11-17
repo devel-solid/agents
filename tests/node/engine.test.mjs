@@ -44,6 +44,7 @@ function source(title = 'Exemplo', body = 'Texto autoral.\n') {
 }
 function manifest() {
   return {
+    schemaVersion: 1,
     agents: { repository: 'git@example.test:empresa/base.git', ref: 'v1.2.3' },
     outputs: {
       'AGENTS.md': {
@@ -69,7 +70,7 @@ function mutate(path, value) {
 }
 const configuration = ['outputs', 'AGENTS.md', 'include', 'conventions'];
 
-test('YAML 1.2 compartilha contrato, comentários, aspas e schemaVersion opcional', () => {
+test('YAML 1.2 preserva comentários, aspas e o contrato único v1', () => {
   const original = stringify(manifest()).replace(
     'ref: v1.2.3',
     'ref: "v1.2.3" # versão fixada',
@@ -78,7 +79,7 @@ test('YAML 1.2 compartilha contrato, comentários, aspas e schemaVersion opciona
   assert.equal(parsed.data.agents.ref, 'v1.2.3');
   assert.equal(parsed.source, original);
   assert.deepEqual(
-    parseManifest(stringify({ schemaVersion: 1, ...manifest() })).data.agents,
+    parseManifest(stringify(manifest())).data.agents,
     parsed.data.agents,
   );
   assert.equal(
@@ -105,11 +106,13 @@ test('YAML rejeita chaves duplicadas, tabs, tags desconhecidas, aliases excessiv
 test('schema rejeita campos ausentes, tipos inválidos e campos desconhecidos em todas as camadas', () => {
   const cases = [
     [[], null],
-    [['agents'], undefined],
+    [['schemaVersion'], undefined],
     [['agents', 'ref'], 1],
     [['agents', 'repository'], ' '],
+    [['schemaVersion'], 2],
     [['schemaVersion'], 3],
     [['schemaVersion'], true],
+    [['schemaVersion'], '1'],
     [['extra'], true],
     [['agents', 'root'], true],
     [['agents', 'source'], {}],
@@ -129,7 +132,8 @@ test('schema rejeita campos ausentes, tipos inválidos e campos desconhecidos em
     [[...configuration, 'remote', 'extra'], true],
     [[...configuration, 'entries'], [null]],
     [[...configuration, 'entries'], [{ origin: 'other', from: 'a.tpl.md' }]],
-    [[...configuration, 'entries'], [{ origin: 'local', from: 1 }]],
+    [[...configuration, 'entries'], [{ origin: 'local', from: 'a.tpl.md' }]],
+    [[...configuration, 'entries'], [{ origin: 'remote', from: 1 }]],
     [
       [...configuration, 'entries'],
       [{ origin: 'remote', from: 'a.tpl.md', extra: true }],
@@ -148,7 +152,7 @@ test('diagnósticos de manifesto incluem campo e localização de origem', () =>
   assert.throws(
     () =>
       parseManifest(
-        'schemaVersion: 9\n' + stringify(manifest()),
+        stringify({ ...manifest(), schemaVersion: 9 }),
         'agents-compose.yml',
       ),
     (error) =>
@@ -204,19 +208,19 @@ test('campos de caminho do manifesto usam validação compartilhada', () => {
           stringify(
             mutate(
               [...configuration, 'entries'],
-              [{ origin: 'local', from: invalid }],
+              [{ origin: 'remote', from: invalid }],
             ),
           ),
         ),
       { code: 'PATH_INVALID' },
     );
   }
-  for (const from of ['a.md', 'templates/local/a.tpl.md'])
+  for (const from of ['a.md', 'templates/docs/conventions/a.tpl.md'])
     assert.throws(
       () =>
         parseManifest(
           stringify(
-            mutate([...configuration, 'entries'], [{ origin: 'local', from }]),
+            mutate([...configuration, 'entries'], [{ origin: 'remote', from }]),
           ),
         ),
       { code: 'MANIFEST_SOURCE' },

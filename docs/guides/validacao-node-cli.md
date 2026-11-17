@@ -16,14 +16,14 @@ A instalação usa `--omit=dev --ignore-scripts`. Os cenários restringem o PATH
 | --- | --- |
 | Interface | Quatro comandos e dez opções; interfaces retiradas são rejeitadas sem escrita. |
 | Init | Cinco arquivos no consumidor e sete na base, prévia sem escrita, repetição sem alteração e conflitos antes da gravação. |
-| Manifestos | V1 explícita preservada, V2 com base opcional e descoberta local, erros com localização. |
+| Manifestos | Contrato único v1, versão explícita, base opcional, descoberta local e entradas somente remotas; erros com localização. |
 | Autoria | Editor/cópia, subpastas, famílias, filhos órfãos, ordenação e colisões portáveis. |
 | Sync | Prévia, aplicação, check 0/1, updates/no-ops e bytes/timestamps preservados. |
 | Base | AGENTS.md próprio, marcador de papel, catálogo vazio/starter, famílias próprias, consumidores separados e conteúdo fixado tratado como dados. |
 | Papéis | Inicialização cruzada, manifesto inserido na base e sync na base rejeitados; subpastas, marcadores inválidos e instruções personalizadas preservadas. |
 | Release | Baseline numérico, primeira versão, prévia sem escrita, tag local, estado sujo e races sem sobrescrita. |
 | Skills | Prefixo agents-, fonte igual ao asset, agents-update-docs no consumidor, agents-update-version na base, instalação automática e CLI direta sem skill. |
-| Compatibilidade | Bytes/hashes dos quatro documentos neutros e dezenove locais dos fixtures v1 aceitos. |
+| Compatibilidade | Documentos históricos preservados; índice local esperado separado para a ordem automática do schema v1. |
 | Proteção | Links, hardlinks, caminhos reservados, UTF-8, Markdown, credenciais redigidas e JSON único. |
 
 ## Fluxo local

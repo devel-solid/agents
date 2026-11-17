@@ -26,6 +26,8 @@ None. This adds language and onboarding guarantees to the accepted CLI, catalog,
 
 ## Impact
 
+- The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 - Affects the Node CLI's maintained text and renderer labels, packaged schema/reference/integration/scaffold assets, root README, guides, first-party instruction assets and owned AGENTS.md, tests and fixture descriptions, and package/release metadata descriptions. Historical Python fixtures are provenance evidence; the implemented Node runtime supplies the current commands before this change starts.
 - Current discovery headings and generated notices are Portuguese literals, so translation requires parser/rendering regression tests, not only Markdown edits. Preserve technical source paths rather than bundling a public path migration into translation.
 - Four initial stages remain developed here. After the separately authorized clean-history handoff and first real publication, implement this change in the new public repository, preserving its new history. Carry forward the approved pending plan without importing private development history.

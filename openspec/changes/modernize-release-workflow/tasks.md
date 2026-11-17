@@ -2,7 +2,7 @@
 
 ## 1. Accepted predecessor and launch boundary
 
-- [ ] 1.1 Confirm accepted/archived `simplify-shared-conventions`, `introduce-node-cli`, and `harden-instruction-sync`; reconcile permanent specs and verify all work remains in this development repository with no existing-consumer migration prerequisite.
+- [ ] 1.1 Confirm accepted/archived `simplify-shared-conventions`, `introduce-node-cli`, and `harden-instruction-sync`; reconcile permanent specs and verify all work remains in this development repository with no existing-consumer migration prerequisite. Verify the sole public manifest contract requires schemaVersion 1 with local discovery, optional base, and remote-only entries; do not restore private explicit-local selection or schema v2.
 - [ ] 1.2 Map accepted release helpers, planner, lock, ownership, and JSON/exit contracts into initial/subsequent release paths; verify installed-package regressions still pass before adding publication behavior and document which old private assumptions are excluded.
 
 ## 2. Initial and subsequent release plans

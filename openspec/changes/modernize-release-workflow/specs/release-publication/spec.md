@@ -97,6 +97,11 @@ Execution SHALL require authorization bound to the exported commit, versions, sc
 
 Publication SHALL validate the selected target's sources and artifacts: all families for a base, the installed npm artifact for CLI, and our optional two-source starter where shipped. Export transformations SHALL trigger fresh validation. Our public package/provenance identity SHALL refer to the new repository and frozen commit rather than the development checkout.
 
+#### Scenario: The public manifest schema is packaged
+- **WHEN** the frozen CLI artifact and its consumer examples are verified
+- **THEN** the package ships only schema v1 with required schemaVersion 1, automatic local discovery, optional base and remote-only entries
+- **AND** no private explicit-local format or schema v2 is accepted
+
 #### Scenario: A development artifact still names the old repository
 - **WHEN** launch preflight checks the exported candidate
 - **THEN** publication is blocked until approved metadata and rebuilt/tested artifacts match the new identity

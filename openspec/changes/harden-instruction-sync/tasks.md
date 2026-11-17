@@ -2,7 +2,7 @@
 
 ## 1. Prerequisite and durable contracts
 
-- [ ] 1.1 Verify `simplify-shared-conventions` and `introduce-node-cli` are implemented, their candidate-content and installed-package gates are recorded and user-reviewed, and their specifications are synchronized and archived; read the accepted two-source/local-policy fixtures and final-export boundary, and stop if any prerequisite is missing.
+- [ ] 1.1 Verify `simplify-shared-conventions` and `introduce-node-cli` are implemented, their candidate-content and installed-package gates are recorded and user-reviewed, and their specifications are synchronized and archived; read the accepted two-source/local-policy fixtures and final-export boundary, and stop if any prerequisite is missing. Verify the sole public manifest contract requires schemaVersion 1 with local discovery, optional base, and remote-only entries; do not restore private explicit-local selection or schema v2.
 - [ ] 1.2 Define versioned lock and ownership schemas with canonical paths, `utf8-lf` SHA-256 hashes, renderer compatibility, and deterministic generation identity; verify malformed, unknown-version, incompatible-renderer, and non-deterministic fixtures are rejected by focused contract tests.
 - [ ] 1.3 Document the distinction between `agents-lock.json`, `.agents/agents-state.json`, and ignored runtime recovery data in the consumer guide; verify examples validate, do not require machine-local session artifacts, and show that clean launch regenerates metadata rather than copying old repository commit identities.
 

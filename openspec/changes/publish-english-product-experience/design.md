@@ -8,6 +8,8 @@ The implemented Node CLI, owned base AGENTS.md, Portuguese guides, three authore
 
 The first public version is a real compatibility baseline, unlike private development v3/v4. The absence of consumers during today's planning cannot justify overwriting published tags, ignoring locks, or assuming nobody has adopted that first version.
 
+The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 ## Goals / Non-Goals
 
 **Goals:** complete English maintained prose, a self-contained visual introduction with working examples, preserved public technical contracts and company ownership, and evidence from the actual subsequent registry artifact and Git content.

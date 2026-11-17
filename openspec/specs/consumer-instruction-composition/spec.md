@@ -17,7 +17,7 @@ Consumers SHALL maintain convention content in source `.tpl.md` files and compos
 
 ### Requirement: Synchronization uses the pinned checkout
 
-With a base, synchronization SHALL resolve its main template and remote sources from `agents.repository/ref`. Version-2 local-only composition SHALL use the local main template without Git access. Both modes SHALL use the installed CLI engine, respect version-specific local inclusion, and preserve the installed integration during generation.
+With a base, synchronization SHALL resolve its main template and remote sources from `agents.repository/ref`. Version-1 local-only composition SHALL use the local main template without Git access. Both modes SHALL use the installed CLI engine, discover all local families and select remote parents explicitly, and preserve the installed integration during generation.
 
 #### Scenario: A base is targeted by synchronization
 - **WHEN** synchronization targets an identified base root
@@ -25,11 +25,11 @@ With a base, synchronization SHALL resolve its main template and remote sources 
 - **AND** the base AGENTS.md is preserved
 
 #### Scenario: A convention is maintained locally by a consumer
-- **WHEN** a version-1 entry has `origin: local`, or a version-2 parent is discovered in the configured local root
+- **WHEN** a valid parent is discovered in the configured local root
 - **THEN** its source resolves under the consumer's `local.tpl_dir`
 
 #### Scenario: A developer creates or copies a local rule
-- **WHEN** a version-2 project puts a valid parent under its local source root and synchronizes
+- **WHEN** a version-1 project puts a valid parent under its local source root and synchronizes
 - **THEN** the family participates without separate registration
 - **AND** its document and discovery entry are generated through the normal engine
 
@@ -70,11 +70,11 @@ The OpenSpec workflows SHALL synchronize approved delta specifications into `ope
 
 ### Requirement: The installed engine preserves supported composition behavior
 
-For valid version-1 sources, the installed engine SHALL preserve manifest order, parent/child discovery cards, configured relative output paths, generated-file notices, UTF-8 text, LF line endings, and write-only-if-changed behavior. Expected behavior SHALL be verified against accepted candidate fixtures. Private pre-release formats and tooling SHALL NOT create a public backward-compatibility obligation.
+For valid version-1 sources, the installed engine SHALL preserve deterministic local order and declared remote order, parent/child discovery cards, configured relative output paths, generated-file notices, UTF-8 text, LF line endings, and write-only-if-changed behavior. Expected behavior SHALL be verified against accepted candidate fixtures. Private pre-release formats and tooling SHALL NOT create a public backward-compatibility obligation.
 
 #### Scenario: A valid composition is generated with the new engine
-- **WHEN** the CLI renders the accepted version-1 candidate inputs
-- **THEN** its published document bytes match the recorded expected results
+- **WHEN** the CLI renders the accepted candidate sources configured through the current public v1 manifest
+- **THEN** its published convention bytes match the recorded expected results and its discovery index uses deterministic local order followed by declared remote order
 - **AND** a second CLI synchronization reports no document changes
 
 #### Scenario: A confirmed invalid destination used to pass validation
@@ -101,7 +101,7 @@ The base's editable template and conventions SHALL define its shared policy cont
 
 ### Requirement: Discovery is deterministic and validates whole families
 
-Version-2 local discovery SHALL recursively classify source families using existing parent/child naming rules. It SHALL order parents by portable normalized relative path and keep each child with its parent. Non-template files SHALL be ignored; malformed templates, orphan children, unsafe paths, and duplicate destinations SHALL be rejected before publication.
+Version-1 local discovery SHALL recursively classify source families using existing parent/child naming rules. It SHALL order parents by portable normalized relative path and keep each child with its parent. Non-template files SHALL be ignored; malformed templates, orphan children, unsafe paths, and duplicate destinations SHALL be rejected before publication.
 
 #### Scenario: The same files were created by different methods
 - **WHEN** two projects have identical manifests and source contents, one created with an editor and the other copied from an existing valid template
@@ -118,10 +118,10 @@ Version-2 local discovery SHALL recursively classify source families using exist
 
 ### Requirement: Local and remote modes share generation guarantees
 
-Both modes SHALL share source validation, discovery rendering, generated notices, path protection, planning, and preview/check semantics. Valid version-1 fixtures SHALL retain their content and repeat-run behavior. Directory discovery SHALL not create a second generator or modify the manifest while scanning.
+Both modes SHALL share source validation, discovery rendering, generated notices, path protection, planning, and preview/check semantics. Historical source/output fixtures SHALL retain their provenance. Tests SHALL explicitly adapt private manifests to the public v1 contract and separately record the intentional local discovery-order expectation; the runtime SHALL NOT support private-format selection. Directory discovery SHALL not create a second generator or modify the manifest while scanning.
 
 #### Scenario: Generation is repeated unchanged
-- **WHEN** a valid version-1 or version-2 project repeats synchronization without source/configuration changes
+- **WHEN** a valid version-1 project repeats synchronization without source/configuration changes
 - **THEN** no document rewrite is planned
 - **AND** generated status notices and parent/child discovery remain consistent
 

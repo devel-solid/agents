@@ -56,7 +56,7 @@ As mensagens são exemplos; adapte a descrição à mudança realizada.
 
 Uma família usa `<tema>.tpl.md` e `<tema>.<subtema>.tpl.md` no mesmo diretório, com um único nível de filho. O filho depende do pai. O gerador acrescenta ao documento pai a seção `Quando ler as subconventions`, com os caminhos e condições de leitura obtidos dos cards dos filhos. Escreva cards específicos em cada fonte e não duplique essa seção gerada no template pai. Preserve o caminho relativo sob `out_dir` e troque `.tpl.md` por `.md` ao referenciar o documento publicado.
 
-Na versão 2 do manifesto, criar ou copiar uma família local válida em `local.tpl_dir` basta para sua descoberta. Na versão 1, respeite a seleção explícita; entradas remotas também são explícitas. Ajuste o manifesto apenas quando necessário à autoria pedida, sem converter contratos ou alterar pins implicitamente. Consulte a referência de composição do pacote instalado quando precisar confirmar formatos.
+No manifesto `schemaVersion: 1`, criar ou copiar uma família local válida em `local.tpl_dir` basta para sua descoberta. `entries` seleciona somente pais remotos. Ajuste o manifesto apenas quando necessário à autoria pedida, sem alterar pins implicitamente. Consulte a referência de composição do pacote instalado quando precisar confirmar formatos.
 
 ## Conferir e encerrar
 

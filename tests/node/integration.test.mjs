@@ -155,8 +155,9 @@ test('o artefato instalado expõe o bin e somente assets públicos necessários'
     files.some((file) => file.endsWith('agents-compose.v1.schema.json')),
   );
   assert.ok(files.some((file) => file.endsWith('contratos-de-composicao.md')));
-  assert.ok(
+  assert.equal(
     files.some((file) => file.endsWith('agents-compose.v2.schema.json')),
+    false,
   );
   assert.equal(
     files.some((file) => file === 'dist/doctor.js'),
@@ -554,7 +555,6 @@ test('uma base empresarial independente publica apenas em remoto Git descartáve
             origin: 'remote',
             from: selection + '.tpl.md',
           })),
-          { version: 2 },
         ),
       ),
     );
@@ -577,7 +577,7 @@ test('uma base empresarial independente publica apenas em remoto Git descartáve
     assert.equal(
       conventions.entries.some((entry) => entry.origin === 'local'),
       false,
-      'v2 descobre o contexto pela pasta',
+      'v1 descobre o contexto pela pasta',
     );
     write(
       root,
@@ -655,12 +655,9 @@ test('init sem parâmetros preserva manifests e rejeita seleção por flags e in
   }
   const configured = location('consumer configurado');
   const initial = stringify(
-    manifest(
-      remote,
-      'v1.0.0',
-      [{ origin: 'remote', from: 'qualidade.tpl.md' }],
-      { version: 1 },
-    ),
+    manifest(remote, 'v1.0.0', [
+      { origin: 'remote', from: 'qualidade.tpl.md' },
+    ]),
   );
   write(configured, 'agents-compose.yml', `# edição própria\n${initial}`);
   write(configured, 'AGENTS.md', 'Documento já existente.\n');
@@ -695,12 +692,9 @@ test('o pin controla conteúdo e nunca executa código nem substitui integraçã
     root,
     'agents-compose.yml',
     stringify(
-      manifest(
-        remote,
-        'v1.0.0',
-        [{ origin: 'remote', from: 'qualidade.tpl.md' }],
-        { version: 2 },
-      ),
+      manifest(remote, 'v1.0.0', [
+        { origin: 'remote', from: 'qualidade.tpl.md' },
+      ]),
     ),
   );
   artifact.run(root, ['sync']);
@@ -776,7 +770,7 @@ test('o pin controla conteúdo e nunca executa código nem substitui integraçã
   assert.equal(existsSync(path.join(root, 'engine.js')), false);
 });
 
-test('tarball reproduz todos os bytes aceitos dos perfis neutro/local e a segunda sync é vazia', () => {
+test('tarball preserva conteúdo histórico com descoberta local v1 e segunda sync vazia', () => {
   const seed = location('base candidata aceita');
   const inputs = path.join(fixtureRoot, 'accepted-inputs');
   copyTree(
@@ -802,6 +796,13 @@ test('tarball reproduz todos os bytes aceitos dos perfis neutro/local e a segund
         readFileSync(path.join(inputs, 'agents-compose.yml'), 'utf8'),
       );
       config.agents = { repository: seed, ref: 'v1.0.0' };
+      // O manifesto privado é evidência histórica; apenas o teste adapta sua seleção ao contrato público.
+      config.schemaVersion = 1;
+      config.outputs['AGENTS.md'].include.conventions.entries = config.outputs[
+        'AGENTS.md'
+      ].include.conventions.entries.filter(
+        (entry) => entry.origin === 'remote',
+      );
       copyTree(
         path.join(inputs, 'templates/docs/conventions-local'),
         path.join(root, 'templates/docs/conventions-local'),
@@ -811,7 +812,6 @@ test('tarball reproduz todos os bytes aceitos dos perfis neutro/local e a segund
         path.join(seed, 'templates/docs/conventions'),
       ).filter((file) => file.endsWith('.tpl.md'));
       config = manifest(seed, 'v1.0.0', [
-        { origin: 'local', from: 'contexto-do-projeto.tpl.md' },
         ...remoteNames.map((from) => ({ origin: 'remote', from })),
       ]);
       // A fixture Python aceita posiciona o card após o corpo; o renderer remove o bloco sem alterar o restante.
@@ -831,13 +831,19 @@ test('tarball reproduz todos os bytes aceitos dos perfis neutro/local e a segund
     artifact.run(root, ['sync']);
     const expectedRoot = path.join(fixtureRoot, 'accepted-outputs', profile);
     for (const relative of walk(expectedRoot)) {
-      const expected = readFileSync(path.join(expectedRoot, relative));
+      const reordered = profile === 'local' && relative === 'AGENTS.md';
+      const expected = readFileSync(
+        reordered
+          ? path.join(fixtureRoot, 'schema-v1/local-AGENTS.md')
+          : path.join(expectedRoot, relative),
+      );
       const actual = readFileSync(path.join(root, relative));
       assert.deepEqual(actual, expected, `${profile}/${relative}`);
-      assert.equal(
-        createHash('sha256').update(actual).digest('hex'),
-        provenance.output_sha256[profile][relative],
-      );
+      if (!reordered)
+        assert.equal(
+          createHash('sha256').update(actual).digest('hex'),
+          provenance.output_sha256[profile][relative],
+        );
       assert.equal(actual.includes(13), false, 'UTF-8/LF');
     }
     const before = snapshot(root);
@@ -871,6 +877,25 @@ test('todos os consumidores do manifesto rejeitam versão/chaves/YAML inválidos
     { origin: 'remote', from: 'qualidade.tpl.md' },
   ]);
   const cases = [
+    stringify({ ...valid, schemaVersion: 2 }),
+    stringify(
+      Object.fromEntries(
+        Object.entries(valid).filter(([key]) => key !== 'schemaVersion'),
+      ),
+    ),
+    stringify({
+      ...valid,
+      outputs: {
+        'AGENTS.md': {
+          include: {
+            conventions: {
+              ...valid.outputs['AGENTS.md'].include.conventions,
+              entries: [{ origin: 'local', from: 'regra.tpl.md' }],
+            },
+          },
+        },
+      },
+    }),
     stringify({ ...valid, schemaVersion: 99 }),
     stringify({ ...valid, agents: { ...valid.agents, bootstrap: true } }),
     stringify({ ...valid, outputs: { ...valid.outputs, skills: [] } }),

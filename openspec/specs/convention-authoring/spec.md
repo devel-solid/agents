@@ -8,17 +8,17 @@ Let teams author complete convention templates with ordinary file operations and
 
 ### Requirement: Templates are authored with ordinary file operations
 
-Developers SHALL be able to create or copy sources directly into the configured template root without a CLI authoring command. A valid source SHALL contain one H1, one nonempty complete AGENT-CARD, and its authored body. Version-2 local discovery SHALL require no registration or manifest edit; version-1 composition SHALL retain explicit source selection.
+Developers SHALL be able to create or copy sources directly into the configured template root without a CLI authoring command. A valid source SHALL contain one H1, one nonempty complete AGENT-CARD, and its authored body. The sole public v1 manifest SHALL discover local families without registration or manifest edits; explicit entries SHALL select remote parents only.
 
 #### Scenario: A developer creates a complete commit rule
-- **WHEN** an editor saves a valid commits.tpl.md under local.tpl_dir in a version-2 consumer
+- **WHEN** an editor saves a valid commits.tpl.md under local.tpl_dir in a version-1 consumer
 - **THEN** the next validation/synchronization discovers it
 - **AND** creating that source alone leaves the manifest and generated documents unchanged
 
-#### Scenario: An author adds a version-1 local source
-- **WHEN** the author saves a new local template in a version-1 consumer
-- **THEN** it participates only when selected by an explicit local entry
-- **AND** authoring does not silently migrate the manifest to version 2
+#### Scenario: An author selects a remote family
+- **WHEN** an author adds a remote parent to entries with origin remote and a valid pinned base
+- **THEN** its complete family participates alongside discovered local families
+- **AND** authoring alone does not regenerate documents
 
 #### Scenario: An existing rule is copied into a base
 - **WHEN** a valid rule is copied into templates/docs/conventions in a shared base
@@ -145,7 +145,7 @@ Agents-write-conventions SHALL guide applicability, actionable rules, valid exam
 
 #### Scenario: A consumer requests local policy maintenance
 - **WHEN** agents-write-conventions receives that request in a consumer
-- **THEN** it edits the requested source under the configured local root and necessary selection only, respecting v1/v2 rules
+- **THEN** it edits the requested source under the configured local root and necessary selection only, respecting the sole public v1 contract
 - **AND** it does not shadow a pinned remote convention with a conflicting local copy or implicitly synchronize outputs
 
 #### Scenario: Only a semantic review is requested

@@ -20,6 +20,8 @@ None. Reuse the accepted manifest, engine, ownership, lock, and recovery contrac
 
 ## Impact
 
+- The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 - Extends internal TypeScript release planning, authored `agents-update-version`, package/release CI, and relevant public/local documentation. A one-time export is a reviewed maintainer procedure, not a new generic repository-migration CLI.
 - All implementation, predecessor validation, archival, and release rehearsals happen in this repository. Actual creation/export is follow-up work after first-public-version readiness and separate authorization; applying this proposal does not perform that handoff.
 - The public Git lineage is independent. Internal source provenance and validation evidence stay in the private backup and handoff record; the new package, lock, generated documents, and public references must resolve without private commits or old tags.

@@ -21,6 +21,8 @@ None. This proposal adds operational guarantees to the composition and CLI contr
 
 ## Impact
 
+- The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 - Affects the Node.js resolver, planner, filesystem application layer, validate diagnostics, and sync planning/application; adds lock, ownership, and ignored transaction storage without additional public command roots.
 
 ### Sequence and validation gate

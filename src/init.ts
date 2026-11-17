@@ -285,7 +285,7 @@ export function initialize(
       preserved.push(contextPath);
     } else intended.set(contextPath, asset('contexto-do-projeto.tpl.md'));
     const manifest: Manifest = {
-      schemaVersion: 2,
+      schemaVersion: 1,
       outputs: {
         'AGENTS.md': {
           include: {

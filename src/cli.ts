@@ -30,7 +30,7 @@ validate confere configuração, fontes e ambiente; --base confere uma base inde
 sync gera AGENTS.md e convenções. --dry-run mostra o plano; --check retorna 1 se há diferenças.
 release descobre a versão pelas tags Git e cria somente uma tag local no HEAD.
 release --dry-run mostra a próxima versão sem gravar arquivos ou tags.
-Na versão 2, regras válidas em local.tpl_dir são descobertas automaticamente; na versão 1, inclua-as em entries.
+Declare schemaVersion: 1; regras locais são descobertas por local.tpl_dir e entries seleciona somente pais remotos.
 agents-write-conventions orienta a autoria e curadoria das regras na base ou no consumidor.
 agents-update-docs atualiza documentos pelo manifesto existente, sem editar regras ou configuração.
 agents-update-version orienta a versão da base; não atualiza consumidores automaticamente.

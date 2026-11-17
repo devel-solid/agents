@@ -17,13 +17,13 @@ test('referência pública contém manifestos e template completos aceitos pelo 
   );
   assert.deepEqual(
     manifests.map((item) => item.schemaVersion),
-    [2, 2, 1],
+    [1, 1],
   );
   assert.equal(manifests[0].agents, undefined);
   assert.equal(manifests[1].agents.ref, 'v1.0.0');
   assert.equal(
-    manifests[2].outputs['AGENTS.md'].include.conventions.entries[0].origin,
-    'local',
+    manifests[1].outputs['AGENTS.md'].include.conventions.entries[0].origin,
+    'remote',
   );
   const template = guide.match(/```markdown\r?\n([\s\S]*?)```/)[1];
   const result = validateMarkdown(template, 'commits.tpl.md');

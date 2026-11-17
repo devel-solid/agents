@@ -2,7 +2,7 @@
 
 ## 1. Published baseline and translation inventory
 
-- [ ] 1.1 Verify all four predecessor changes are accepted/synchronized/archived and the first actual public Git/npm launch passed remote checks; record public checkout, source/package identities and approved pending-plan location, and stop if only rehearsal/readiness evidence exists.
+- [ ] 1.1 Verify all four predecessor changes are accepted/synchronized/archived and the first actual public Git/npm launch passed remote checks; record public checkout, source/package identities and approved pending-plan location, and stop if only rehearsal/readiness evidence exists. Verify the sole public manifest contract requires schemaVersion 1 with local discovery, optional base, and remote-only entries; do not restore private explicit-local selection or schema v2.
 - [ ] 1.2 Freeze first-public-version compatibility inputs and inventory maintained prose, generated-source ownership, packaged assets and narrow language exceptions; verify current README/guides, hidden authored integrations, owned base instructions, comments/docstrings and explanatory fixtures are covered without scanning dependencies or rewriting archives.
 
 ## 2. English sources and compatible rendering

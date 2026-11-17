@@ -10,6 +10,11 @@ Make a consumer's selected shared instructions reproducible and inspectable acro
 
 The CLI SHALL maintain a versioned `agents-lock.json` containing the repository, requested reference, resolved commit, remote selection, remote source integrity, renderer contract, and producing CLI version. The producing CLI version SHALL be informational; synchronization MUST NOT install or execute a different engine from the content repository.
 
+#### Scenario: Unsupported private configuration precedes state creation
+- **WHEN** a consumer omits schemaVersion, declares schema v2, or selects local entries explicitly
+- **THEN** validation rejects it before lock or ownership planning without private-format fallback
+- **AND** the supported public schema v1 remains independent of lock and ownership format versions
+
 #### Scenario: First synchronization establishes a lock
 - **WHEN** a valid consumer without a lock runs a successful normal synchronization
 - **THEN** the CLI resolves the selected reference to a commit and records the remote inputs used by the generation

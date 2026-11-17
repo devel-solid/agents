@@ -4,16 +4,23 @@
   "title": "Manifesto de composição agents, versão 1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["agents", "outputs"],
+  "required": ["schemaVersion", "outputs"],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
     "agents": {
       "type": "object",
       "additionalProperties": false,
       "required": ["repository", "ref"],
       "properties": {
-        "repository": { "$ref": "#/definitions/nonempty" },
-        "ref": { "$ref": "#/definitions/nonempty" }
+        "repository": {
+          "$ref": "#/definitions/nonempty"
+        },
+        "ref": {
+          "$ref": "#/definitions/nonempty"
+        }
       }
     },
     "outputs": {
@@ -36,9 +43,15 @@
                   "additionalProperties": false,
                   "required": ["out_dir", "local", "remote", "entries"],
                   "properties": {
-                    "out_dir": { "$ref": "#/definitions/nonempty" },
-                    "local": { "$ref": "#/definitions/sourceRoot" },
-                    "remote": { "$ref": "#/definitions/sourceRoot" },
+                    "out_dir": {
+                      "$ref": "#/definitions/nonempty"
+                    },
+                    "local": {
+                      "$ref": "#/definitions/sourceRoot"
+                    },
+                    "remote": {
+                      "$ref": "#/definitions/sourceRoot"
+                    },
                     "entries": {
                       "type": "array",
                       "items": {
@@ -46,8 +59,12 @@
                         "additionalProperties": false,
                         "required": ["origin", "from"],
                         "properties": {
-                          "origin": { "enum": ["local", "remote"] },
-                          "from": { "$ref": "#/definitions/nonempty" }
+                          "origin": {
+                            "const": "remote"
+                          },
+                          "from": {
+                            "$ref": "#/definitions/nonempty"
+                          }
                         }
                       }
                     }
@@ -61,12 +78,62 @@
     }
   },
   "definitions": {
-    "nonempty": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "nonempty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
     "sourceRoot": {
       "type": "object",
       "additionalProperties": false,
       "required": ["tpl_dir"],
-      "properties": { "tpl_dir": { "$ref": "#/definitions/nonempty" } }
+      "properties": {
+        "tpl_dir": {
+          "$ref": "#/definitions/nonempty"
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outputs": {
+            "properties": {
+              "AGENTS.md": {
+                "properties": {
+                  "include": {
+                    "properties": {
+                      "conventions": {
+                        "properties": {
+                          "entries": {
+                            "minItems": 1,
+                            "type": "array"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "type": "object",
+        "required": ["agents"],
+        "properties": {
+          "agents": {
+            "$ref": "#/properties/agents"
+          }
+        }
+      }
+    }
+  ]
 }

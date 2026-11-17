@@ -96,12 +96,12 @@ test('init, validate e sync completam o fluxo local sem Git nem rede', (t) => {
   cli(root, ['validate']);
   cli(root, ['sync']);
 });
-test('schema v2 é explícito e o pin é opcional somente sem entradas remotas', (t) => {
+test('schema v1 é explícito e o pin é opcional somente sem entradas remotas', (t) => {
   const root = fixture(t);
   initialize(root, {});
   const current = readFileSync(path.join(root, 'agents-compose.yml'), 'utf8');
   const data = parseManifest(current).data;
-  assert.equal(data.schemaVersion, 2);
+  assert.equal(data.schemaVersion, 1);
   assert.equal(data.agents, undefined);
   const c = data.outputs['AGENTS.md'].include.conventions;
   c.entries = [{ origin: 'local', from: 'x.tpl.md' }];
@@ -182,6 +182,7 @@ test('fontes inválidas, órfãs e colisões abortam antes de escrever', (t) => 
 test('init preserva v1 offline e rejeita conflitos antes da primeira escrita', (t) => {
   const root = fixture(t);
   const manifest = {
+    schemaVersion: 1,
     agents: { repository: 'https://example.invalid/base.git', ref: 'v1.0.0' },
     outputs: {
       'AGENTS.md': {

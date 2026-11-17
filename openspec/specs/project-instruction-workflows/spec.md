@@ -30,7 +30,7 @@ The CLI SHALL use the supported Node.js versions declared by its npm package and
 
 ### Requirement: Initialization creates a usable local project
 
-Ordinary init SHALL require no repository, reference, or convention arguments. New setup SHALL create a version-2 manifest, local main/context templates, and packaged agents-write-conventions and agents-update-docs integrations. It SHALL NOT fetch content, register local entries, initialize Git, or generate final documents.
+Ordinary init SHALL require no repository, reference, or convention arguments. New setup SHALL create a version-1 manifest, local main/context templates, and packaged agents-write-conventions and agents-update-docs integrations. It SHALL NOT fetch content, register local entries, initialize Git, or generate final documents.
 
 #### Scenario: A new ordinary project initializes
 - **WHEN** agents init runs inside a new project
@@ -39,7 +39,7 @@ Ordinary init SHALL require no repository, reference, or convention arguments. N
 - **AND** AGENTS.md and docs/conventions outputs are not generated
 
 #### Scenario: Existing authored content is encountered
-- **WHEN** init finds a valid version-1 or version-2 project
+- **WHEN** init finds a valid version-1 project
 - **THEN** it preserves the manifest, authored sources, and generated documents
 - **AND** it installs only compatible missing setup or reports conflicts before partial writes
 
@@ -54,7 +54,7 @@ Init SHALL accept --dry-run in ordinary and base modes and report concrete creat
 
 ### Requirement: Local files determine inclusion
 
-Version 2 SHALL discover every valid local parent family under local.tpl_dir. Manual creation and copying SHALL have identical inclusion semantics. No separate registration command, registry, CLI-created-file history, or local inclusion list SHALL exist.
+Version 1 SHALL discover every valid local parent family under local.tpl_dir. Manual creation and copying SHALL have identical inclusion semantics. No separate registration command, registry, CLI-created-file history, or local inclusion list SHALL exist.
 
 #### Scenario: A developer copies a rule
 - **WHEN** a valid commits.tpl.md is placed under the configured local root and sync runs
@@ -88,7 +88,7 @@ Init --base and validate --base SHALL support offline shared-base authoring with
 Validate SHALL check applicable Node/Git prerequisites, configuration, integration, templates, and paths without applying project or Git changes. --debug SHALL add detail without changing acceptance. --base SHALL validate the main template/catalog without a consumer manifest. Git-backed input resolution MAY populate the documented cache.
 
 #### Scenario: Local files are valid without Git
-- **WHEN** agents validate runs on a local-only version-2 project with Node and valid sources
+- **WHEN** agents validate runs on a local-only version-1 project with Node and valid sources
 - **THEN** absent Git does not cause failure and the command writes no project files or refs
 
 #### Scenario: A convention lacks its discovery card
@@ -160,7 +160,7 @@ Base initialization SHALL create .agents/base.json with schemaVersion 1 and kind
 - **AND** explicit base initialization cannot initialize that subdirectory as another base
 
 #### Scenario: A remote content checkout predates role markers
-- **WHEN** a valid version-1 or version-2 consumer selects that base as an input
+- **WHEN** a valid version-1 consumer selects that base as an input
 - **THEN** its sources remain consumable without installing metadata, skills or consumer setup into the checkout
 
 ### Requirement: A base owns its simple AGENTS.md

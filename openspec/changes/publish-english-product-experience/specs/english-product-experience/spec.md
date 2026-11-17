@@ -45,6 +45,11 @@ The repository's authored policy SHALL select en-US for maintained artifacts and
 
 The parser SHALL recognize the supported English discovery structure and the first public release's Portuguese structure outside code examples. Rendering SHALL retain source order, family discovery, UTF-8, and stable technical markers. Existing public source paths, pins, locks, and ownership protections SHALL remain valid; ambiguous structure SHALL fail before writes.
 
+#### Scenario: The first public manifest remains valid
+- **WHEN** translation verifies the released compatibility baseline
+- **THEN** required schemaVersion 1, automatic local discovery, optional base and remote-only entries retain their meaning
+- **AND** private development formats and schema v2 are not revived
+
 #### Scenario: The first public base is consumed with the new CLI
 - **WHEN** a project uses its original valid manifest, pinned content and ownership records with the English CLI
 - **THEN** the composition remains resolvable without replacing its remote selection or public source filenames

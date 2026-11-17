@@ -277,7 +277,7 @@ test('manifesto UTF-8 inválido e operação removida são rejeitados sem altera
       invalid.data.diagnostics.some((item) => item.code === 'MANIFEST_UTF8'),
     );
     const source =
-      'agents:\n  repository: exemplo\n  ref: v1.0.0\noutputs:\n  AGENTS.md:\n    include:\n      conventions:\n        out_dir: docs\n        local:\n          tpl_dir: local\n        remote:\n          tpl_dir: remote\n        entries: []\n';
+      'schemaVersion: 1\nagents:\n  repository: exemplo\n  ref: v1.0.0\noutputs:\n  AGENTS.md:\n    include:\n      conventions:\n        out_dir: docs\n        local:\n          tpl_dir: local\n        remote:\n          tpl_dir: remote\n        entries: []\n';
     writeFileSync(join(root, 'agents-compose.yml'), source);
     linkSync(
       join(root, 'agents-compose.yml'),

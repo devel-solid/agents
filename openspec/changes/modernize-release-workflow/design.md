@@ -6,6 +6,8 @@ See `proposal.md` and `specs/release-publication/spec.md`. Content, runtime, and
 
 All four implementations stay in the current repository. This stage builds and rehearses release behavior using disposable Git remotes and registry fixtures. Only after the first public version is ready and a later handoff is authorized do we create the real new repository and export final files. No actual export, remote/name change, Git rewrite, commit, tag, or publication occurs merely by implementing or accepting this change.
 
+The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 ## Goals / Non-Goals
 
 **Goals:** independent public Git lineage, safe initial and subsequent releases, exact installed-artifact verification, owned base instructions, explicit version decisions, and recoverable publication.

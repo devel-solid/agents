@@ -5,11 +5,11 @@ import { safeJoin, validateRelativePath } from './paths.js';
 import { assertConsumerRoot } from './roles.js';
 
 export interface ConventionEntry {
-  origin: 'local' | 'remote';
+  origin: 'remote';
   from: string;
 }
 export interface Manifest {
-  schemaVersion?: 1 | 2;
+  schemaVersion: 1;
   agents?: { repository: string; ref: string };
   outputs: {
     'AGENTS.md': {
@@ -50,21 +50,13 @@ export interface LoadedManifest {
   path: string;
   document: Document.Parsed;
 }
-const validators = new Map(
-  [1, 2].map((version) => [
-    version,
-    new Ajv({ allErrors: true, strict: true }).compile(
-      JSON.parse(
-        readFileSync(
-          new URL(
-            `../schemas/agents-compose.v${version}.schema.json`,
-            import.meta.url,
-          ),
-          'utf8',
-        ),
-      ) as object,
+const validator = new Ajv({ allErrors: true, strict: true }).compile(
+  JSON.parse(
+    readFileSync(
+      new URL('../schemas/agents-compose.v1.schema.json', import.meta.url),
+      'utf8',
     ),
-  ]),
+  ) as object,
 );
 
 function schemaField(error: ErrorObject): string[] {
@@ -108,11 +100,6 @@ export function parseManifest(
   } catch {
     throw new EngineError('MANIFEST_YAML', `Aliases excessivos em ${path}.`);
   }
-  const declaredVersion =
-    data && typeof data === 'object' && 'schemaVersion' in data
-      ? data.schemaVersion
-      : 1;
-  const validator = validators.get(declaredVersion === 2 ? 2 : 1)!;
   if (!validator(data)) {
     const error = validator.errors![0]!;
     const parts = schemaField(error);
@@ -132,7 +119,7 @@ export function parseManifest(
         field,
         location: { path, line: position.line, column: position.col },
         remediation:
-          'Consulte o schema da versão 1 ou 2 do manifesto; entradas locais explícitas pertencem somente à versão 1.',
+          'Declare schemaVersion: 1; fontes locais são descobertas pela pasta e entries aceita somente origin: remote.',
       },
     );
   }
@@ -167,8 +154,7 @@ export function parseManifest(
         2,
         { field: `entries.${index}.from` },
       );
-    const base =
-      entry.origin === 'local' ? config.local.tpl_dir : config.remote.tpl_dir;
+    const base = config.remote.tpl_dir;
     if (source.startsWith(`${base}/`))
       throw new EngineError(
         'MANIFEST_SOURCE',

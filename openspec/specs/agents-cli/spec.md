@@ -25,7 +25,7 @@ The tool SHALL expose the executable `agents` from a public-npm-ready package. I
 
 ### Requirement: Initialization is explicit and preserves existing documents
 
-Parameter-free agents init SHALL create a local-only v2 manifest, main/context templates, and the packaged agents-write-conventions and agents-update-docs integrations. It SHALL discover local families through the configured directory, preserve valid existing v1/v2 manifests and documents, reject integration conflicts before partial writes, and remain idempotent.
+Parameter-free agents init SHALL create a local-only manifest with explicit schemaVersion: 1, main/context templates, and the packaged agents-write-conventions and agents-update-docs integrations. It SHALL discover local families through the configured directory, preserve valid existing v1 manifests and documents, reject integration conflicts before partial writes, and remain idempotent.
 
 #### Scenario: A consumer already has a valid manifest
 - **WHEN** `agents init` is run beside a valid version-1 `agents-compose.yml`
@@ -37,7 +37,7 @@ Parameter-free agents init SHALL create a local-only v2 manifest, main/context t
 - **THEN** no existing source, manifest, integration, or document is rewritten
 
 #### Scenario: A new consumer selects the simplified content base
-- **WHEN** a new local v2 project is initialized and its author explicitly adds a pinned base and remote selections to the manifest
+- **WHEN** a new local v1 project is initialized and its author explicitly adds a pinned base and remote selections to the manifest
 - **THEN** its manifest selects the two initial shared conventions and consumer-owned local context
 - **AND** it does not copy or mandate this repository's local operational, language, commit, testing, or skill policies
 
@@ -138,8 +138,8 @@ Agents release --bump patch|minor|major SHALL calculate from reachable stable Gi
 The project SHALL test its installed artifact and meaningful candidate regression scenarios on Windows and Linux with its declared supported Node.js LTS lines. CI and the local pre-push gate SHALL exercise behavior rather than relying only on configuration-text assertions.
 
 #### Scenario: A candidate CLI is ready for stage acceptance
-- **WHEN** the candidate tarball is tested against the accepted neutral/local version-1 fixtures
-- **THEN** generated documents match the expected UTF-8/LF content, discovery structure, ordering, and paths except for declared regressions
+- **WHEN** the candidate tarball is tested against the accepted neutral/local source fixtures configured with the public v1 contract
+- **THEN** generated convention documents preserve the expected UTF-8/LF content, discovery structure and paths; the main index follows automatic local ordering then explicit remote ordering, with its intentional difference from private-format fixtures recorded separately
 - **AND** a repeated sync produces no document changes
 - **AND** the evidence is presented for user review before starting the next change
 

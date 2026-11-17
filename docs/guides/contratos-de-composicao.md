@@ -1,6 +1,6 @@
 # Contratos de Composição
 
-Referência pública dos manifestos versões 1 e 2 e dos templates aceitos pela CLI instalada. A base Git fornece somente conteúdo; o motor e a integração vêm do pacote CLI.
+Referência pública do manifesto versão 1 e dos templates aceitos pela CLI instalada. A base Git fornece somente conteúdo; o motor e a integração vêm do pacote CLI.
 
 ## Fonte, manifesto e documentos
 
@@ -14,12 +14,12 @@ templates .tpl.md + agents-compose.yml
 
 Edite o conteúdo nas fontes e a configuração no manifesto. Os documentos gerados não devem ser editados manualmente. A CLI preserva fontes, manifesto e integração durante a geração.
 
-## Versão 2: começar localmente
+## Schema v1: começar localmente
 
 Este é um manifesto completo, sem uma base Git obrigatória:
 
 ```yaml
-schemaVersion: 2
+schemaVersion: 1
 outputs:
   AGENTS.md:
     include:
@@ -32,7 +32,7 @@ outputs:
         entries: []
 ```
 
-- `local.tpl_dir`: todos os pais `.tpl.md` válidos dessa pasta, incluindo subpastas, entram com seus filhos. Criar ou copiar um arquivo basta; `entries` não aceita entradas locais na versão 2.
+- `local.tpl_dir`: todos os pais `.tpl.md` válidos dessa pasta, incluindo subpastas, entram com seus filhos. Criar ou copiar um arquivo basta; `entries` não aceita entradas locais.
 - `out_dir`: os documentos preservam o caminho relativo, trocando `.tpl.md` por `.md`. `AGENTS.md` é gerado na raiz.
 - Sem base, o template principal é `templates/AGENTS.tpl.md` do consumidor.
 - `remote.tpl_dir`: raiz do catálogo dentro de uma base Git, quando ela for configurada. A seleção remota permanece explícita.
@@ -40,7 +40,7 @@ outputs:
 Para consumir conteúdo compartilhado, acrescente um bloco `agents` e as entradas remotas. Exemplo de configuração, com endereço e versão ilustrativos:
 
 ```yaml
-schemaVersion: 2
+schemaVersion: 1
 agents:
   repository: https://git.example.com/equipe/instrucoes.git
   ref: v1.0.0
@@ -58,32 +58,11 @@ outputs:
 
 Com uma base configurada, seu template principal e as regras remotas vêm do checkout fixado. Os templates locais continuam sendo descobertos pela pasta. A CLI não seleciona todo o catálogo remoto automaticamente e não executa scripts dele. Para trocar a versão consumida, edite `agents.ref`, revise com `sync --dry-run` e gere com `sync`.
 
-## Versão 1: seleção explícita preservada
+## Um único contrato
 
-A omissão de `schemaVersion` significa versão 1. Ela exige uma base fixada e declara tanto fontes locais quanto remotas em `entries`:
+Declare `schemaVersion: 1`. Versão ausente, diferente de 1 ou entradas com `origin: local` são inválidas. Fontes locais são descobertas pela pasta; uma base é opcional e passa a ser obrigatória quando há entradas remotas. Não há suporte a formatos privados anteriores nem conversão automática.
 
-```yaml
-schemaVersion: 1
-agents:
-  repository: https://git.example.com/equipe/instrucoes.git
-  ref: v1.0.0
-outputs:
-  AGENTS.md:
-    include:
-      conventions:
-        out_dir: docs/conventions
-        local: { tpl_dir: templates/docs/conventions-local }
-        remote: { tpl_dir: templates/docs/conventions }
-        entries:
-          - origin: local
-            from: contexto-do-projeto.tpl.md
-          - origin: remote
-            from: commits.tpl.md
-```
-
-Arquivos locais não selecionados continuam fora da composição v1. `init` preserva o manifesto existente. Uma troca explícita para v2 exige revisar todos os templates da pasta local e retirar suas entradas locais redundantes. Não há conversão automática.
-
-Os schemas `schemas/agents-compose.v1.schema.json` e `schemas/agents-compose.v2.schema.json` acompanham o pacote e são usados sem baixar schemas. YAML deve conter um único documento UTF-8, sem chaves duplicadas, campos desconhecidos ou aliases excessivos. Erros identificam campo e localização.
+O schema `schemas/agents-compose.v1.schema.json` acompanha o pacote e é usado sem download. YAML deve conter um único documento UTF-8, sem chaves duplicadas, campos desconhecidos ou aliases excessivos. Erros identificam campo e localização.
 
 ## Template de convenção completo
 
@@ -103,7 +82,7 @@ Descreva a mudança feita neste commit.
 
 O bloco `AGENT-CARD` alimenta a descoberta em `AGENTS.md`. O corpo da regra vira `commits.md`, com aviso de documento gerado. As mensagens de commit variam conforme a mudança; o formato não obriga uma mensagem literal fixa.
 
-Um pai `politica.tpl.md` pode ter filhos como `politica.detalhes.tpl.md` na mesma pasta. Seleciona-se o pai; seus filhos são validados e publicados junto da família. Um filho sem pai é erro. Cada fonte tem exatamente um H1 e um bloco de leitura completo e não vazio. Pais locais v2 são ordenados por caminho normalizado portável; famílias remotas seguem a ordem declarada.
+Um pai `politica.tpl.md` pode ter filhos como `politica.detalhes.tpl.md` na mesma pasta. Seleciona-se o pai; seus filhos são validados e publicados junto da família. Um filho sem pai é erro. Cada fonte tem exatamente um H1 e um bloco de leitura completo e não vazio. Pais locais são ordenados por caminho normalizado portável; famílias remotas seguem a ordem declarada.
 
 ## Validação e proteção de arquivos
 
@@ -137,4 +116,4 @@ A skill `agents-update-version` é o roteiro do mantenedor da base. `init --base
 
 A base não usa manifesto consumidor nem sync. Inicialização cruzada, manifesto inserido na base e operações consumidoras nela retornam `PROJECT_ROLE_CONFLICT`, saída 2, antes de escrever. Identificação inválida retorna `PROJECT_ROLE_INVALID`; `validate --base` e release sem inicialização retornam `BASE_NOT_INITIALIZED`. Subpastas da base não redirecionam operações a um consumidor ancestral.
 
-O template `templates/AGENTS.tpl.md` da base continua separado e é usado na geração dos consumidores. A identidade interna não é exigida nos checkouts remotos selecionados pelos manifestos v1/v2, cujos formatos e saídas permanecem iguais.
+O template `templates/AGENTS.tpl.md` da base continua separado e é usado na geração dos consumidores. A identidade interna não é exigida nos checkouts remotos selecionados pelo manifesto v1.

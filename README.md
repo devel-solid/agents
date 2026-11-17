@@ -8,7 +8,7 @@ A equipe escreve as regras. O manifesto define as pastas e, quando necessário, 
 
 | Comando | Uso | Efeito |
 | --- | --- | --- |
-| `agents init` | Preparar um projeto | Cria manifesto versão 2, templates principal/contexto e as skills `agents-write-conventions` e `agents-update-docs`. |
+| `agents init` | Preparar um projeto | Cria manifesto versão 1, templates principal/contexto e as skills `agents-write-conventions` e `agents-update-docs`. |
 | `agents validate` | Conferir configuração, fontes e ambiente | Aponta problemas sem gerar documentos. |
 | `agents sync` | Gerar ou atualizar as instruções | Grava somente os documentos cujo conteúdo mudou. |
 | `agents release --bump minor` | Versionar uma base | Calcula a próxima versão e cria somente sua tag local no commit atual. |
@@ -32,7 +32,7 @@ agents sync --check
 
 `init` prepara as fontes, sem gerar documentos. `sync --dry-run` lista os arquivos previstos sem gravá-los. `sync --check` retorna 0 quando estão atuais ou 1 quando há diferenças. Fontes inválidas e conflitos impedem a geração.
 
-Na versão 2 do manifesto, todos os templates locais válidos da pasta configurada participam da geração. Não há cadastro de regras por comando. A versão 1 continua usando suas entradas explícitas e não é convertida automaticamente.
+O manifesto usa somente `schemaVersion: 1`, declarado explicitamente. Todos os templates locais válidos da pasta configurada participam da geração; `entries` seleciona somente pais remotos. Não há cadastro de regras locais por comando.
 
 ## Compartilhar uma base
 
@@ -81,4 +81,4 @@ npm run check
 npm pack --pack-destination .tmp
 ```
 
-O build compila TypeScript e empacota os assets autorais. O tarball contém o executável, os dois schemas, os scaffolds e a integração pública. Nenhum passo de desenvolvimento publica uma release real. `agents --help` lista as opções; `agents --version` informa a versão da CLI, independente das tags da base.
+O build compila TypeScript e empacota os assets autorais. O tarball contém o executável, o schema v1, os scaffolds e a integração pública. Nenhum passo de desenvolvimento publica uma release real. `agents --help` lista as opções; `agents --version` informa a versão da CLI, independente das tags da base.

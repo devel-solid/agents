@@ -8,6 +8,8 @@ The current Node implementation resolves configured Git inputs, plans complete o
 
 Content stage 0 `simplify-shared-conventions` precedes the runtime stage. Preserve its two-source shared catalog and historical repository-local fixtures. Use accepted candidate neutral/local fixtures; there is no historical consumer to migrate and no real existing-consumer validation prerequisite. Read the permanent catalog spec and final-export boundary alongside runtime contracts. The current repository remains the development home until first-public-version readiness and later handoff authorization.
 
+The public manifest has one format: required `schemaVersion: 1`, directory-discovered local families, optional pinned Git base, and explicit remote-only entries. The former private explicit-local format and development schema v2 are unsupported; historical fixtures remain provenance and are adapted explicitly in tests rather than accepted by the runtime. JSON envelopes, base-role markers, locks, and ownership records have independent format versions.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -50,7 +52,7 @@ The remote is the company's selected public or private content base, not necessa
 - agents sync --offline: use only a compatible lock and verified local cache; reject unresolved new remote selections without network access.
 - A pending transaction is reported by validate --debug and sync --dry-run. When its recorded rollback is safe, sync restores that state and stops; another invocation performs normal generation. Independent edits remain conflicts.
 
-Retain one optional remote base. A manually changed repository/ref/remote selection is reviewed through sync preview and applied transactionally by sync; the plan shows sanitized previous and candidate identities. Failure preserves prior durable state and outputs without fallback to another base. Local-only v2 projects need no remote lock; their local sources/main template remain represented in ownership/provenance. Discovered local families are generation inputs, not remote lock selections.
+Retain one optional remote base. A manually changed repository/ref/remote selection is reviewed through sync preview and applied transactionally by sync; the plan shows sanitized previous and candidate identities. Failure preserves prior durable state and outputs without fallback to another base. Local-only v1 projects need no remote lock; their local sources/main template remain represented in ownership/provenance. Discovered local families are generation inputs, not remote lock selections.
 
 The agents-update-docs skill stays the interface for validation/preview/generation/freshness from the existing manifest, without authoring sources or changing configuration. Agents-write-conventions retains content curation in both roles, and agents-update-version retains reviewed base releases. All three invoke the installed CLI only for their authorized mechanical stages. `sync` does not replace its adapter. An explicit `init` adapter refresh retains the stage-1 adoption and conflict rules; no new adapter-distribution system is introduced here.
 

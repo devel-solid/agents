@@ -43,13 +43,13 @@ agents sync
 agents sync --check
 ```
 
-O resultado inclui `AGENTS.md`, `docs/conventions/contexto-do-projeto.md` e `docs/conventions/commits.md`. O manifesto concentra os caminhos; não é preciso registrar cada template local na versão 2.
+O resultado inclui `AGENTS.md`, `docs/conventions/contexto-do-projeto.md` e `docs/conventions/commits.md`. O manifesto concentra os caminhos; o schema v1 descobre os templates locais pela pasta, sem registrá-los em `entries`.
 
 `validate` confere estrutura e ambiente. `sync --dry-run` lista os documentos previstos; `sync` grava somente o conteúdo alterado. `sync --check` preserva os arquivos e retorna 1 quando falta gerar alguma saída. Um template inválido bloqueia a geração sem editar documentos manualmente.
 
 ## Adotar uma base Git opcional
 
-Configure `agents.repository`, `agents.ref` e as entradas remotas no manifesto. Escolha as regras desejadas; não há seleção automática de todo o catálogo remoto. Leia o [contrato completo](contratos-de-composicao.md) para exemplos v1/v2.
+Configure `agents.repository`, `agents.ref` e as entradas remotas no manifesto. Escolha as regras desejadas; não há seleção automática de todo o catálogo remoto. Leia o [contrato completo](contratos-de-composicao.md) para exemplos do schema v1.
 
 Uma mudança do pin é uma edição do manifesto, seguida de prévia e geração. Criar uma tag na base não altera automaticamente todos os consumidores. Acesso a bases privadas usa o Git e o credential helper já configurados; não grave credenciais no manifesto.
 

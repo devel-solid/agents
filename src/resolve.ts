@@ -379,16 +379,13 @@ export function resolveComposition(
     ? resolveContent(repoRoot, base.repository, base.ref)
     : { checkout: repoRoot, cacheActivity: [] };
   const template = loadTemplate(content.checkout);
-  const entries =
-    manifest.data.schemaVersion === 2
-      ? [
-          ...listParentSources(repoRoot, config.local.tpl_dir).map((from) => ({
-            origin: 'local' as const,
-            from,
-          })),
-          ...config.entries,
-        ]
-      : config.entries;
+  const entries = [
+    ...listParentSources(repoRoot, config.local.tpl_dir).map((from) => ({
+      origin: 'local' as const,
+      from,
+    })),
+    ...config.entries,
+  ];
   const families = entries.map((entry) =>
     resolveFamily(
       entry.origin === 'remote' ? content.checkout : repoRoot,
