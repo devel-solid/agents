@@ -137,6 +137,11 @@ npm pack --dry-run
 npm pack --pack-destination .tmp
 ~~~
 
+Run `npm run setup` after each clone to configure the native Git hook in
+`.githooks/pre-push` using this checkout's local `core.hooksPath`. Repeating setup
+is safe; a different existing hooks path is reported without replacing it.
+The hook runs `npm run check` and blocks the push if that command fails.
+
 `npm test` runs only lightweight unit tests with isolated data or mocked boundaries.
 `check`, pre-push, and CI add type/format checks to that same unit gate. Build and
 archive inspection are delivery checks. The package contains compiled runtime/client

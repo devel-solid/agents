@@ -20,6 +20,6 @@ This repository does not consume the CLI. Its `agentscli.yml` selects the three 
 
 ## Checks
 
-Use a Node.js line declared in `package.json`. Run focused unit tests during implementation and `npm run check` for the general gate. `npm run build` compiles the runtime and assembles client assets. Keep the Lefthook pre-push gate aligned with the lightweight CI.
+Use a Node.js line declared in `package.json`. Run focused unit tests during implementation and `npm run check` for the general gate. `npm run build` compiles the runtime and assembles client assets. Run `npm run setup` after cloning to enable the native Git pre-push hook, which runs the same `npm run check` as CI.
 
 Report changed files, actual checks, and remaining work. Preserve unrelated changes and the requested scope.

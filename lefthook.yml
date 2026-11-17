@@ -1,5 +1,0 @@
-pre-push:
-  parallel: false
-  jobs:
-    - name: tests
-      run: npm run check

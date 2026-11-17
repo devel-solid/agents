@@ -23,13 +23,12 @@
   "scripts": {
     "build": "node scripts/clean-dist.mjs && tsc && node scripts/package-assets.mjs",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml lefthook.yml agentscli.yml",
-    "format:check": "prettier --check src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml lefthook.yml agentscli.yml",
+    "format": "prettier --write src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml agentscli.yml",
+    "format:check": "prettier --check src scripts tests/unit package.json tsconfig.json .github/workflows/node.yml agentscli.yml",
     "test": "tsc && node scripts/test.mjs",
     "check": "npm run typecheck && npm run format:check && npm test",
     "setup": "node scripts/setup.mjs",
-    "prepack": "npm run build",
-    "lefthook:install": "lefthook install"
+    "prepack": "npm run build"
   },
   "engines": {
     "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
@@ -41,7 +40,6 @@
   },
   "devDependencies": {
     "@types/node": "22.20.5",
-    "lefthook": "2.1.8",
     "prettier": "3.9.10",
     "typescript": "7.0.2"
   }
