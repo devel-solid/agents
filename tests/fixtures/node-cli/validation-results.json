@@ -1,0 +1,232 @@
+{
+  "date": "2026-11-16",
+  "platform": "Windows",
+  "runtime": "Node.js v24.15.0",
+  "git": "2.56.1.windows.1",
+  "accepted_stage0_candidate_sha256": "874db2ba0b7588c16ee5d8d675e7c7ca3718a6f97fc8adba60cf1c082fbb8604",
+  "installed_artifact_gate": {
+    "command": "node --test tests/node/integration.test.mjs",
+    "execution": "Fora do sandbox, com escalonamento aprovado pelo ambiente, usando cache npm local e Git exclusivamente descartável.",
+    "tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "duration_seconds": 58.526,
+    "tarball_installations": 1,
+    "consumer_runtime_path": "Somente Node/Git; python, python3, make e tsc comprovadamente ausentes.",
+    "base_runtime_path": "Somente Node; Git, Python, Make e compilador ausentes.",
+    "neutral_outputs_byte_equal": 4,
+    "local_outputs_byte_equal": 19,
+    "company_custom_parents": 3,
+    "company_custom_children": 1,
+    "company_consumers": 2,
+    "real_repository_creation_or_migration": false,
+    "external_git_or_npm_publication": false
+  },
+  "linux_matrix": {
+    "platform": "Ubuntu em WSL2, filesystem Linux, x86_64",
+    "kernel": "6.18.58.1-microsoft-standard-WSL2",
+    "git": "2.34.1",
+    "command": "npm ci --no-audit --no-fund && npm run check",
+    "execution": "Cópia descartável no filesystem Linux sob /tmp/agents-linux-validation.*, sem alterar o checkout Windows nem instalar runtime globalmente. Downloads oficiais nodejs.org verificados contra SHASUMS256.txt; cleanup em uma shell Linux após validar o prefixo absoluto.",
+    "results": [
+      {
+        "node": "22.23.5",
+        "npm": "10.9.9",
+        "archive": "node-v22.23.5-linux-x64.tar.xz",
+        "archive_sha256": "cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8",
+        "official_checksums": "https://nodejs.org/dist/v22.23.5/SHASUMS256.txt",
+        "clean_install": "passou",
+        "typecheck_format_build": "passaram",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 30.503
+      },
+      {
+        "node": "24.22.3",
+        "npm": "11.19.1",
+        "archive": "node-v24.22.3-linux-x64.tar.xz",
+        "archive_sha256": "4f2b175a6d53a5c617a80dba2676238a0688cef28c6da4eba35c7d844e66fcfb",
+        "official_checksums": "https://nodejs.org/dist/v24.22.3/SHASUMS256.txt",
+        "clean_install": "passou",
+        "typecheck_format_build": "passaram",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 34.833
+      },
+      {
+        "node": "26.13.1",
+        "npm": "11.20.0",
+        "archive": "node-v26.13.1-linux-x64.tar.xz",
+        "archive_sha256": "5c063e46bab0fbc1c17cc445d7ff129cbdcd0471be6ed83b6ab864f8143bc864",
+        "official_checksums": "https://nodejs.org/dist/v26.13.1/SHASUMS256.txt",
+        "clean_install": "passou",
+        "typecheck_format_build": "passaram",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 35.266
+      }
+    ],
+    "final_toolchain_followup": {
+      "reason": "Após corrigir o helper de cópia do harness para o problema de paths acentuados do fs.cpSync no Node22/Windows, o mesmo cenário foi repetido em Linux com a fonte final.",
+      "node": "26.13.1",
+      "npm": "11.20.0",
+      "command": "node --test tests/node/toolchain.test.mjs",
+      "source_sha256": "aa41da20819ec871ac49f80d17fadd7bbcc404118fbccb7180e3ce19230af600",
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "test_duration_seconds": 2.466
+    },
+    "harness_corrections": [
+      "Cache npm vazio após npm ci tem os tarballs do lock, mas pode não conter packuments necessários ao install de um novo tarball. O teste passou a usar --prefer-offline, permitindo metadata de instalação sem acesso ao catálogo de conteúdo.",
+      "O teste de desenvolvimento com PATH restrito precisa selecionar /bin/sh explicitamente via npm_config_script_shell no POSIX para executar npm scripts; os comandos do runtime continuam com PATH só Node/Git."
+    ],
+    "temporary_directories_removed": true,
+    "windows_checkout_changed_by_linux_runs": false,
+    "global_node_or_default_runtime_changed": false
+  },
+  "preservation": {
+    "root_generated_documents": "SHA-256 inalterados antes/depois do gate instalado.",
+    "root_manifest": "SHA-256 inalterado, pin real preservado.",
+    "generated_openspec_skills": "SHA-256 inalterados.",
+    "root_head_tags_remotes": "Inalterados.",
+    "consumer_sources_manifest_integration_documents": "Preview/check/doctor e repetições conferidos por bytes e timestamps.",
+    "unselected_files": "Preservados, inclusive antigo arquivo plano e arquivo próprio não selecionado.",
+    "protected_baseline_hashes_checked": 29,
+    "changed_protected_hashes": []
+  },
+  "initial_attempts": [
+    "O sandbox usa cache npm isolado e npm install --offline falhou com ENOTCACHED antes do gate; nenhuma conclusão parcial foi registrada.",
+    "A primeira execução fora do sandbox encontrou quoting incorreto no teste do shim Windows e falhas Git locais intermitentes em concorrência com outra suíte. O quoting foi corrigido; oito clones isolados passaram e a repetição integral instalada passou 11/11.",
+    "A primeira chamada manual do Lefthook sincronizou seu hook gerado local e não executou jobs por não haver arquivos de push. O gate final usou --force e --no-auto-install; não houve push. Uma tentativa com Git interno no PATH restrito falhou e foi corrigida no harness conforme windows_matrix.harness_corrections."
+  ],
+  "platform_evidence": {
+    "Windows_Node_24": "Executado no Node24.22.3: pre-push local invocou npm run check e passou66/66, sem Python/Make, sem push.",
+    "Linux_Node_22_24_26": "Executado no Ubuntu WSL2: npm ci e npm run check passaram 66/66 em cada linha, sem skips; toolchain final também passou no foco Linux26.",
+    "macOS_Node_22_24_26": "Matriz CI configurada; não há executor macOS neste ambiente e sua execução não foi observada.",
+    "Windows_Node_22": "Executado: npm run check passou66/66 no Node22.23.5 e foco YAML final12/12.",
+    "Windows_Node_26": "Executado: npm run check passou66/66 no Node26.13.1 e foco YAML final12/12."
+  },
+  "limits": [
+    "Não houve push do projeto para acionar CI remota.",
+    "Aceitação do usuário, sincronização de specs e arquivamento da change permanecem posteriores.",
+    "O pacote não foi publicado no registro npm; nenhuma conta, credencial ou disponibilidade do nome foi verificada nesta etapa."
+  ],
+  "windows_matrix": {
+    "platform": "Windows x64",
+    "git": "2.56.1.windows.1",
+    "official_runtime_checksums": "Executáveis win-x64/node.exe conferidos contra SHASUMS256.txt de nodejs.org; Node global preservado.",
+    "results": [
+      {
+        "node": "22.23.5",
+        "node_exe_sha256": "247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a",
+        "command": "npm run check via runtime oficial em cache",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 116.499
+      },
+      {
+        "node": "24.22.3",
+        "node_exe_sha256": "86fc4785327db5f5c7558dc6156c543b433c313e813a222e088086222ab4afa6",
+        "command": "Lefthook pre-push --force --no-auto-install --no-tty; job npm run check",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 98.173,
+        "hook_duration_seconds": 100.89,
+        "path": "Runtime oficial Node + wrapper npm + Git/cmd + Windows System32, sem Python/Make; consumers ainda mais restritos pelos testes."
+      },
+      {
+        "node": "26.13.1",
+        "node_exe_sha256": "f5109dc868ec38703ad8f305e0aceece717cb60d4889873f434017af4e96cccb",
+        "command": "npm run check via runtime oficial em cache",
+        "tests": 66,
+        "passed": 66,
+        "failed": 0,
+        "skipped": 0,
+        "exit_code": 0,
+        "test_duration_seconds": 106.299
+      }
+    ],
+    "byte_preservation_followup": {
+      "change": "Preservar BOM UTF-8 no loader compartilhado para não remover bytes alheios ao editar agents.ref.",
+      "node": [
+        "22.23.5",
+        "24.22.3",
+        "26.13.1"
+      ],
+      "command": "node --test --test-name-pattern set-compose-ref|YAML|schema|manifesto tests/node/engine.test.mjs tests/node/release.test.mjs tests/node/cli.test.mjs",
+      "tests_per_runtime": 12,
+      "passed_per_runtime": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "harness_corrections": [
+      "Node22.23.5/Windows fs.cpSync recursivo cria destino com mojibake quando o nome tem á; troca por walker/copyFile preserva o mesmo cenário acentuado. O teste isolado passou e a repetição completa passou66/66.",
+      "Git Bash expõe primeiro ucrt64/bin/git.exe; isolá-lo no PATH causa crash0xC0000005 em clone/ls-remote. O harness agora prefere o wrapper Git/cmd/git.exe e mantém os asserts de ausência de Python/Make/tsc."
+    ],
+    "pre_push": {
+      "node": "24.22.3",
+      "command": "node node_modules/lefthook/bin/index.js run pre-push --force --no-auto-install --no-tty --colors off",
+      "job": "npm run check",
+      "passed": true,
+      "tests": 66,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "git_push_executed": false
+    }
+  },
+  "independent_review": {
+    "areas": [
+      "motor/contratos",
+      "CLI/init/doctor",
+      "release/skills/documentação",
+      "tarball/testes/setup/CI"
+    ],
+    "findings_fixed": [
+      "alias de init para metadados reservados",
+      "branch remota não padrão ou desatualizada",
+      "separadores públicos portáveis",
+      "hardlinks de destinos"
+    ],
+    "remaining_product_findings": []
+  },
+  "task_tracking": {
+    "complete": 22,
+    "total": 24,
+    "pending": [
+      {
+        "task": "2.4",
+        "reason": "Validação de caminhos concluída em Windows/Linux; macOS sem executor."
+      },
+      {
+        "task": "5.3",
+        "reason": "Candidatos, preservação, rollback e evidência Windows/Linux concluídos; gate completo de plataformas aguarda macOS."
+      }
+    ]
+  },
+  "additional_checks": {
+    "openspec_strict_validation": "passou",
+    "git_diff_check": "passou",
+    "independent_final_review": "sem achados materiais remanescentes"
+  }
+}

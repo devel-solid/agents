@@ -1,0 +1,433 @@
+{
+  "legacyScenarioCount": 61,
+  "notes": "Mapeamento interno de regressões, sem promessa de compatibilidade com versões privadas. Corrigidos separadamente: YAML unificado, Markdown fora de exemplos e destinos portáveis/reservados.",
+  "scenarios": [
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_find_repo_root_searches_from_launcher_location",
+      "disposition": "replaced",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Launcher Python e cópia de código remoto foram retirados; --repo-root e integração empacotada são o contrato público inicial."
+    },
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_bootstrap_clones_checkout_and_copies_skill",
+      "disposition": "replaced",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Launcher Python e cópia de código remoto foram retirados; --repo-root e integração empacotada são o contrato público inicial."
+    },
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_bootstrap_rejects_non_git_checkout",
+      "disposition": "replaced",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Launcher Python e cópia de código remoto foram retirados; --repo-root e integração empacotada são o contrato público inicial."
+    },
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_bootstrap_rejects_tabs_in_manifest",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Inicialização explícita pelo bin instalado; integração pertence ao pacote, não ao conteúdo Git."
+    },
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_bootstrap_accepts_tag_refs_even_when_checkout_needs_refresh",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Inicialização explícita pelo bin instalado; integração pertence ao pacote, não ao conteúdo Git."
+    },
+    {
+      "legacyModule": "test_agents_bootstrap.py",
+      "legacyScenario": "test_main_uses_script_location",
+      "disposition": "replaced",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Launcher Python e cópia de código remoto foram retirados; --repo-root e integração empacotada são o contrato público inicial."
+    },
+    {
+      "legacyModule": "test_local_toolchain.py",
+      "legacyScenario": "test_package_metadata_declares_local_lefthook_tooling",
+      "disposition": "replaced",
+      "nodeEvidence": "package.json, scripts/, .github/workflows/, tests/node/integration.test.mjs",
+      "reason": "Setup/teste por npm e artefato instalado sem Python/Make; Lefthook continua gate local."
+    },
+    {
+      "legacyModule": "test_local_toolchain.py",
+      "legacyScenario": "test_make_setup_validates_host_and_uses_local_npm_tooling",
+      "disposition": "replaced",
+      "nodeEvidence": "package.json, scripts/, .github/workflows/, tests/node/integration.test.mjs",
+      "reason": "Setup/teste por npm e artefato instalado sem Python/Make; Lefthook continua gate local."
+    },
+    {
+      "legacyModule": "test_local_toolchain.py",
+      "legacyScenario": "test_make_tests_and_pre_push_keep_test_entrypoint",
+      "disposition": "replaced",
+      "nodeEvidence": "package.json, scripts/, .github/workflows/, tests/node/integration.test.mjs",
+      "reason": "Setup/teste por npm e artefato instalado sem Python/Make; Lefthook continua gate local."
+    },
+    {
+      "legacyModule": "test_local_toolchain.py",
+      "legacyScenario": "test_local_lefthook_test_convention_is_declared_and_valid",
+      "disposition": "replaced",
+      "nodeEvidence": "package.json, scripts/, .github/workflows/, tests/node/integration.test.mjs",
+      "reason": "Setup/teste por npm e artefato instalado sem Python/Make; Lefthook continua gate local."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_candidate_identity_is_explicit_and_reproducible",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_inventory_preserves_local_normative_content_and_retirement",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_exact_two_shared_sources_have_valid_cards",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_profiles_generate_discoverable_utf8_lf_and_stay_idempotent",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_arbitrary_local_family_and_company_catalog_are_not_limited_to_two",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_shared_instruction_catalog.py",
+      "legacyScenario": "test_retired_sources_fail_visibly_without_substitution_or_output_changes",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/integration.test.mjs, tests/fixtures/node-cli/provenance.json",
+      "reason": "Inputs e todos os outputs dos dois perfis foram capturados antes do port e verificados por hashes contra a identidade aceita."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_remove_path_handles_readonly_git_pack_files",
+      "disposition": "implementation-specific",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Helpers internos Python de remoção não formam contrato público; o port não remove outputs por inferência de nomes. Erros operacionais Git são verificados no pacote."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_readonly_removal_retries_the_failed_unlink",
+      "disposition": "implementation-specific",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Helpers internos Python de remoção não formam contrato público; o port não remove outputs por inferência de nomes. Erros operacionais Git são verificados no pacote."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_readonly_removal_preserves_other_permission_errors",
+      "disposition": "implementation-specific",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Helpers internos Python de remoção não formam contrato público; o port não remove outputs por inferência de nomes. Erros operacionais Git são verificados no pacote."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_compose_rejects_tabs",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_accepts_new_schema_and_normalizes_fields",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_allows_empty_entries",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_missing_or_invalid_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_missing_source_root_blocks_or_tpl_dirs",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_missing_or_invalid_entries",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_unsafe_convention_directories",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_invalid_entry_values",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_extra_keys_in_conventions_local_remote_and_entries",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_load_runtime_context_rejects_legacy_schema_without_source_roots",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_resolve_convention_source_path_and_expected_public_target_preserve_subdirectories_and_validate_root",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_validate_convention_targets_uses_final_public_target_and_detects_collisions",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_resolve_convention_family_respects_relative_directory_boundaries",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_sync_repository_publishes_nested_targets_and_generates_agents_md",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/engine.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_docs.py",
+      "legacyScenario": "test_sync_repository_cleans_legacy_flat_targets_without_touching_current_targets",
+      "disposition": "corrected",
+      "nodeEvidence": "tests/node/integration.test.mjs",
+      "reason": "Arquivos não selecionados e sem ownership permanecem; remoção por inferência foi explicitamente excluída da etapa 1."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_next_version_bumps_semver",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_next_version_rejects_invalid_ref",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_set_compose_ref_updates_only_agents_ref",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_accepts_clean_main_head_ahead_of_origin",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_wrong_branch",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_dirty_worktree",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_head_drift",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_existing_tag",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_missing_origin",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_compose_drift",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_missing_origin_main",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_origin_main_drift_since_proposal",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_origin_main_ahead",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_state_rejects_origin_main_divergent",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_accepts_only_release_outputs",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_markdown_outside_configured_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_accepts_created_nested_markdown_under_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_accepts_modified_nested_markdown_under_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_allows_deleted_nested_markdown_under_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_old_conventions_schema",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_load_conventions_out_dir_rejects_incomplete_conventions_schema",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_unsafe_out_dir",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_deleted_agents_md",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_deleted_agents_compose",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_deleted_update_docs_script",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_renamed_agents_md_out_of_scope",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    },
+    {
+      "legacyModule": "test_update_version.py",
+      "legacyScenario": "test_validate_release_paths_rejects_unrelated_files",
+      "disposition": "preserved",
+      "nodeEvidence": "tests/node/release.test.mjs",
+      "reason": "Contrato mantido e verificado no motor Node e no pacote instalado."
+    }
+  ]
+}

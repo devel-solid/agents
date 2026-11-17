@@ -1,0 +1,59 @@
+{
+  "accepted_stage0_candidate": {
+    "sha256": "874db2ba0b7588c16ee5d8d675e7c7ca3718a6f97fc8adba60cf1c082fbb8604",
+    "files_sha256_lf": {
+      ".agents/skills/update-docs/scripts/update_docs.py": "b4f5de5b71d84e44afa9342607ddd4b48307670dd8b2fada6d36de19bd91912a",
+      "agents-compose.yml": "e236e0f948eec0eb5c41e3f0771c91004a7845ffb6d8f8c73a9b0f0dec2cc2d4",
+      "docs/guides/contratos-de-composicao.md": "25403c1f37e51851e9a36e29c8968fb6bf8d99fab85e985952dcff6b82eab7aa",
+      "templates/AGENTS.tpl.md": "5ebcc953d348229b383d86e1ad5410590a3287ab2cd09a05a7d4fb32910fb3b3",
+      "templates/docs/conventions/composicao-de-instrucoes-para-repositorios-consumidores.tpl.md": "088478f7964d4ccbb5c7856bd539d15b1bc912ca64296816a3289ab10a5fb66d",
+      "templates/docs/conventions/seguranca-para-agentes-e-conteudo-nao-confiavel.tpl.md": "6068017e941b02ceef5991f70b0eef94fd9c4f37aaae2a40bc4a91f69df1e929",
+      "templates/docs/conventions-local/apresentacao-visual-de-artefatos-tecnicos.tpl.md": "4647896d357d75e03252cb9d5cf579eb62d55cc3164cb001d50a7a515837224c",
+      "templates/docs/conventions-local/arquivos-temporarios.tpl.md": "d0316fd75f99b1440e70835374592d50a8cdb868734dec38883f24c58d3f23c2",
+      "templates/docs/conventions-local/atualizacao-segura-e-auditavel-de-dependencias-e-plataformas.tpl.md": "cf9e33dbe916e91d9a7e5a6fd48645b744431820ae44a4c98c8a1f032caf1472",
+      "templates/docs/conventions-local/autoria-e-publicacao-de-conventions.tpl.md": "400dd2c26df09f9ac56d6df67a1dd34b82e28badcd1be657cc6d7f6f4184dc55",
+      "templates/docs/conventions-local/contexto-do-projeto.tpl.md": "013d97bebfd4080f3d5bc09da744c70dee2d1bfb0d26c4be5cdb89a6ecb338ff",
+      "templates/docs/conventions-local/convencoes-para-skills.semantica-e-determinismo.tpl.md": "9a364ee2c07f4cf58504c45df460ff7a5b8d4954f11b8875a7eb2639601f06ca",
+      "templates/docs/conventions-local/convencoes-para-skills.tpl.md": "d819961f9e3629041392083c98fe33e69a9c18101c75cf73e3b2dda488027639",
+      "templates/docs/conventions-local/idiomas-pt-br-e-en-us-e-buscas-textuais.chat.tpl.md": "ca989206452838691dc9351c1e03218c6ae19922d2b20490fbee961c9ff4c54f",
+      "templates/docs/conventions-local/idiomas-pt-br-e-en-us-e-buscas-textuais.openspec.tpl.md": "4369aad81319141ba00ac93b71e3447f3fe736c71a03869f4d7b08525e84eddf",
+      "templates/docs/conventions-local/idiomas-pt-br-e-en-us-e-buscas-textuais.textos-gerais.tpl.md": "4b3369b337966d2ac9c54783b0ed8e57f683b4e90147622a6dc73ba6e0e473ed",
+      "templates/docs/conventions-local/idiomas-pt-br-e-en-us-e-buscas-textuais.tpl.md": "2a249402a82d21b5726571d9a75fff905049f9543167b08708964d3e6e471985",
+      "templates/docs/conventions-local/idiomas-pt-br-e-en-us-e-buscas-textuais.utf-8-e-buscas.tpl.md": "3bde7b14cc67a26e7bda2ae4865a086fb94441a984520946a7ba6698b7ee9a43",
+      "templates/docs/conventions-local/padrao-de-mensagem-de-commit.tpl.md": "67e695a2d51d373ccc210a17bbe117dd0e4cfa8b2e487c2a57b684370cbd913f",
+      "templates/docs/conventions-local/politica-operacional-do-repositorio.tpl.md": "c372381042c4911f45b9eebc1a4b0e1a533b46d8c2934125e5092af0b6cb3ec3",
+      "templates/docs/conventions-local/python-no-host-para-artefatos-estruturados.tpl.md": "bedb475edbe3e2e4cf01ab0009d26677b59d56af631a30ccc0838827876af7d9",
+      "templates/docs/conventions-local/testes-minimos-e-lefthook.tpl.md": "81af5b15cfac4837926d1166e3a079a8974c4a54ee2836ba3abc90efc2fda719"
+    }
+  },
+  "output_sha256": {
+    "neutral": {
+      "AGENTS.md": "cf30273e0e16a192a21b208ed9a991ee70f215fed8add8fd9bcae4a03643b184",
+      "docs/conventions/composicao-de-instrucoes-para-repositorios-consumidores.md": "05f10af20ebc3800880c452adfdc8c93cecab0b0ee41049d63dc2962199fbc7f",
+      "docs/conventions/contexto-do-projeto.md": "48ced4485d27d0e4ea09111ef32ea884f03dafb6b099433986e9d95014d6fafa",
+      "docs/conventions/seguranca-para-agentes-e-conteudo-nao-confiavel.md": "7cbb5ad68c51f38d8b1298bbc24d101d2a36b4719bf7f2eb92d30588ddf00818"
+    },
+    "local": {
+      "AGENTS.md": "b09015bdcabf6958a653abdd01c1ff139ba3f3f7eaba748a40e3592ac7edd204",
+      "docs/conventions/apresentacao-visual-de-artefatos-tecnicos.md": "21219d2ae6627ef03f3e6ce32a9918ebb21a1cc61bdee3b6dc0669e2fff396d7",
+      "docs/conventions/arquivos-temporarios.md": "5e616c8e012a5c70d45294511d9cd037fcbc92ee6a698e6bee61808bc9791b05",
+      "docs/conventions/atualizacao-segura-e-auditavel-de-dependencias-e-plataformas.md": "ec21a6eea10f66cb1662b47da5f51890f843aceea93c9dbdc4104aa4b85bc542",
+      "docs/conventions/autoria-e-publicacao-de-conventions.md": "be0c36c91efe726aa02bf14c2c3e418ecaf642b9c00ee0f55ada7a858d00995c",
+      "docs/conventions/composicao-de-instrucoes-para-repositorios-consumidores.md": "05f10af20ebc3800880c452adfdc8c93cecab0b0ee41049d63dc2962199fbc7f",
+      "docs/conventions/contexto-do-projeto.md": "e842f3d96686c822d3a428a75cbc9b0bd7b2896d046a2bf787f0669dbc6a93a4",
+      "docs/conventions/convencoes-para-skills.md": "401d56f809ed9e29803664eb9a083ab6fac66acaa259754bc58af3fb0912b43d",
+      "docs/conventions/convencoes-para-skills.semantica-e-determinismo.md": "66d631b40d258c2d3da1a70b0095cd359a414e000ce413fd4c40716e0b7ac1bd",
+      "docs/conventions/idiomas-pt-br-e-en-us-e-buscas-textuais.chat.md": "212425f933c0a44fa061298befe8f370c13bcd15c2be602ac977aea14d313ecf",
+      "docs/conventions/idiomas-pt-br-e-en-us-e-buscas-textuais.md": "33f85eeb5915a786ad4ea886263e5b5db8f2aea39f1ab28c8b401f7bdcf8c023",
+      "docs/conventions/idiomas-pt-br-e-en-us-e-buscas-textuais.openspec.md": "a9c3b1b73b6cd40b4ee528808372f28f2c1564e3de37fc70bc479d4b50ea9c09",
+      "docs/conventions/idiomas-pt-br-e-en-us-e-buscas-textuais.textos-gerais.md": "3288409ac92a8ed9ab87a0647a472a413a5afabff538813a5dbf1a47fd24cd7a",
+      "docs/conventions/idiomas-pt-br-e-en-us-e-buscas-textuais.utf-8-e-buscas.md": "42108fa558b28b29b325a092dab5faad689cbc3df1600505bf1d5d74214ea441",
+      "docs/conventions/padrao-de-mensagem-de-commit.md": "263a31888d599a197ce65e535c1fde271a44aa28a3f9cd627ba0683a9d158fdb",
+      "docs/conventions/politica-operacional-do-repositorio.md": "e74d5283be21f7a7a7315e432999185ac097e32a25574007792e1ff0ef9ccdae",
+      "docs/conventions/python-no-host-para-artefatos-estruturados.md": "3aa9d57f691950bb2df9ccae78cbef4957ce38e313c46ba788b35ba702e50bc6",
+      "docs/conventions/seguranca-para-agentes-e-conteudo-nao-confiavel.md": "7cbb5ad68c51f38d8b1298bbc24d101d2a36b4719bf7f2eb92d30588ddf00818",
+      "docs/conventions/testes-minimos-e-lefthook.md": "229d450a095ebd30b2d48316f313aa0d2d75cd0d00d4f883cbdf4959d7c0cf03"
+    }
+  },
+  "capture": "Python oracle before the Node port; disposable local Git-backed sources; no root publication"
+}

@@ -1,14 +1,45 @@
 {
-  "name": "agents",
+  "name": "@devel-solid/agents",
   "version": "3.0.2",
-  "private": true,
+  "description": "Composição de instruções para agentes a partir de bases Git independentes.",
+  "type": "module",
+  "bin": {
+    "agents": "dist/cli.js"
+  },
+  "files": [
+    "dist/**/*.js",
+    "schemas/agents-compose.v1.schema.json",
+    "schemas/agents-compose.v2.schema.json",
+    "assets/",
+    "docs/guides/contratos-de-composicao.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
+    "build": "node scripts/clean-dist.mjs && tsc && node scripts/package-assets.mjs",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write src scripts tests/node schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
+    "format:check": "prettier --check src scripts tests/node schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
+    "test": "npm run build && node scripts/test.mjs",
+    "check": "npm run typecheck && npm run format:check && npm test",
+    "setup": "node scripts/setup.mjs",
+    "prepack": "npm run build",
     "lefthook:install": "lefthook install"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "remark-parse": "11.0.0",
+    "unified": "11.0.5",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
-    "lefthook": "2.1.8"
+    "@types/node": "22.20.5",
+    "lefthook": "2.1.8",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2"
   }
 }
