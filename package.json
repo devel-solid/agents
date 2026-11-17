@@ -8,9 +8,11 @@
   },
   "files": [
     "dist/**/*.js",
-    "schemas/agents-compose.v1.schema.json",
+    "schemas/*.schema.json",
     "assets/",
-    "docs/guides/contratos-de-composicao.md"
+    "docs/guides/contratos-de-composicao.md",
+    "docs/guides/integracao-em-repositorio-consumidor.md",
+    "docs/guides/manutencao-do-repositorio-agents.md"
   ],
   "publishConfig": {
     "access": "public"
@@ -18,9 +20,9 @@
   "scripts": {
     "build": "node scripts/clean-dist.mjs && tsc && node scripts/package-assets.mjs",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write src scripts tests/node schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
-    "format:check": "prettier --check src scripts tests/node schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
-    "test": "npm run build && node scripts/test.mjs",
+    "format": "prettier --write src scripts tests/node tests/unit schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
+    "format:check": "prettier --check src scripts tests/node tests/unit schemas package.json tsconfig.json .github/workflows/node.yml lefthook.yml",
+    "test": "tsc && node scripts/test.mjs",
     "check": "npm run typecheck && npm run format:check && npm test",
     "setup": "node scripts/setup.mjs",
     "prepack": "npm run build",

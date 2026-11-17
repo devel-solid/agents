@@ -23,6 +23,8 @@ fontes .tpl.md + agents-compose.yml
 - No manifesto `schemaVersion: 1`, `local.tpl_dir` determina as famílias locais: criar ou copiar um template válido nessa pasta basta. `entries` seleciona somente pais remotos, com `origin: remote` e `from` relativo a `remote.tpl_dir`. `out_dir` define o destino publicado.
 - Uma base Git é opcional. Quando configurada, `agents.repository/ref` fixa seu template principal e as fontes remotas; sem base, o template principal é local. Entradas remotas exigem uma base configurada.
 - Use o fluxo público de sincronização do projeto para materializar saídas quando autorizado; quando esse fluxo for a skill `agents-update-docs`, use essa skill. Autoria sozinha não autoriza publicação quando a política local separar essas etapas. O fluxo de release é definido por cada projeto.
+- Antes da primeira geração com ownership, um documento existente precisa corresponder exatamente ao resultado esperado após normalizar quebras de linha. Um aviso de arquivo gerado não comprova ownership. Se houver conflito, reconcilie a alteração na fonte e restaure a saída correspondente; não apague metadados para forçar substituição.
+- Revise mudanças de seleção e destino com `agents sync --dry-run`. A sincronização autorizada remove somente saídas antes registradas em `.agents/agents-state.json` que ainda correspondam aos hashes gerados. Arquivos alheios ou editados são preservados; uma edição conflitante bloqueia a operação inteira.
 
 ## Fontes e descoberta
 
@@ -37,4 +39,4 @@ Cada empresa pode manter seu template e suas famílias em uma base Git própria,
 
 Para campos, schema v1 e exemplos completos, consulte `docs/guides/contratos-de-composicao.md` no pacote instalado da **ferramenta fornecedora do gerador, da mesma versão utilizada na composição**. A referência acompanha a CLI para uso offline; uma base de empresa ou um consumidor não precisa copiá-la nem conter código do motor.
 
-Declare `schemaVersion: 1`; versão ausente ou diferente é inválida. Todos os comandos usam a mesma validação YAML/schema. A integração `agents-update-docs` pertence ao pacote instalado por `agents init`, não ao pin de conteúdo; `sync` nunca executa scripts da base nem substitui motor ou skill. Os destinos incluem `AGENTS.md`, equivalência de maiúsculas/minúsculas e links resolvidos; arquivos não selecionados ou alheios são preservados nesta etapa.
+Declare `schemaVersion: 1`; versão ausente ou diferente é inválida. Todos os comandos usam a mesma validação YAML/schema. A integração `agents-update-docs` pertence ao pacote instalado por `agents init`, não ao pin de conteúdo; `sync` nunca executa scripts da base nem substitui motor ou skill. Os destinos incluem `AGENTS.md`, equivalência de maiúsculas/minúsculas e links resolvidos. O lock fixa o commit remoto; alterações locais continuam autorais e não atualizam a base. Uma adoção remota exige editar explicitamente a seleção no manifesto, revisar a prévia e autorizar a geração.

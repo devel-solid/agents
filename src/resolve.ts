@@ -1,8 +1,28 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { EngineError, type LoadedManifest } from './manifest.js';
+import { ensureRuntimeIgnored } from './runtime.js';
+import {
+  canonicalJson,
+  engineVersion,
+  lockMatchesManifest,
+  readLock,
+  remoteSelection,
+  repositoryIdentity,
+  textHash,
+  type ContentLock,
+} from './lock.js';
 import {
   assertWithin,
   portableKey,
@@ -26,40 +46,131 @@ export interface ConventionArtifact extends ParsedSource {
 export interface ConventionFamily {
   parent: ConventionArtifact;
   children: ConventionArtifact[];
+  origin?: 'local' | 'remote';
 }
 export interface ResolvedComposition {
   repoRoot: string;
   manifest: LoadedManifest;
-  source: { repository?: string; ref?: string; checkout: string };
+  source: {
+    repository?: string;
+    ref?: string;
+    checkout: string;
+    commit?: string;
+  };
   templatePath: string;
   cacheActivity: string[];
   template: string;
   families: ConventionFamily[];
+  lock?: ContentLock;
+  previousLock?: ContentLock;
 }
 export function redact(text: string): string {
-  return text.replace(
-    /([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+(?::[^\s/@]*)?@/giu,
-    '$1[redigido]@',
-  );
+  return text
+    .replace(
+      /([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+(?::[^\s/@]*)?@/giu,
+      '$1[redigido]@',
+    )
+    .replace(
+      /([?&](?:access_token|token|password|secret|key|auth|credential)=)[^&\s'"<>]+/giu,
+      '$1[redigido]',
+    )
+    .replace(
+      /\b(?:gh[pousr]_[a-z0-9_]+|github_pat_[a-z0-9_]+|glpat-[a-z0-9_-]+)\b/giu,
+      '[redigido]',
+    )
+    .replace(
+      /((?:authorization\s*:\s*(?:bearer|basic)|password|access_token|secret|token)\s*[=: ]\s*)[^\s'"<>]+/giu,
+      '$1[redigido]',
+    );
 }
 export function git(args: string[], cwd?: string): string {
-  const result = spawnSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    windowsHide: true,
-    maxBuffer: 16 * 1024 * 1024,
-  });
-  if (result.error && (result.error as NodeJS.ErrnoException).code === 'ENOENT')
+  const configured = process.env.AGENTS_GIT_TIMEOUT_MS ?? '30000';
+  const timeout = Number(configured);
+  if (
+    !/^\d+$/u.test(configured) ||
+    !Number.isSafeInteger(timeout) ||
+    timeout < 1 ||
+    timeout > 300000
+  )
+    throw new EngineError(
+      'GIT_TIMEOUT_CONFIG',
+      'AGENTS_GIT_TIMEOUT_MS deve ser um inteiro entre 1 e 300000 milissegundos.',
+    );
+  const supervised = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(new URL('./git-process.js', import.meta.url)),
+      String(timeout),
+      ...args,
+    ],
+    {
+      cwd,
+      encoding: 'utf8',
+      windowsHide: true,
+      maxBuffer: 40 * 1024 * 1024,
+      timeout: timeout + 5000,
+      killSignal: 'SIGKILL',
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    },
+  );
+  if (
+    supervised.error &&
+    (supervised.error as NodeJS.ErrnoException).code === 'ETIMEDOUT'
+  )
+    throw new EngineError(
+      'GIT_TIMEOUT',
+      `Git excedeu o limite de ${timeout} ms e foi encerrado.`,
+      3,
+      {
+        remediation:
+          'Confira o acesso à base e a rede; ajuste AGENTS_GIT_TIMEOUT_MS (1–300000) se necessário.',
+      },
+    );
+  let result: {
+    stdout: string;
+    stderr: string;
+    status: number | null;
+    errorCode?: string;
+    timedOut?: boolean;
+    cancelled?: boolean;
+    overflow?: boolean;
+  };
+  try {
+    result = JSON.parse(supervised.stdout) as typeof result;
+  } catch {
+    throw new EngineError(
+      'GIT_OPERATION',
+      'O supervisor Git não concluiu a operação.',
+      3,
+    );
+  }
+  if (result.timedOut)
+    throw new EngineError(
+      'GIT_TIMEOUT',
+      `Git excedeu o limite de ${timeout} ms; sua árvore de processos foi encerrada.`,
+      3,
+      {
+        remediation:
+          'Confira o acesso à base e a rede; ajuste AGENTS_GIT_TIMEOUT_MS (1–300000) se necessário.',
+      },
+    );
+  if (result.cancelled)
+    throw new EngineError(
+      'GIT_CANCELLED',
+      'Operação Git cancelada; sua árvore de processos foi encerrada.',
+      3,
+    );
+  if (result.errorCode === 'ENOENT')
     throw new EngineError(
       'GIT_MISSING',
       'Git não está disponível no PATH.',
       2,
       { remediation: 'Instale Git e confirme git --version.' },
     );
-  if (result.error || result.status !== 0)
+  if (result.errorCode || result.overflow || result.status !== 0)
     throw new EngineError(
       'GIT_OPERATION',
-      `Falha ao acessar conteúdo Git: ${redact(result.stderr?.trim() || result.error?.message || 'operação encerrada sem sucesso')}`,
+      `Falha ao acessar conteúdo Git: ${redact(result.stderr?.trim() || (result.overflow ? 'saída excedeu o limite de 16 MiB' : 'operação encerrada sem sucesso'))}`,
       3,
       {
         remediation:
@@ -70,7 +181,7 @@ export function git(args: string[], cwd?: string): string {
 }
 export function contentFingerprint(repository: string, ref: string): string {
   return createHash('sha256')
-    .update(`${repository}\n${ref}`)
+    .update(`${repositoryIdentity(repository)}\n${ref}`)
     .digest('hex')
     .slice(0, 16);
 }
@@ -78,65 +189,145 @@ export function resolveContent(
   repoRoot: string,
   repository: string,
   ref: string,
-): { checkout: string; cacheActivity: string[] } {
-  git(['--version']);
+  options: {
+    commit?: string;
+    lock?: ContentLock;
+    offline?: boolean;
+    inspect?: boolean;
+  } = {},
+): { checkout: string; cacheActivity: string[]; commit: string } {
   if (
     repository.startsWith('-') ||
     ref.startsWith('-') ||
     /[\r\n\0]/u.test(repository + ref)
   )
     throw new EngineError('SOURCE_IDENTITY', 'Repository/ref inválido.');
-  const cacheRoot = safeJoin(repoRoot, '.cache/agents', 'cache');
-  const checkout = assertWithin(
-    join(cacheRoot, contentFingerprint(repository, ref)),
-    cacheRoot,
-    'cache',
-  );
+  const cacheRoot = safeJoin(repoRoot, '.cache/agents/content', 'cache');
   if (
     portableKey(cacheRoot) !==
-      portableKey(join(resolvedPath(repoRoot), '.cache', 'agents')) ||
-    portableKey(checkout) !==
-      portableKey(join(cacheRoot, contentFingerprint(repository, ref)))
+    portableKey(join(resolvedPath(repoRoot), '.cache', 'agents', 'content'))
   )
     throw new EngineError(
       'CACHE_PATH',
       'O cache de conteúdo não pode usar links ou aliases de diretório.',
     );
   const activity: string[] = [];
-  if (existsSync(checkout)) {
-    let valid = false;
+  let commit = options.commit;
+  const cachePath = (sha: string): string => {
+    const path = join(cacheRoot, contentFingerprint(repository, sha));
+    if (
+      portableKey(assertWithin(path, cacheRoot, 'cache')) !== portableKey(path)
+    )
+      throw new EngineError(
+        'CACHE_PATH',
+        'A entrada de cache não pode usar links ou aliases.',
+      );
+    return path;
+  };
+  if (commit) {
+    const checkout = cachePath(commit);
+    if (existsSync(checkout)) {
+      try {
+        verifyCheckout(checkout, repository, commit, options.lock);
+        return {
+          checkout,
+          commit,
+          cacheActivity: ['Conteúdo imutável verificado no cache.'],
+        };
+      } catch (error) {
+        if (
+          !(error instanceof EngineError) ||
+          [
+            'GIT_MISSING',
+            'GIT_TIMEOUT',
+            'GIT_TIMEOUT_CONFIG',
+            'GIT_CANCELLED',
+          ].includes(error.code)
+        )
+          throw error;
+        if (options.offline || options.inspect)
+          throw new EngineError(
+            'CACHE_INTEGRITY',
+            `Cache inválido para ${repositoryIdentity(repository)} em ${commit}.`,
+            2,
+            {
+              remediation:
+                'Execute agents sync online para reparar o conteúdo no commit registrado.',
+            },
+          );
+        activity.push(
+          'Cache inválido/sujo será recriado no commit registrado.',
+        );
+      }
+    } else if (options.offline || options.inspect)
+      throw new EngineError(
+        'CACHE_MISSING',
+        `Cache verificado ausente para ${repositoryIdentity(repository)} em ${commit}.`,
+        2,
+        { remediation: 'Execute agents sync online para preencher o cache.' },
+      );
+  } else if (options.offline)
+    throw new EngineError(
+      'CACHE_OFFLINE',
+      'Uma seleção remota nova não pode ser resolvida offline.',
+    );
+  ensureRuntimeIgnored(repoRoot);
+  mkdirSync(cacheRoot, { recursive: true });
+  const stage = mkdtempSync(join(cacheRoot, '.stage-'));
+  try {
+    git(['clone', '--no-hardlinks', '--no-checkout', '--', repository, stage]);
+    if (commit) {
+      // Fetch the immutable object, never the possibly moved requested ref.
+      git(['-C', stage, 'fetch', '--no-tags', 'origin', commit]);
+    } else commit = resolveCommit(stage, ref);
+    git([
+      '-C',
+      stage,
+      '-c',
+      'advice.detachedHead=false',
+      'checkout',
+      '--force',
+      '--detach',
+      commit,
+    ]);
+    verifyCheckout(stage, repository, commit, options.lock);
+    const checkout = cachePath(commit);
+    if (existsSync(checkout)) {
+      try {
+        verifyCheckout(checkout, repository, commit, options.lock);
+        return { checkout, commit, cacheActivity: activity };
+      } catch (error) {
+        if (
+          error instanceof EngineError &&
+          [
+            'GIT_MISSING',
+            'GIT_TIMEOUT',
+            'GIT_TIMEOUT_CONFIG',
+            'GIT_CANCELLED',
+          ].includes(error.code)
+        )
+          throw error;
+        // Rename first: no reader can observe a half-populated replacement.
+        const retired = `${stage}-invalid`;
+        renameSync(checkout, retired);
+        rmSync(retired, { recursive: true, force: true, maxRetries: 5 });
+      }
+    }
     try {
-      valid =
-        portableKey(git(['-C', checkout, 'rev-parse', '--show-toplevel'])) ===
-          portableKey(checkout) &&
-        git(['-C', checkout, 'status', '--porcelain']) === '' &&
-        git(['-C', checkout, 'remote', 'get-url', 'origin']) === repository;
-    } catch {
-      /* O cache inválido é descartável. */
+      renameSync(stage, checkout);
+    } catch (error) {
+      if (!existsSync(checkout)) throw error;
+      verifyCheckout(checkout, repository, commit, options.lock);
     }
-    if (!valid) {
-      rmSync(checkout, { recursive: true, force: true, maxRetries: 3 });
-      activity.push('Cache inválido/sujo recriado.');
-    }
+    activity.push(
+      'Checkout imutável publicado no cache; nenhum código da base foi executado.',
+    );
+    return { checkout, commit, cacheActivity: activity };
+  } finally {
+    rmSync(stage, { recursive: true, force: true, maxRetries: 5 });
   }
-  if (!existsSync(checkout)) {
-    mkdirSync(dirname(checkout), { recursive: true });
-    git(['clone', '--no-checkout', '--', repository, checkout]);
-    activity.push('Checkout de conteúdo criado no cache.');
-  }
-  git([
-    '-C',
-    checkout,
-    'fetch',
-    '--prune',
-    '--force',
-    '--tags',
-    'origin',
-    '+refs/heads/*:refs/remotes/origin/*',
-  ]);
-  activity.push(
-    'Ref consultada no cache de conteúdo; nenhum código da base foi executado.',
-  );
+}
+function resolveCommit(checkout: string, ref: string): string {
   const candidates = ref.startsWith('refs/heads/')
     ? [`refs/remotes/origin/${ref.slice('refs/heads/'.length)}`]
     : ref.startsWith('refs/')
@@ -183,17 +374,75 @@ export function resolveContent(
       },
     );
   }
-  git([
-    '-C',
-    checkout,
-    '-c',
-    'advice.detachedHead=false',
-    'checkout',
-    '--force',
-    '--detach',
-    commit,
-  ]);
-  return { checkout, cacheActivity: activity };
+  return commit;
+}
+function selectedSources(
+  checkout: string,
+  selection: ContentLock['remote'],
+): ContentLock['sources'] {
+  const paths = new Set(['templates/AGENTS.tpl.md']);
+  for (const from of selection.entries) {
+    const parent = safeJoin(
+      safeJoin(checkout, selection.tplDir),
+      from,
+      'lock.source',
+    );
+    const classification = classifySource(basename(from));
+    if (!classification || classification.kind !== 'parent')
+      throw new EngineError(
+        'SOURCE_PARENT',
+        `Selecione um pai .tpl.md: ${from}.`,
+      );
+    // Diagnose a missing selection before scanning its possibly absent directory.
+    readText(parent);
+    const scan = scanDirectory(
+      dirname(parent),
+      safeJoin(checkout, selection.tplDir),
+    );
+    paths.add(relative(checkout, parent).replaceAll('\\', '/'));
+    for (const child of scan.children.get(classification.root) ?? [])
+      paths.add(relative(checkout, child).replaceAll('\\', '/'));
+  }
+  return [...paths].sort().map((path) => ({
+    path,
+    sha256: textHash(readText(safeJoin(checkout, path, 'lock.source'))),
+  }));
+}
+function verifyCheckout(
+  checkout: string,
+  repository: string,
+  commit: string,
+  lock?: ContentLock,
+): void {
+  if (
+    portableKey(git(['-C', checkout, 'rev-parse', '--show-toplevel'])) !==
+      portableKey(checkout) ||
+    git(['-C', checkout, 'rev-parse', 'HEAD']) !== commit ||
+    git(['-C', checkout, 'rev-parse', '--abbrev-ref', 'HEAD']) !== 'HEAD' ||
+    repositoryIdentity(git(['-C', checkout, 'remote', 'get-url', 'origin'])) !==
+      repositoryIdentity(repository) ||
+    git([
+      '-C',
+      checkout,
+      'status',
+      '--porcelain',
+      '--untracked-files=all',
+      '--ignored',
+    ]) !== ''
+  )
+    throw new EngineError(
+      'CACHE_INTEGRITY',
+      'Identidade, commit ou arquivos do cache foram alterados.',
+    );
+  if (
+    lock &&
+    canonicalJson(selectedSources(checkout, lock.remote)) !==
+      canonicalJson(lock.sources)
+  )
+    throw new EngineError(
+      'CACHE_INTEGRITY',
+      'Inventário ou integridade das fontes do cache divergente do lock.',
+    );
 }
 export interface ClassifiedSource {
   kind: 'parent' | 'child';
@@ -360,6 +609,9 @@ export function loadTemplate(sourceRoot: string): string {
 }
 export interface ResolveOptions {
   localSources?: Map<string, string>;
+  offline?: boolean;
+  frozen?: boolean;
+  inspect?: boolean;
 }
 export function resolveComposition(
   repoRoot: string,
@@ -375,9 +627,43 @@ export function resolveComposition(
   ] as const)
     validateRelativePath(value, field);
   const base = manifest.data.agents;
+  const previousLock = readLock(repoRoot);
+  const matching = previousLock && lockMatchesManifest(previousLock, manifest);
+  if (options.frozen && (base || previousLock) && !matching)
+    throw new EngineError(
+      previousLock ? 'LOCK_MISMATCH' : 'LOCK_REQUIRED',
+      previousLock
+        ? 'A seleção difere do lock; --frozen não permite adoção.'
+        : 'agents-lock.json é obrigatório com --frozen.',
+    );
+  if (options.offline && base && !matching)
+    throw new EngineError(
+      'LOCK_REQUIRED',
+      'O modo offline requer um lock compatível com a seleção.',
+    );
   const content = base
-    ? resolveContent(repoRoot, base.repository, base.ref)
+    ? resolveContent(repoRoot, base.repository, base.ref, {
+        commit: matching ? previousLock.commit : undefined,
+        lock: matching ? previousLock : undefined,
+        offline: options.offline,
+        inspect: options.inspect,
+      })
     : { checkout: repoRoot, cacheActivity: [] };
+  const lock: ContentLock | undefined = base
+    ? matching
+      ? previousLock
+      : {
+          schemaVersion: 1,
+          rendererContract: 1,
+          normalization: 'utf8-lf',
+          engineVersion,
+          repository: repositoryIdentity(base.repository),
+          requestedRef: base.ref,
+          commit: 'commit' in content ? content.commit! : '',
+          remote: remoteSelection(manifest),
+          sources: selectedSources(content.checkout, remoteSelection(manifest)),
+        }
+    : undefined;
   const template = loadTemplate(content.checkout);
   const entries = [
     ...listParentSources(repoRoot, config.local.tpl_dir).map((from) => ({
@@ -386,19 +672,52 @@ export function resolveComposition(
     })),
     ...config.entries,
   ];
-  const families = entries.map((entry) =>
-    resolveFamily(
+  const families = entries.map((entry) => ({
+    ...resolveFamily(
       entry.origin === 'remote' ? content.checkout : repoRoot,
       entry.origin === 'remote' ? config.remote.tpl_dir : config.local.tpl_dir,
       entry.from,
       config.out_dir,
       entry.origin === 'local' ? options.localSources : undefined,
     ),
-  );
+    origin: entry.origin,
+  }));
+  if (lock) {
+    // Bind parsed bytes to the verified lock, including changes during resolution.
+    const parsed = [
+      { path: 'templates/AGENTS.tpl.md', sha256: textHash(template) },
+      ...families.flatMap((family, index) =>
+        entries[index]!.origin === 'remote'
+          ? [family.parent, ...family.children].map((artifact) => ({
+              path: artifact.sourceDisplay,
+              sha256: textHash(artifact.text),
+            }))
+          : [],
+      ),
+    ].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+    if (
+      canonicalJson(parsed) !== canonicalJson(lock.sources) ||
+      canonicalJson(selectedSources(content.checkout, lock.remote)) !==
+        canonicalJson(lock.sources)
+    )
+      throw new EngineError(
+        'CACHE_INTEGRITY',
+        'As fontes remotas mudaram durante a resolução; nenhuma saída foi aplicada.',
+      );
+  }
   return {
     repoRoot,
     manifest,
-    source: { ...manifest.data.agents, checkout: content.checkout },
+    source: {
+      ...(base
+        ? {
+            repository: repositoryIdentity(base.repository),
+            ref: base.ref,
+            commit: lock?.commit,
+          }
+        : {}),
+      checkout: content.checkout,
+    },
     templatePath: safeJoin(
       content.checkout,
       'templates/AGENTS.tpl.md',
@@ -407,5 +726,7 @@ export function resolveComposition(
     cacheActivity: content.cacheActivity,
     template,
     families,
+    lock,
+    previousLock,
   };
 }

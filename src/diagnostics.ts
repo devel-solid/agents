@@ -1,8 +1,8 @@
 import { existsSync, statSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { EngineError, loadManifest } from './manifest.js';
 import { safeJoin } from './paths.js';
 import { inspectIntegration } from './init.js';
+import { git } from './resolve.js';
 
 export interface Diagnostic {
   code: string;
@@ -47,19 +47,11 @@ export function diagnose(repoRoot: string, base = false): Diagnostic[] {
         'local.tpl_dir',
       );
       if (data.agents) {
-        const result = spawnSync('git', ['--version'], {
-          encoding: 'utf8',
-          windowsHide: true,
-        });
+        const result = git(['--version']);
         diagnostics.push({
-          code: result.status === 0 ? 'GIT' : 'GIT_MISSING',
-          severity: result.status === 0 ? 'info' : 'error',
-          message:
-            result.status === 0
-              ? result.stdout.trim()
-              : 'Git é necessário para resolver a base configurada.',
-          remediation:
-            result.status === 0 ? undefined : 'Instale Git e confira seu PATH.',
+          code: 'GIT',
+          severity: 'info',
+          message: result,
         });
       }
       const integration = inspectIntegration(repoRoot);

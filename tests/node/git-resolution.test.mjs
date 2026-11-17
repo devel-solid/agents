@@ -95,7 +95,7 @@ test('Git atualiza branch padrão sem reutilizar branch local antiga; tag e SHA 
   f.commit('main posterior');
   git(f.author, 'push', 'origin', 'main');
   const updated = resolveContent(f.consumer, f.remote, 'main');
-  assert.equal(updated.checkout, main.checkout);
+  assert.notEqual(updated.checkout, main.checkout);
   assert.equal(content(updated), 'main posterior');
   assert.equal(
     content(resolveContent(f.consumer, f.remote, 'v1.0.0')),

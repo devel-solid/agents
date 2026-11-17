@@ -3,13 +3,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { EngineError } from './manifest.js';
 import { buildSyncPlan } from './plan.js';
-import { applyPlan } from './apply.js';
+import { applyPlan, inspectRecovery, recoverTransaction } from './apply.js';
 import { validateBase } from './validate.js';
 import { initialize } from './init.js';
 import { diagnose, type Diagnostic } from './diagnostics.js';
 import { redact } from './resolve.js';
 import { release } from './release.js';
 import { findBaseRoot } from './roles.js';
+import { assertConsumerRoot } from './roles.js';
 
 const version = (
   JSON.parse(
@@ -20,8 +21,8 @@ const help = `agents ${version} — instruções para agentes de IA
 
 agents init [--dry-run]
 agents init --base [--starter minimal] [--dry-run]
-agents validate [--base]
-agents sync [--dry-run | --check]
+agents validate [--base] [--offline]
+agents sync [--dry-run | --check] [--frozen] [--offline]
 agents release --bump patch|minor|major [--dry-run]
 
 init cria manifesto, templates e as skills agents-write-conventions e agents-update-docs. Não gera documentos.
@@ -39,7 +40,16 @@ Base e consumidor são papéis exclusivos. A base não usa manifesto consumidor 
 Opções comuns: --repo-root <diretório>, --json, --debug, --help; --version sem comando.
 Node.js deve estar instalado (LTS 22, 24 ou 26). Git só é necessário para entradas Git e release.
 As prévias de init e release não gravam nada. Validate e sync podem preencher o cache de entradas Git.
-sync preserva fontes, manifesto e skills. Arquivos antigos fora da composição são preservados.
+sync preserva fontes, manifesto e skills; inicializa agents-lock.json e .agents/agents-state.json.
+Edite agents.ref para adotar outra versão: sync --dry-run revisa; sync aplica a transação.
+Refs movidas continuam no commit do lock. --frozen exige lock correspondente; --offline usa somente cache verificado.
+Arquivos gerados editados bloqueiam a operação: reconcilie a alteração na fonte e restaure a saída.
+Somente saídas inalteradas com ownership são removidas ao mudar a seleção ou o diretório.
+Recuperação pendente: sync --dry-run mostra rollback; sync restaura e para; outro sync gera novamente.
+Conflitos de recuperação preservam backups em .cache/agents/transactions; não apague as evidências.
+Transações têm exclusão por projeto e substituição por arquivo; há uma janela de visibilidade entre arquivos.
+AGENTS_GIT_TIMEOUT_MS configura o limite Git (padrão 30000 ms, máximo 300000 ms).
+validate --debug mostra proveniência e diagnósticos sem reparar estado ou cache alterado.
 Saídas: 0 sucesso; 1 divergência em sync --check; 2 uso, validação ou conflito; 3 falha operacional.
 `;
 type Options = Record<string, string | boolean>;
@@ -65,6 +75,8 @@ const booleans = new Set([
   'base',
   'dry-run',
   'check',
+  'offline',
+  'frozen',
 ]);
 const strings = new Set(['repo-root', 'starter', 'bump']);
 function parse(args: string[]): { words: string[]; options: Options } {
@@ -118,8 +130,8 @@ function projectRoot(explicit: unknown, search: boolean): string {
 function checkOptions(command: string, options: Options): void {
   const allowed: Record<string, string[]> = {
     init: ['base', 'starter', 'dry-run'],
-    validate: ['base'],
-    sync: ['dry-run', 'check'],
+    validate: ['base', 'offline'],
+    sync: ['dry-run', 'check', 'offline', 'frozen'],
     release: ['bump', 'dry-run'],
   };
   if (!Object.hasOwn(allowed, command)) {
@@ -231,7 +243,16 @@ try {
           (diagnostic) => diagnostic.severity === 'error',
         )
       )
-        exitCode = 2;
+        exitCode = envelope.diagnostics.some((diagnostic) =>
+          [
+            'GIT_TIMEOUT',
+            'GIT_CANCELLED',
+            'GIT_OPERATION',
+            'MANIFEST_READ',
+          ].includes(diagnostic.code),
+        )
+          ? 3
+          : 2;
       else if (options.base) {
         const result = validateBase(repoRoot);
         envelope.result = {
@@ -241,38 +262,193 @@ try {
           applied: false,
         };
       } else {
-        const plan = buildSyncPlan(repoRoot);
-        envelope.cacheActivity = plan.cacheActivity;
-        envelope.result = {
-          families: plan.families,
-          templatePath: plan.templatePath,
-          mode: 'validate',
-          applied: false,
-        };
+        const recovery = inspectRecovery(repoRoot);
+        if (recovery) {
+          envelope.diagnostics.push({
+            code: 'RECOVERY_PENDING',
+            severity: 'error',
+            message: 'Há uma transação pendente.',
+            remediation:
+              'Use agents sync --dry-run para conferir o rollback; depois agents sync para recuperar e parar.',
+          });
+          envelope.result = { mode: 'validate', applied: false, recovery };
+          exitCode = 3;
+        }
+        const plan = (() => {
+          try {
+            return buildSyncPlan(repoRoot, undefined, {
+              offline: options.offline === true,
+              inspect: true,
+              inspection: true,
+            });
+          } catch (error) {
+            if (!recovery || !(error instanceof EngineError)) throw error;
+            envelope.diagnostics.push({
+              code: error.code,
+              severity: 'error',
+              message: error.message,
+              remediation: error.remediation,
+            });
+            return undefined;
+          }
+        })();
+        if (plan) {
+          envelope.cacheActivity = plan.cacheActivity;
+          envelope.diagnostics.push({
+            code: plan.source.repository
+              ? 'CACHE_VERIFIED'
+              : 'CACHE_NOT_REQUIRED',
+            severity: 'info',
+            message: plan.source.repository
+              ? 'Cache e fontes remotas verificados sem reparo.'
+              : 'Composição local não exige cache remoto.',
+          });
+          if (plan.conflicts.length && !recovery) {
+            if (!recovery) exitCode = 2;
+            envelope.diagnostics.push(
+              ...plan.conflicts.map((conflict) => ({
+                code: 'OWNERSHIP_CONFLICT',
+                severity: 'error' as const,
+                message: `${conflict.path}: ${conflict.reason}`,
+              })),
+            );
+          }
+          for (const code of ['LOCK', 'OWNERSHIP', 'OUTPUT'] as const) {
+            const relevant = plan.changes.filter((change) =>
+              code === 'LOCK'
+                ? change.path === 'agents-lock.json'
+                : code === 'OWNERSHIP'
+                  ? change.path === '.agents/agents-state.json'
+                  : !['metadata', 'adopt'].includes(change.action) &&
+                    !['agents-lock.json', '.agents/agents-state.json'].includes(
+                      change.path,
+                    ),
+            );
+            const count =
+              code === 'OUTPUT'
+                ? new Set([
+                    ...relevant.map((item) => item.path),
+                    ...plan.provenance
+                      .filter((item) => item.drift)
+                      .map((item) => item.path),
+                    ...plan.conflicts.map((item) => item.path),
+                  ]).size
+                : relevant.length;
+            envelope.diagnostics.push({
+              code: recovery
+                ? `${code}_PENDING_RECOVERY`
+                : count
+                  ? `${code}_DRIFT`
+                  : `${code}_VERIFIED`,
+              severity: recovery || count ? 'warning' : 'info',
+              message: recovery
+                ? 'A consistência da geração aguarda a recuperação registrada.'
+                : count
+                  ? `${count} divergência(s) prevista(s) em ${code}.`
+                  : `${code} verificado.`,
+            });
+          }
+          if (recovery?.conflicts.length)
+            envelope.diagnostics.push({
+              code: 'RECOVERY_CONFLICT',
+              severity: 'error',
+              message: `Edições independentes preservadas: ${recovery.conflicts.join(', ')}.`,
+            });
+          envelope.result = {
+            ...(typeof envelope.result === 'object' ? envelope.result : {}),
+            families: plan.families,
+            templatePath: plan.templatePath,
+            mode: 'validate',
+            applied: false,
+            ...(debug
+              ? {
+                  source: plan.source,
+                  previousSource: plan.previousSource,
+                  rendererContract: 1,
+                  generation: plan.ownership.generation,
+                  provenance: [...plan.provenance, ...plan.unmanagedTargets],
+                }
+              : {}),
+          };
+        }
       }
     } else if (command === 'sync') {
-      const plan = buildSyncPlan(repoRoot);
-      envelope.cacheActivity = plan.cacheActivity;
-      envelope.changes = plan.changes.map(({ action, path, reason }) => ({
-        action,
-        path,
-        reason,
-      }));
-      const mode = options.check ? 'check' : dryRun ? 'preview' : 'applied';
-      if (options.check && plan.changes.length) exitCode = 1;
-      else if (mode === 'applied') applyPlan(plan);
-      envelope.result = {
-        mode,
-        applied: mode === 'applied',
-        templatePath: plan.templatePath,
-        source: plan.source,
-        outputs: plan.outputs.map((output) => ({
-          path: output.path,
-          action:
-            plan.changes.find((change) => change.path === output.path)
-              ?.action ?? 'no-op',
-        })),
-      };
+      assertConsumerRoot(repoRoot);
+      const recovery = inspectRecovery(repoRoot);
+      if (recovery) {
+        envelope.changes = recovery.changes;
+        envelope.result = {
+          mode: dryRun
+            ? 'recovery-preview'
+            : options.check
+              ? 'recovery-check'
+              : 'recovered',
+          applied: !dryRun && !options.check,
+          recovery,
+        };
+        if (options.check)
+          throw new EngineError(
+            'RECOVERY_PENDING',
+            'Recuperação pendente; confira agents sync --dry-run e execute agents sync.',
+            3,
+          );
+        if (dryRun && recovery.conflicts.length)
+          throw new EngineError(
+            'RECOVERY_CONFLICT',
+            recovery.conflicts.join('\n'),
+            2,
+          );
+        if (!dryRun) recoverTransaction(repoRoot);
+      } else {
+        const plan = buildSyncPlan(repoRoot, undefined, {
+          offline: options.offline === true,
+          frozen: options.frozen === true,
+          allowConflicts: true,
+        });
+        envelope.cacheActivity = plan.cacheActivity;
+        envelope.changes = [
+          ...plan.changes.map(({ action, path, reason }) => ({
+            action,
+            path,
+            reason,
+          })),
+          ...plan.conflicts.map((conflict) => ({
+            action: 'conflict',
+            ...conflict,
+          })),
+        ];
+        const mode = options.check ? 'check' : dryRun ? 'preview' : 'applied';
+        envelope.result = {
+          mode,
+          applied: false,
+          templatePath: plan.templatePath,
+          source: plan.source,
+          previousSource: plan.previousSource,
+          outputs: plan.outputs.map((output) => ({
+            path: output.path,
+            action: plan.conflicts.some(
+              (conflict) => conflict.path === output.path,
+            )
+              ? 'conflict'
+              : (plan.changes.find((change) => change.path === output.path)
+                  ?.action ?? 'no-op'),
+          })),
+        };
+        if (plan.conflicts.length) {
+          exitCode = 2;
+          envelope.diagnostics.push(
+            ...plan.conflicts.map((conflict) => ({
+              code: 'OWNERSHIP_CONFLICT',
+              severity: 'error' as const,
+              message: `${conflict.path}: ${conflict.reason}`,
+            })),
+          );
+        } else if (options.check && plan.changes.length) exitCode = 1;
+        else if (mode === 'applied') {
+          applyPlan(plan);
+          (envelope.result as { applied: boolean }).applied = true;
+        }
+      }
     } else {
       const result = release(
         repoRoot,
@@ -301,7 +477,13 @@ try {
         }
       : {}),
   });
-  if (debug && error instanceof Error) envelope.result = { stack: error.stack };
+  if (debug && error instanceof Error)
+    envelope.result = {
+      ...(envelope.result && typeof envelope.result === 'object'
+        ? envelope.result
+        : {}),
+      stack: error.stack,
+    };
 }
 envelope = sanitize(envelope) as Envelope;
 if (json) process.stdout.write(JSON.stringify(envelope) + '\n');
@@ -333,6 +515,19 @@ else {
         'Fontes e configuração válidas. Nenhum documento gerado.\n',
       );
     else if (envelope.command === 'sync' && Array.isArray(result.outputs)) {
+      const previous = result.previousSource as
+        | { repository?: string; requestedRef?: string; commit?: string }
+        | undefined;
+      const candidate = result.source as
+        { repository?: string; ref?: string; commit?: string } | undefined;
+      if (previous)
+        process.stdout.write(
+          `Base anterior: ${previous.repository} @ ${previous.requestedRef} -> ${previous.commit}\n`,
+        );
+      if (candidate?.repository)
+        process.stdout.write(
+          `Base selecionada: ${candidate.repository} @ ${candidate.ref} -> ${candidate.commit}\n`,
+        );
       if (result.mode === 'check')
         process.stdout.write(
           envelope.ok
@@ -351,6 +546,30 @@ else {
     process.stdout.write(
       `${change.action}: ${change.path} — ${change.reason}\n`,
     );
+  if (
+    debug &&
+    envelope.command === 'validate' &&
+    envelope.result &&
+    typeof envelope.result === 'object'
+  ) {
+    const details = envelope.result as Record<string, unknown>;
+    if (details.provenance)
+      process.stdout.write(
+        JSON.stringify(
+          {
+            rendererContract: details.rendererContract,
+            generation: details.generation,
+            provenance: details.provenance,
+          },
+          null,
+          2,
+        ) + '\n',
+      );
+    if (details.recovery)
+      process.stdout.write(
+        JSON.stringify({ recovery: details.recovery }, null, 2) + '\n',
+      );
+  }
   for (const message of envelope.cacheActivity ?? [])
     process.stdout.write(`cache: ${message}\n`);
   for (const diagnostic of envelope.diagnostics) {

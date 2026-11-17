@@ -43,6 +43,40 @@ O `AGENTS.md` da raiz é um arquivo autoral, preservado pela CLI. O `templates/A
 
 Este repositório usa esse mesmo modelo, com uma seção curta de desenvolvimento da CLI. As fontes locais e saídas do antigo autoconsumo foram retiradas; as fixtures históricas permanecem isoladas nos testes.
 
+## Recuperar uma sincronização
+
+Este procedimento é executado no consumidor afetado, nunca na base:
+
+```bash
+agents validate --debug --offline --json
+agents sync --dry-run
+agents sync
+# A recuperação termina sem gerar a próxima composição:
+agents sync
+agents sync --frozen --check
+```
+
+Uma operação normal prepara os documentos e metadados, salva os bytes anteriores e um journal e substitui cada arquivo. Só uma operação de escrita pode atuar na mesma raiz física. A propriedade durável marca a geração concluída. Há uma janela intermediária entre substituições: a transação é recuperável, mas não promete visibilidade atômica de todos os arquivos ao mesmo tempo.
+
+Depois de uma interrupção, `validate --debug` informa o estado sem reparar. `sync --dry-run` mostra as ações registradas de rollback sem gravar; `sync` obtém acesso exclusivo, verifica a evidência, restaura o estado anterior e para. Outra execução faz a geração normal. Em um projeto somente local, a última checagem não precisa de lock remoto.
+
+Se algum arquivo tiver uma edição independente após a interrupção, a recuperação preserva a edição e os backups e informa conflito. Compare o arquivo com os estados registrados e reconcilie-o com cuidado antes de repetir. Evidência ausente ou proprietário ambíguo exige reconciliação manual; um PID inexistente, isoladamente, não prova que o lock possa ser removido. Não apague `.cache/agents/` enquanto houver uma transação pendente e não tente resolver contenção apagando a exclusão de escrita.
+
+O journal e os backups ficam separados dos checkouts descartáveis de conteúdo em `.cache/agents/`. Reparar um checkout não remove a evidência de recuperação. Backups são retidos enquanto necessários; depois da conclusão verificada, a limpeza pode terminar na próxima execução. Commit, lock remoto, ownership e documentos devem representar o mesmo estado revisado antes de trocar versões da ferramenta.
+
+## Diagnósticos operacionais
+
+Use `agents validate --debug --offline --json` para inspecionar proveniência e evidência local sem rede. `sync --check` retorna 1 para diferenças ou metadados ausentes, sem inicializá-los. `--frozen` rejeita lock ausente ou seleção alterada. Conflitos e pré-requisitos retornam 2; falhas operacionais, timeout e recuperação não concluída retornam 3. A saída JSON contém um único resultado estruturado; stderr do Git é capturado e credenciais são redigidas.
+
+Git usa os acessos já configurados no ambiente, com limite padrão de 30000 ms por operação. Configure `AGENTS_GIT_TIMEOUT_MS` como inteiro de 1 a 300000 ms quando necessário. `GIT_TIMEOUT_CONFIG` identifica configuração inválida (saída 2); `GIT_TIMEOUT` identifica o limite excedido (saída 3). Um timeout encerra o Git e não publica resultados parciais. Falha de acesso exige corrigir o acesso Git à base configurada; não há fallback para o catálogo opcional desta ferramenta.
+
+| Código | Próxima ação |
+| --- | --- |
+| `LOCK_REQUIRED` / `LOCK_MISMATCH` | Confira a seleção; inicialize ou adote o conteúdo por um sync normal revisado, sem `--frozen`. |
+| `LOCK_SCHEMA` / `LOCK_RENDERER` | Restaure metadados válidos e use uma CLI compatível; não edite o contrato para suprimir o erro. |
+| `CACHE_MISSING` / `CACHE_OFFLINE` / `CACHE_INTEGRITY` | Preserve recuperação pendente; use uma execução online para repor conteúdo no commit fixado. |
+| `GIT_OPERATION` / `GIT_MISSING` | Confira Git no PATH, repository/ref e o acesso à base privada pelo Git existente. |
+
 ## Desenvolvimento
 
 ```bash

@@ -10,7 +10,7 @@ A equipe escreve as regras. O manifesto define as pastas e, quando necessário, 
 | --- | --- | --- |
 | `agents init` | Preparar um projeto | Cria manifesto versão 1, templates principal/contexto e as skills `agents-write-conventions` e `agents-update-docs`. |
 | `agents validate` | Conferir configuração, fontes e ambiente | Aponta problemas sem gerar documentos. |
-| `agents sync` | Gerar ou atualizar as instruções | Grava somente os documentos cujo conteúdo mudou. |
+| `agents sync` | Gerar ou atualizar as instruções | Aplica documentos e metadados em uma transação recuperável, protegendo edições diretas. |
 | `agents release --bump minor` | Versionar uma base | Calcula a próxima versão e cria somente sua tag local no commit atual. |
 
 Node.js 22, 24 ou 26 deve estar instalado. O fluxo local não exige Git, rede, Python ou Make. Git é necessário para consumir uma base Git e para criar versões.
@@ -31,6 +31,8 @@ agents sync --check
 ```
 
 `init` prepara as fontes, sem gerar documentos. `sync --dry-run` lista os arquivos previstos sem gravá-los. `sync --check` retorna 0 quando estão atuais ou 1 quando há diferenças. Fontes inválidas e conflitos impedem a geração.
+
+O primeiro `sync` registra a propriedade dos documentos em `.agents/agents-state.json`; arquivos existentes só são adotados se corresponderem exatamente à geração esperada após normalizar quebras de linha. Mantenha esse registro junto dos documentos no Git. Alterações devem ser feitas nas fontes: uma edição direta da saída causa conflito. Uma saída retirada da composição só é removida se estiver registrada e inalterada.
 
 O manifesto usa somente `schemaVersion: 1`, declarado explicitamente. Todos os templates locais válidos da pasta configurada participam da geração; `entries` seleciona somente pais remotos. Não há cadastro de regras locais por comando.
 
@@ -57,6 +59,16 @@ A CLI descobre a maior tag estável alcançável a partir de HEAD e calcula o au
 
 Os consumidores configuram a base, a tag desejada e as regras remotas no manifesto. Isso é separado de criar uma versão da própria base.
 
+O primeiro `sync` também cria `agents-lock.json`, que fixa o commit e a integridade do conteúdo remoto. Repetir o comando mantém esse commit mesmo se a tag mudar. Para adotar conteúdo novo, edite explicitamente `agents.ref` para uma nova versão ou commit, revise `agents sync --dry-run` e aplique `agents sync`. Isso não atualiza a CLI.
+
+```bash
+agents sync --frozen --check
+agents sync --offline --check
+agents validate --debug --offline --json
+```
+
+`--frozen` exige um lock existente compatível; `--offline` usa somente cache verificado, sem rede. Prévia e check preservam documentos e metadados; operações online podem preencher o cache ignorado. Se houver uma transação interrompida, `sync --dry-run` mostra a recuperação, `sync` restaura o estado anterior e para. Execute outro `sync` para gerar. Veja os [limites e cuidados de recuperação](docs/guides/manutencao-do-repositorio-agents.md#recuperar-uma-sincronizacao).
+
 ## Três skills
 
 | Skill | Instalada por | Responsabilidade |
@@ -77,7 +89,7 @@ Todas vêm do pacote CLI e ficam em `.agents/skills/<nome>/SKILL.md` do reposit�
 ```bash
 npm ci
 npm run setup
-npm run check
+npm run check # tipos, formatação e somente testes unitários
 npm pack --pack-destination .tmp
 ```
 

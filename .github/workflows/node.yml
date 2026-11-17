@@ -1,18 +1,13 @@
 name: Node CLI
 on: [push, pull_request]
 jobs:
-  behavior:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        node: [22, 24, 26]
-    runs-on: ${{ matrix.os }}
+  unit:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run check

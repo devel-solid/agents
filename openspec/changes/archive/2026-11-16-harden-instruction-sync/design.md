@@ -1,5 +1,9 @@
 # Design
 
+## Final acceptance decision
+
+The user's final instructions supersede the installed-package, process-fixture, and Windows/Linux matrix verification prescriptions in this original design. Runtime guarantees remain unchanged. Acceptance now consists of independent code review, retained unit contracts, `npm run check`, and strict OpenSpec validation. New non-unit tests and their temporary scripts/cache were removed; historical fixtures/tests are preserved outside the default runner. CI runs one Ubuntu/Node.js 24 unit gate. Lefthook remains configured but is not invoked for acceptance. `validation.md` records actual results and platform limits without claiming that removed or interrupted checks passed. The user explicitly authorized synchronization and archival under this scope.
+
 ## Context
 
 See `proposal.md` for motivation and the two delta specifications for observable guarantees. The prerequisite `introduce-node-cli` replaces the Python normal workflow with an installed Node.js/TypeScript engine, establishes `rendererContract: 1`, and supplies the shared manifest reader and plan/apply boundary. This stage extends that boundary rather than building another renderer or command framework.
@@ -15,7 +19,7 @@ The public manifest has one format: required `schemaVersion: 1`, directory-disco
 **Goals:**
 - Give every applied composition a stable content identity and an inspectable source-to-output mapping.
 - Make updates, removals, and interrupted operations understandable without silently replacing local work.
-- Reuse the installed-package test and CI entry points introduced in stage 1.
+- Use a unit-only default test runner and a single CI job, retaining existing runtime contracts and historical fixtures.
 
 **Non-Goals:**
 - No generic skill installation, package registry, new agent adapters, or changes to official OpenSpec-generated skills.

@@ -1,16 +1,19 @@
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const tests = readdirSync(new URL('../tests/node/', import.meta.url))
+const tests = readdirSync(new URL('../tests/unit/', import.meta.url))
   .filter((file) => file.endsWith('.test.mjs'))
   .sort()
-  .map((file) => new URL(`../tests/node/${file}`, import.meta.url));
-const { fileURLToPath } = await import('node:url');
+  .map((file) => new URL(`../tests/unit/${file}`, import.meta.url));
+if (!tests.length)
+  throw new Error('Nenhum teste unitário encontrado em tests/unit.');
 const result = spawnSync(
   process.execPath,
-  ['--test', '--test-concurrency=1', ...tests.map(fileURLToPath)],
+  ['--test', ...tests.map(fileURLToPath)],
   {
     stdio: 'inherit',
   },
 );
+if (result.error) throw result.error;
 process.exitCode = result.status ?? 1;

@@ -100,16 +100,33 @@ export function validateDestination(
     parts.some((p) =>
       ['.git', '.cache', 'node_modules', '.agents'].includes(p),
     ) ||
-    (!allowAgents && portableKey(normalized) === 'agents.md')
+    (!allowAgents && portableKey(normalized) === 'agents.md') ||
+    ['agents-lock.json', 'agents-compose.yml'].includes(portableKey(normalized))
   ) {
     throw new EngineError('PATH_RESERVED', `Destino reservado: ${path}.`);
   }
   const target = safeJoin(repoRoot, normalized, 'destino');
+  if (
+    existsSync(target) &&
+    lstatSync(resolve(repoRoot, normalized)).isSymbolicLink()
+  )
+    throw new EngineError(
+      'DESTINATION_LINK',
+      `Destino com link de arquivo preservado: ${path}.`,
+      2,
+      {
+        remediation:
+          'Restaure um arquivo regular no destino antes de sincronizar.',
+      },
+    );
   const actualRelative = relative(resolvedPath(repoRoot), target).replaceAll(
     '\\',
     '/',
   );
   if (
+    ['agents-lock.json', 'agents-compose.yml'].includes(
+      portableKey(actualRelative),
+    ) ||
     actualRelative
       .split('/')
       .some((p) =>

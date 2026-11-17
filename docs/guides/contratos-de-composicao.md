@@ -88,7 +88,17 @@ Um pai `politica.tpl.md` pode ter filhos como `politica.detalhes.tpl.md` na mesm
 
 Nomes, caminhos relativos, aliases, colisões portáveis e destinos reservados são validados antes da geração. Equivalência de caixa, escapes por links, destinos sobrepostos e hardlinks de saída não permitem sobrescrever arquivos alheios. A publicação mantém a relação pai/filhos e identifica todos os documentos gerados.
 
-A remoção de uma fonte muda a composição esperada, mas a CLI preserva saídas antigas fora dela. Não apague arquivos por inferência de nomes. Repetir uma geração sem mudanças preserva bytes e timestamps.
+A propriedade durável em `.agents/agents-state.json` prova quais saídas a CLI pode atualizar ou remover. Na primeira geração, um arquivo existente só é adotado quando corresponde exatamente ao resultado esperado após normalizar quebras de linha. Um aviso de arquivo gerado, sozinho, não prova propriedade. Edições diretas causam conflito: reconcilie a fonte e o documento, sem apagar metadados para contornar a proteção.
+
+A remoção de uma fonte muda a composição esperada. Saídas antigas registradas e inalteradas podem ser removidas, inclusive após uma mudança de `out_dir`; arquivos alheios ou editados são preservados. Não apague arquivos por inferência de nomes. Repetir uma geração sem mudanças preserva bytes, metadados e timestamps. Essas regras também valem para futuras seleções remotas, sem restaurar políticas locais no catálogo compartilhado.
+
+## Lock e proveniência
+
+`agents-lock.json` fixa a base Git no commit resolvido e registra a seleção remota, os hashes `utf8-lf` SHA-256, o contrato de renderer e a versão informativa da CLI. Uma tag movida não troca o commit aplicado. Para adotar conteúdo novo, edite explicitamente `agents.ref` ou a seleção, revise `sync --dry-run` e aplique `sync`. A instalação do motor é independente do conteúdo da base.
+
+`sync --frozen` exige o lock remoto correspondente; `sync --offline` usa somente conteúdo local verificado contra ele, sem rede. Projetos somente locais não precisam de lock remoto. A propriedade fica em `.agents/agents-state.json`; journals, backups e cache são runtime ignorado em `.cache/agents/`, nunca dependências de sessão versionadas. No lançamento com histórico novo, gere nova proveniência contra a identidade publicada em vez de copiar commits de desenvolvimento.
+
+`validate --debug` identifica fontes, famílias, seleção, template principal, commit, renderer, integridade e propriedade; fontes locais não são atribuídas à base remota e arquivos desconhecidos são não gerenciados. `validate --offline` não consulta rede nem repara cache ou documentos. Veja o [guia de integração](integracao-em-repositorio-consumidor.md) e o [procedimento de recuperação](manutencao-do-repositorio-agents.md#recuperar-uma-sincronizacao).
 
 ## Prévia e efeitos
 
@@ -96,9 +106,11 @@ A remoção de uma fonte muda a composição esperada, mas a CLI preserva saída
 | --- | --- | --- |
 | `init --dry-run` | Caminhos a criar/preservar ou conflitos | Nenhuma. |
 | `validate` | Estrutura, configuração e ambiente | Nenhuma escrita de projeto; pode preencher cache Git. |
-| `sync --dry-run` | Creates, updates e no-ops previstos | Preserva documentos e configuração; pode preencher cache Git. |
-| `sync --check` | Atualidade dos documentos | Mesmo limite da prévia; retorna 0 atual ou 1 divergente. |
-| `sync` | Geração dos documentos previstos | Grava somente saídas alteradas e seguras. |
+| `sync --dry-run` | Criações, atualizações, remoções, adoções, metadados e recuperação previstos | Preserva documentos e configuração; pode preencher cache Git. |
+| `sync --check` | Atualidade dos documentos e metadados duráveis | Mesmo limite da prévia; retorna 0 atual ou 1 divergente. |
+| `sync` | Geração ou recuperação registrada | Aplica documentos e metadados em transação; recuperação restaura e para. |
+| `sync --frozen --check` | Composição com lock remoto já estabelecido | Não inicializa nem troca o lock. |
+| `sync --offline` | Composição com cache local íntegro | Sem rede; mesmas proteções de propriedade e transação. |
 | `release --bump minor --dry-run` | Baseline, próxima tag e HEAD | Nenhuma escrita ou consulta de rede. |
 | `release --bump minor` | Tag local no HEAD | Cria somente a tag calculada. |
 

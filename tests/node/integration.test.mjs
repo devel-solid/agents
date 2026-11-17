@@ -591,7 +591,7 @@ test('uma base empresarial independente publica apenas em remoto Git descartáve
     );
     write(
       root,
-      'docs/conventions/engenharia.md',
+      'docs/conventions/antigo/engenharia.md',
       'Antigo arquivo plano não deve ser removido por inferência.\n',
     );
     artifact.run(root, ['validate']);
@@ -701,7 +701,7 @@ test('o pin controla conteúdo e nunca executa código nem substitui integraçã
   const integration = readFileSync(
     path.join(root, '.agents/skills/agents-update-docs/SKILL.md'),
   );
-  const cacheRoot = path.join(root, '.cache/agents');
+  const cacheRoot = path.join(root, '.cache/agents/content');
   const cachedCheckouts = readdirSync(cacheRoot);
   assert.equal(cachedCheckouts.length, 1);
   const cache = path.join(cacheRoot, cachedCheckouts[0]);
@@ -934,7 +934,12 @@ test('códigos de saída distinguem Git ausente e falha operacional com credenci
     assertPreserved(root, before);
   }
   artifact.run(root, ['init'], { env: artifact.nodeOnlyEnv });
-  assert.equal(existsSync(path.join(root, '.cache')), false);
+  assert.equal(existsSync(path.join(root, 'agents-lock.json')), false);
+  assert.equal(existsSync(path.join(root, '.agents/agents-state.json')), false);
+  assert.equal(
+    existsSync(path.join(root, '.cache/agents/transactions/active')),
+    false,
+  );
   write(
     root,
     'agents-compose.yml',
@@ -1004,12 +1009,15 @@ test('tarball completa init, cópia, validate e sync somente com Node', () => {
   const preview = artifact.run(root, ['sync', '--dry-run'], {
     env: artifact.nodeOnlyEnv,
   });
-  assert.equal(preview.changes.length, 3);
+  assert.equal(preview.changes.length, 4);
   assertPreserved(root, authored);
   artifact.run(root, ['sync'], { env: artifact.nodeOnlyEnv });
   const stable = snapshot(root);
   artifact.run(root, ['sync', '--check'], { env: artifact.nodeOnlyEnv });
   artifact.run(root, ['init'], { env: artifact.nodeOnlyEnv });
   assertPreserved(root, stable);
-  assert.equal(existsSync(path.join(root, '.cache')), false);
+  assert.equal(
+    existsSync(path.join(root, '.cache/agents/transactions/active')),
+    false,
+  );
 });

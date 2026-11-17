@@ -73,7 +73,7 @@ test('init, validate e sync completam o fluxo local sem Git nem rede', (t) => {
   cli(root, ['validate']);
   const authored = snapshot(root);
   const planned = cli(root, ['sync', '--dry-run']);
-  assert.equal(planned.changes.length, 3);
+  assert.equal(planned.changes.length, 4);
   assert.deepEqual(snapshot(root), authored);
   cli(root, ['sync', '--check'], 1);
   assert.deepEqual(snapshot(root), authored);
