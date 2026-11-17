@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import {
   defaultManifest,
@@ -10,8 +11,11 @@ import {
 import { relativePath, uniquePaths } from '../../dist/paths.js';
 import {
   decode,
+  CARD_END,
+  CARD_START,
   GENERATED,
   INSERTION,
+  parseMarkdown,
   validateConvention,
   validateTemplate,
 } from '../../dist/markdown.js';
@@ -51,6 +55,66 @@ const resources = {
     ]),
   ),
 };
+const documentResources = {
+  ...resources,
+  templates: Object.fromEntries(
+    ['en', 'pt-br'].map((locale) => [
+      locale,
+      Object.fromEntries(
+        ['AGENTS.tpl.md', 'project.tpl.md'].map((filename) => [
+          filename,
+          readFileSync(
+            new URL(
+              `../../assets/templates/${locale}/${filename}`,
+              import.meta.url,
+            ),
+          ),
+        ]),
+      ),
+    ]),
+  ),
+};
+const defaultCopy = {
+  en: {
+    sections: ['Working in this project', 'Conventions'],
+    working:
+      'Read the project context convention before making changes. Follow the conventions relevant to the current task and keep changes within the requested scope.',
+    mainHint:
+      "<!-- Replace this comment with the project's purpose and essential repository orientation. -->",
+    contextTitle: 'Project context',
+    card: "Read when starting work or choosing the project's development workflow.",
+    contextHint:
+      "<!-- Replace this comment with the project's actual context. -->",
+    notice: 'Generated file. Edit the template',
+  },
+  'pt-br': {
+    sections: ['Trabalho neste projeto', 'Convenções'],
+    working:
+      'Leia a convenção de contexto do projeto antes de fazer alterações. Siga as convenções relevantes para a tarefa atual e mantenha as alterações dentro do escopo solicitado.',
+    mainHint:
+      '<!-- Substitua este comentário pelo propósito do projeto e pela orientação essencial sobre o repositório. -->',
+    contextTitle: 'Contexto do projeto',
+    card: 'Leia ao iniciar um trabalho ou escolher o fluxo de desenvolvimento do projeto.',
+    contextHint:
+      '<!-- Substitua este comentário pelo contexto real do projeto. -->',
+    notice: 'Arquivo gerado. Edite o template',
+  },
+};
+function markdownNodes(text) {
+  const nodes = [];
+  function visit(node) {
+    nodes.push(node);
+    for (const child of node.children ?? []) visit(child);
+  }
+  visit(parseMarkdown(text));
+  return nodes;
+}
+const nodeText = (node) =>
+  node.value ?? (node.children ?? []).map(nodeText).join('');
+const values = (text, type) =>
+  markdownNodes(text)
+    .filter((node) => node.type === type)
+    .map(nodeText);
 
 /** A mocked filesystem boundary: no temporary directories, commands, or real IO. */
 function memory(files = {}) {
@@ -280,6 +344,161 @@ test('rendering preserves full authored body and produces localized LF notices, 
   assert.equal(isGenerated(bytes('\ufeff' + GENERATED + '\n')), false);
   assert.equal(isGenerated(bytes(GENERATED + '\r\n')), true);
 });
+
+for (const [locale, copy] of Object.entries(defaultCopy)) {
+  test(`${locale} bundled defaults keep authoring hints in comments and render usable discovery`, () => {
+    const defaults = documentResources.templates[locale];
+    const mainText = decode(defaults['AGENTS.tpl.md'], 'AGENTS.tpl.md');
+    const contextText = decode(defaults['project.tpl.md'], 'project.tpl.md');
+    assert.ok(mainText.startsWith('# AGENTS.md\n'));
+    assert.deepEqual(values(mainText, 'heading'), [
+      'AGENTS.md',
+      ...copy.sections,
+    ]);
+    assert.deepEqual(values(mainText, 'paragraph'), [copy.working]);
+    assert.deepEqual(values(mainText, 'html'), [copy.mainHint, INSERTION]);
+    assert.deepEqual(values(contextText, 'heading'), [copy.contextTitle]);
+    assert.deepEqual(values(contextText, 'paragraph'), [copy.card]);
+    assert.deepEqual(values(contextText, 'html'), [
+      CARD_START,
+      CARD_END,
+      copy.contextHint,
+    ]);
+    validateTemplate(mainText, 'AGENTS.tpl.md');
+    assert.equal(
+      validateConvention(contextText, 'project.tpl.md').card,
+      copy.card,
+    );
+
+    const output = render(
+      { source: 'templates/AGENTS.tpl.md', text: mainText },
+      [
+        {
+          source: 'templates/project.tpl.md',
+          output: 'docs/conventions/project.md',
+          text: contextText,
+        },
+      ],
+      locale,
+    );
+    const generatedMain = output.get('AGENTS.md');
+    const generatedContext = output.get('docs/conventions/project.md');
+    assert.ok(
+      generatedMain.startsWith(
+        `${GENERATED}\n<!-- ${copy.notice} templates/AGENTS.tpl.md;`,
+      ),
+    );
+    assert.ok(
+      generatedContext.startsWith(
+        `${GENERATED}\n<!-- ${copy.notice} templates/project.tpl.md;`,
+      ),
+    );
+    assert.deepEqual(values(generatedMain, 'heading'), [
+      'AGENTS.md',
+      ...copy.sections,
+    ]);
+    assert.ok(
+      generatedMain.includes(
+        `- [${copy.contextTitle}](docs/conventions/project.md)\n  ${copy.card}`,
+      ),
+    );
+    assert.ok(!generatedMain.includes(INSERTION));
+    assert.deepEqual(values(generatedContext, 'heading'), [copy.contextTitle]);
+    assert.deepEqual(values(generatedContext, 'paragraph'), []);
+    assert.ok(!generatedContext.includes('AGENT-CARD'));
+    assert.ok(!generatedContext.includes(copy.card));
+    for (const [text, hint] of [
+      [generatedMain, copy.mainHint],
+      [generatedContext, copy.contextHint],
+    ]) {
+      assert.equal(
+        values(text, 'html').filter((value) => value === hint).length,
+        1,
+      );
+      assert.ok(
+        values(text, 'paragraph').every(
+          (value) => !value.includes(hint.slice(5, -4)),
+        ),
+      );
+    }
+  });
+
+  test(`${locale} real defaults initialize in memory without replacing older or customized sources`, async () => {
+    const fs = memory();
+    const run = (command) =>
+      execute(
+        command,
+        { repoRoot: fs.root, language: locale },
+        { io: fs.io, resources: documentResources },
+      );
+    assert.equal((await run('init')).exitCode, 0);
+    const defaults = documentResources.templates[locale];
+    for (const [name, content] of Object.entries(defaults))
+      assert.equal(fs.text(`templates/${name}`), decode(content, name));
+    assert.ok(fs.text('AGENTS.md').includes(copy.mainHint));
+    assert.ok(
+      fs.text('docs/conventions/project.md').includes(copy.contextHint),
+    );
+    assert.equal(
+      parseManifest(fs.text('agentscli-compose.yml')).language,
+      locale,
+    );
+
+    for (const authored of [
+      {
+        main:
+          '# Project instructions\n\nCustomize this template with the project purpose.\n\n' +
+          INSERTION +
+          '\n',
+        context:
+          '# Project context\n\n' +
+          CARD_START +
+          '\nRead before working.\n' +
+          CARD_END +
+          '\n\nRecord actual project information here.\n',
+      },
+      {
+        main:
+          '# Team handbook\n\n## Entry points\n\nUse the existing workspace.\n\n' +
+          INSERTION +
+          '\n\n## Additional section\n\nKeep this authored text.\n',
+        context:
+          '# Workspace overview\n\n' +
+          CARD_START +
+          '\nRead before changing this workspace.\n' +
+          CARD_END +
+          '\n\nThis project processes local input files.\n',
+      },
+    ]) {
+      fs.put('templates/AGENTS.tpl.md', authored.main);
+      fs.put('templates/project.tpl.md', authored.context);
+      const oldOutput = fs.text('AGENTS.md');
+      assert.equal((await run('init')).exitCode, 0);
+      assert.equal(fs.text('AGENTS.md'), oldOutput);
+      assert.equal(fs.text('templates/AGENTS.tpl.md'), authored.main);
+      assert.equal(fs.text('templates/project.tpl.md'), authored.context);
+      assert.equal((await run('sync')).exitCode, 0);
+      assert.equal(fs.text('templates/AGENTS.tpl.md'), authored.main);
+      assert.equal(fs.text('templates/project.tpl.md'), authored.context);
+      const expected = render(
+        { source: 'templates/AGENTS.tpl.md', text: authored.main },
+        [
+          {
+            source: 'templates/project.tpl.md',
+            output: 'docs/conventions/project.md',
+            text: authored.context,
+          },
+        ],
+        locale,
+      );
+      assert.equal(fs.text('AGENTS.md'), expected.get('AGENTS.md'));
+      assert.equal(
+        fs.text('docs/conventions/project.md'),
+        expected.get('docs/conventions/project.md'),
+      );
+    }
+  });
+}
 
 test('discovery automatically maps independent nested and dotted names and supports no conventions', () => {
   const fs = client({

@@ -23,6 +23,8 @@ Move detailed domain rules, lengthy procedures, examples, and instructions relev
 
 Preserve established decisions outside the request. Check commands, paths, links, duplicated guidance, and contradictions against current project files. Do not invent tools or policies.
 
+When authorized to populate project content, replace the applicable fill-in comment itself with verified content; do not leave the hint beside the completed text. The main default asks only for project purpose and essential repository orientation. Report missing facts rather than inventing them. Any new fill-in guidance must be an HTML comment explicitly asking the author to replace that comment. Fill-in hints are separate from operational markers: preserve the convention-index insertion comment in client templates.
+
 ## Preserve the format
 
 In client mode, preserve valid UTF-8, exactly one H1, and exactly one full-line operational insertion comment outside examples:

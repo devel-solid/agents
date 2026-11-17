@@ -32,6 +32,8 @@ First check whether an existing convention covers the requested subject. Keep th
 - Check related rules for duplication, contradiction, ambiguity, and stale references. Prefer one normative source with useful links. Surface unresolved policy choices rather than inventing a priority.
 - Split topics when they are consulted for different decisions, without adding inheritance or subconventions.
 
+When authorized to populate a convention, replace its applicable fill-in comment itself with verified project content; do not leave the hint beside the completed text. For the project context template, use the actual project context. Report missing facts rather than inventing architecture, commands, or policies. Any new fill-in guidance must be an HTML comment explicitly asking the author to replace that comment. Preserve the convention's title and operational AGENT-CARD when replacing fill-in hints in client templates.
+
 ## Check the applicable format
 
 Client templates require valid UTF-8, one H1, and exactly one complete, nonempty card outside code examples:

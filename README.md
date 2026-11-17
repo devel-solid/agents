@@ -51,12 +51,23 @@ The main template needs one H1 and one full-line insertion comment outside examp
 Other headings, sections, and text are yours to customize:
 
 ~~~markdown
-# Project instructions
+# AGENTS.md
 
-Keep project-wide orientation here.
+## Working in this project
+
+Read the project context convention before making changes. Follow the conventions relevant to the current task and keep changes within the requested scope.
+
+<!-- Replace this comment with the project's purpose and essential repository orientation. -->
+
+## Conventions
 
 <!-- agentscli:conventions -->
 ~~~
+
+Replace each fill-in comment itself with verified project content in its template;
+keep the technical insertion and discovery markers. Upgrading the CLI does not replace
+existing valid templates. To adopt new defaults, edit those templates deliberately,
+then run `sync` when generation is requested.
 
 Each convention template needs one H1 and one nonempty discovery card outside examples:
 
