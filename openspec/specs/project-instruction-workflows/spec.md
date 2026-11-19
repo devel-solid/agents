@@ -20,11 +20,12 @@ The source repository SHALL use agentscli.yml with only a skills list of contain
 
 ### Requirement: Initialization creates usable instructions without resetting authored content
 
-First init SHALL create .agentscli/config.yml, .agentscli/templates/AGENTS.tpl.md, .agentscli/templates/conventions/project.tpl.md, three client skills, root AGENTS.md, and .agentscli/conventions/project.md. It SHALL preserve valid existing templates, regular skill files, and existing generated documents while creating missing setup. Repeated init SHALL NOT recreate intentionally removed convention sources.
+First init SHALL create the fixed configuration, main template, three client skills, and generated instructions. The default convention SHALL be `project-context.tpl.md` in English or `contexto-do-projeto.tpl.md` in Portuguese, with the matching generated path. Repeated init SHALL preserve valid authored setup and SHALL NOT restore removed conventions.
 
 #### Scenario: A new client initializes
 - **WHEN** init succeeds in an empty project
 - **THEN** the fixed configuration, editable main/context templates, three client skills, and generated instructions exist
+- **AND** the context template and output use the canonical filename for the configured language
 
 #### Scenario: Authored setup already exists
 - **WHEN** init finds customized valid templates and regular skill files
@@ -56,11 +57,12 @@ Init --dry-run SHALL describe configuration creation or explicit language change
 
 ### Requirement: Every convention template participates automatically
 
-Every valid *.tpl.md below .agentscli/templates/conventions/ SHALL participate recursively. Each SHALL map its path relative to that subtree into .agentscli/conventions/ with suffix .md. The main source SHALL be .agentscli/templates/AGENTS.tpl.md. Ordering SHALL use portable normalized paths and equivalent destinations SHALL fail. Names/directories SHALL create no parent/child relationships.
+Every valid `*.tpl.md` below `.agentscli/templates/conventions/` SHALL participate recursively and map its relative path to `.agentscli/conventions/` with suffix `.md`. The main source SHALL be `.agentscli/templates/AGENTS.tpl.md`. Ordering SHALL use portable normalized paths and equivalent destinations SHALL fail. Directories SHALL create no inheritance.
 
 #### Scenario: Nested and dotted sources are present
-- **WHEN** testing/unit.tpl.md and policy.details.tpl.md exist below .agentscli/templates/conventions/
-- **THEN** they produce .agentscli/conventions/testing/unit.md and .agentscli/conventions/policy.details.md with independent root AGENTS entries
+- **WHEN** `testing/unit.tpl.md` has the heading “Unit” and `policy.details.tpl.md` has the heading “Policy details”
+- **THEN** validation reports `policy-details.tpl.md` as the expected filename before writing
+- **AND** after the source is renamed, both sources generate independent root AGENTS entries and the nested source keeps its directory
 
 #### Scenario: Portable destinations collide
 - **WHEN** source paths differ only by case or Unicode normalization
@@ -71,7 +73,7 @@ Every valid *.tpl.md below .agentscli/templates/conventions/ SHALL participate r
 - **THEN** generation succeeds with an empty convention index
 
 #### Scenario: Templates are outside the convention subtree
-- **WHEN** unrelated *.tpl.md files exist elsewhere, including directly beside .agentscli/templates/AGENTS.tpl.md
+- **WHEN** unrelated `*.tpl.md` files exist elsewhere, including directly beside `.agentscli/templates/AGENTS.tpl.md`
 - **THEN** they do not become convention sources or generated outputs
 
 ### Requirement: Templates are the sole source of generated instructions
@@ -361,3 +363,24 @@ Repeating init --migrate with the same options SHALL recompute remaining effects
 #### Scenario: Both contracts appear independently occupied
 - **WHEN** existing new content is inconsistent with the deterministic migration or validated cleanup state
 - **THEN** migration reports conflicting context and makes no new writes
+
+### Requirement: Convention filename mismatches block generation
+
+A convention basename SHALL equal its H1 in ASCII lowercase kebab case plus `.tpl.md`. Normalize the parsed title using Unicode NFKD, remove combining marks, and replace non-alphanumeric runs by single hyphens. Reject empty results and mismatches before any writes in init, validate, sync, previews, check, and migration.
+
+#### Scenario: A client submits a mismatched filename
+- **WHEN** `componentes.tpl.md` has the H1 “Aplicação web e componentes”
+- **THEN** the CLI fails with validation exit code 2 and identifies the source and expected filename `aplicacao-web-e-componentes.tpl.md`
+- **AND** it makes no changes to templates, outputs, or managed skills
+
+#### Scenario: A convention has a valid nested path and a formatted heading
+- **WHEN** `testing/api-e-validacao.tpl.md` has the H1 “**API** e validação”
+- **THEN** the containing directory is preserved and the generated file is `testing/api-e-validacao.md`
+
+#### Scenario: An H1 cannot produce a portable slug
+- **WHEN** the parsed H1 has no ASCII letters or digits after normalization
+- **THEN** validation fails with a diagnostic identifying the title to correct
+
+#### Scenario: A legacy migration would transfer an invalid convention
+- **WHEN** a legacy convention would produce a mismatched basename in the fixed layout
+- **THEN** migration and its preview fail before writing and identify the required source correction
