@@ -20,7 +20,7 @@ Read project instructions and inspect the requested project root before writing:
 
 Inspect ancestors for `agentscli.yml`: an internal ancestor blocks treating a requested subtree as a client; diagnose it before editing. Read the applicable context; do not infer direct mode from absent client configuration. A valid client configuration contains exactly `language: en` or `language: pt-br`, with no duplicate/unknown keys, YAML aliases, or layout overrides. Invalid configuration blocks edits. The internal `skills` list is a distribution list, not a generation configuration. Never initialize, migrate, validate, or synchronize the source repository or its descendants as clients.
 
-In client mode, `.agentscli/conventions/` contains disposable generated documents. Make changes in `.agentscli/templates/conventions/`, preserving paths relative to that subtree. Only convention sources below that subtree participate automatically; no registration or parent convention is needed. Nested and dotted names are independent.
+In client mode, `.agentscli/conventions/` contains disposable generated documents. Make changes in `.agentscli/templates/conventions/`, preserving paths relative to that subtree. Only convention sources below that subtree participate automatically. Keep each convention in its chosen directory.
 
 ## Curate the rule
 
@@ -37,7 +37,9 @@ When authorized to populate a convention, replace its applicable fill-in comment
 
 ## Check the applicable format
 
-Client templates require valid UTF-8, one H1, and exactly one complete, nonempty card outside code examples:
+Use the H1's plain text for the basename in both authoring modes. Apply Unicode NFKD, remove combining marks, lowercase ASCII letters, replace runs of non-ASCII-alphanumeric characters with one hyphen, and trim outer hyphens. Use a heading with at least one ASCII letter or digit after normalization. Append `.tpl.md` for a client template or `.md` for a handwritten convention. For example, `# Contexto do projeto` maps to `contexto-do-projeto.tpl.md`. When renaming, preserve the requested heading and update affected authored links. In client mode, sync regenerates the new document path and removes the marked stale output.
+
+Client templates require valid UTF-8, one H1, and exactly one complete, nonempty card outside code examples. This convention uses `commit-messages.tpl.md`.
 
 ```markdown
 # Commit messages

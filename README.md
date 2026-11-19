@@ -1,7 +1,7 @@
 # agentscli
 
 Generate a project's `AGENTS.md` and conventions from editable Markdown templates.
-Package **@devel-solid/agentscli**, experimental version **0.2.0**, licensed under MIT.
+Package **@devel-solid/agentscli**, experimental version **0.3.0**, licensed under MIT.
 Requires Node.js 22, 24, or 26. The executable is `agentscli`.
 
 ## Use
@@ -47,9 +47,9 @@ skills. The CLI does not change Git state or ignore rules.
   templates/
     AGENTS.tpl.md
     conventions/
-      project.tpl.md
+      contexto-do-projeto.tpl.md
   conventions/
-    project.md
+    contexto-do-projeto.md
 AGENTS.md
 .agents/skills/
   agentscli-write-conventions/
@@ -59,16 +59,17 @@ AGENTS.md
 
 ## Edit templates, then synchronize
 
+The starter context is `project-context` in English and `contexto-do-projeto` in Brazilian Portuguese.
+
 ~~~text
-.agentscli/templates/AGENTS.tpl.md                   -> AGENTS.md
-.agentscli/templates/conventions/project.tpl.md      -> .agentscli/conventions/project.md
-.agentscli/templates/conventions/testing/unit.tpl.md -> .agentscli/conventions/testing/unit.md
+.agentscli/templates/AGENTS.tpl.md                     -> AGENTS.md
+.agentscli/templates/conventions/project-context.tpl.md -> .agentscli/conventions/project-context.md
+.agentscli/templates/conventions/testing/unit.tpl.md    -> .agentscli/conventions/testing/unit.md
 ~~~
 
 Only convention `*.tpl.md` files below `.agentscli/templates/conventions/`
-participate automatically, including nested and dotted names and nested `AGENTS.tpl.md`.
-Paths map relative to that full subtree; unrelated templates beside the main source
-are ignored. An empty set is valid. No per-file registration or inheritance exists.
+participate automatically. Their relative directories carry over to `.agentscli/conventions/`.
+Unrelated templates beside the main source are ignored. An empty set is valid.
 
 The main template needs one H1 and one full-line insertion comment outside examples.
 Other headings, sections, and text are yours to customize:
@@ -92,7 +93,12 @@ keep the technical insertion and discovery markers. Upgrading the CLI does not r
 existing valid templates. To adopt new defaults, edit those templates deliberately,
 then run `sync` when generation is requested.
 
-Each convention template needs one H1 and one nonempty discovery card outside examples:
+Each convention template needs one H1 and one nonempty discovery card outside examples.
+Name the file after the H1's plain text. Apply Unicode NFKD, remove combining marks,
+lowercase ASCII letters, replace runs of non-ASCII-alphanumeric characters with a
+single hyphen, trim outer hyphens, and append `.tpl.md`. The result before the suffix
+must contain a letter or digit. For example, `# Aplicação web e componentes` uses
+`aplicacao-web-e-componentes.tpl.md`, and the template below uses `testing.tpl.md`.
 
 ~~~markdown
 # Testing
@@ -129,6 +135,15 @@ and remaining changes. Repeat `sync` to finish. Concurrent writes are unsupporte
 JSON results contain `schemaVersion`, `command`, `ok`, `changes`, and `diagnostics`.
 Exit codes: 0 success, 1 check drift, 2 usage/validation/conflict, 3 operational failure.
 
+## Upgrade convention filenames
+
+Init, validate, sync, and migration reject mismatched filenames before writing.
+For a fixed-layout client, rename each reported template to the expected filename
+in its existing directory and update authored links to the new template and generated
+paths. If the H1 has no usable filename, revise the heading first. Then run
+`agentscli validate` and `agentscli sync --dry-run` before `agentscli sync`.
+The sync removes stale generated convention files with the exact generated marker.
+
 ## Migrate an existing client
 
 Only explicit migration reads `agentscli-compose.yml`. Ordinary init, validate,
@@ -159,6 +174,10 @@ main source and every other `*.tpl.md`, retaining their full relative paths unde
 the new convention-source subtree; a legacy `conventions/rule.tpl.md` keeps that
 subdirectory. An empty convention set stays empty. Older composition schemas,
 unsafe roots, or roots overlapping `.agentscli/` are rejected.
+If migration reports a filename mismatch, rename the legacy template in its existing
+directory and update affected links to the template and its generated path. Refresh
+legacy generated documents with the previous compatible CLI before retrying the
+migration preview, preserving authored content in the templates.
 
 The preview includes source transfers, regenerated documents/notices, complete
 replacement of the three managed skill trees (including removal of extra files),

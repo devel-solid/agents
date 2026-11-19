@@ -9,7 +9,7 @@ import { GENERATED } from '../../dist/markdown.js';
 const bytes = (text) => new TextEncoder().encode(text);
 const main = '# Project\n\n<!-- agentscli:conventions -->\n';
 const convention =
-  '# Rules\n\n<!-- AGENT-CARD START -->\nRead for rules.\n<!-- AGENT-CARD END -->\n\nKeep this literal.\n';
+  '# Unit\n\n<!-- AGENT-CARD START -->\nRead for rules.\n<!-- AGENT-CARD END -->\n\nKeep this literal.\n';
 const skills = Object.fromEntries(
   [
     'agentscli-build-agents',
@@ -27,11 +27,15 @@ const resources = {
   templates: {
     en: {
       'AGENTS.tpl.md': bytes(main),
-      'conventions/project.tpl.md': bytes(convention),
+      'conventions/project-context.tpl.md': bytes(
+        convention.replace('# Unit', '# Project context'),
+      ),
     },
     'pt-br': {
       'AGENTS.tpl.md': bytes(main),
-      'conventions/project.tpl.md': bytes(convention),
+      'conventions/contexto-do-projeto.tpl.md': bytes(
+        convention.replace('# Unit', '# Contexto do projeto'),
+      ),
     },
   },
   skills,
@@ -124,6 +128,7 @@ function legacy({
         text,
       })),
     language,
+    { legacyLayout: true },
   );
   return memory({
     'agentscli-compose.yml': `language: ${language}\ntemplates_dir: ${templates}\nconventions_dir: ${outputs}\n`,
@@ -194,12 +199,13 @@ test('migration retains real URL suffixes when authored paths use numeric entiti
 });
 
 test('migration previews the same ordered transfers, full skills and bounded cleanup without writes', async () => {
+  const policy = convention.replace('# Unit', '# Policy details');
   for (const language of ['en', 'pt-br']) {
     const fs = legacy({
       language,
       templates: 'rules/sources',
       outputs: 'rules/final',
-      sources: { 'conventions/policy.details.tpl.md': convention },
+      sources: { 'conventions/policy-details.tpl.md': policy },
       extras: {
         'rules/sources/image.png': 'image',
         'rules/final/manual.md': 'Manual.',
@@ -213,7 +219,7 @@ test('migration previews the same ordered transfers, full skills and bounded cle
     const paths = preview.result.changes.map((change) => change.path);
     assert.ok(
       paths.includes(
-        '.agentscli/templates/conventions/conventions/policy.details.tpl.md',
+        '.agentscli/templates/conventions/conventions/policy-details.tpl.md',
       ),
     );
     assert.ok(paths.includes('.agents/skills/agentscli-build-agents/extra.md'));
@@ -227,14 +233,14 @@ test('migration previews the same ordered transfers, full skills and bounded cle
     assert.equal(fs.text('.agentscli/config.yml'), `language: ${language}\n`);
     assert.equal(
       fs.text(
-        '.agentscli/templates/conventions/conventions/policy.details.tpl.md',
+        '.agentscli/templates/conventions/conventions/policy-details.tpl.md',
       ),
-      convention,
+      policy,
     );
     assert.ok(
       fs
         .text('AGENTS.md')
-        .includes('.agentscli/conventions/conventions/policy.details.md'),
+        .includes('.agentscli/conventions/conventions/policy-details.md'),
     );
     for (const path of [
       'rules/sources/image.png',
@@ -251,6 +257,30 @@ test('migration previews the same ordered transfers, full skills and bounded cle
   }
 });
 
+test('migration rejects a noncanonical legacy source before preview or apply writes', async () => {
+  const relative = 'testing/policy.details.tpl.md';
+  const authored = convention.replace('# Unit', '# Policy details');
+  const fs = legacy({ sources: { [relative]: authored } });
+  const source = `templates/${relative}`;
+  const output = 'docs/conventions/testing/policy.details.md';
+  const originalIndex = fs.text('AGENTS.md');
+  const originalOutput = fs.text(output);
+  for (const dryRun of [true, false]) {
+    const { exitCode, result } = await invoke(fs, { dryRun });
+    assert.equal(exitCode, 2);
+    assert.deepEqual(result.changes, []);
+    assert.equal(result.diagnostics[0].code, 'SOURCE_FILENAME');
+    assert.equal(result.diagnostics[0].path, source);
+    assert.match(result.diagnostics[0].message, /policy-details\.tpl\.md/u);
+    assert.equal(fs.writes.length, 0);
+    assert.equal(fs.text(source), authored);
+    assert.equal(fs.text(output), originalOutput);
+    assert.equal(fs.text('AGENTS.md'), originalIndex);
+    assert.ok(exists(fs, 'agentscli-compose.yml'));
+    assert.ok(!exists(fs, '.agentscli/config.yml'));
+  }
+});
+
 test('migration accepts missing old outputs, empty conventions and preserves raw source newlines', async () => {
   const fs = legacy({ sources: {} });
   fs.nodes.delete(join(fs.root, 'AGENTS.md'));
@@ -260,10 +290,7 @@ test('migration accepts missing old outputs, empty conventions and preserves raw
     fs.text('.agentscli/templates/AGENTS.tpl.md'),
     main.replaceAll('\n', '\r\n'),
   );
-  assert.equal(
-    exists(fs, '.agentscli/templates/conventions/project.tpl.md'),
-    false,
-  );
+  assert.ok(!exists(fs, '.agentscli/templates/conventions'));
   const missing = legacy();
   missing.nodes.delete(join(missing.root, 'docs/conventions/testing/unit.md'));
   assertSuccess(await invoke(missing));
@@ -509,7 +536,10 @@ test('managed links are rebased in migrated source and generated output together
   const fs = legacy({
     templates: 'rules/authored',
     outputs: 'handbook',
-    sources: { 'unit.tpl.md': source, 'other.tpl.md': convention },
+    sources: {
+      'unit.tpl.md': source,
+      'other.tpl.md': convention.replace('# Unit', '# Other'),
+    },
     extras: { 'README.md': 'Readme.' },
   });
   assertSuccess(await invoke(fs));

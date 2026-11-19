@@ -1,8 +1,14 @@
 import type { Language } from './manifest.js';
-import { GENERATED, validateConvention, validateTemplate } from './markdown.js';
+import {
+  GENERATED,
+  validateConvention,
+  validateConventionFilename,
+  validateTemplate,
+} from './markdown.js';
 
 export interface ConventionInput {
   source: string;
+  authoredSource?: string;
   output: string;
   text: string;
 }
@@ -27,13 +33,16 @@ export function render(
   main: { source: string; text: string },
   conventions: ConventionInput[],
   language: Language,
+  { legacyLayout = false } = {},
 ): Map<string, string> {
   const template = validateTemplate(main.text, main.source),
     outputs = new Map<string, string>();
   const entries = conventions.map((input) => {
-    const parsed = validateConvention(input.text, input.source);
+    const authoredSource = input.authoredSource ?? input.source;
+    const parsed = validateConvention(input.text, authoredSource);
+    if (!legacyLayout) validateConventionFilename(parsed.title, authoredSource);
     outputs.set(input.output, notice(input.source, language) + parsed.body);
-    const title = parsed.title.replace(/[\\[\]]/gu, '\\$&');
+    const title = (parsed.title || 'Convention').replace(/[\\[\]]/gu, '\\$&');
     return `- [${title}](${link(input.output)})\n${parsed.card
       .split('\n')
       .map((line) => `  ${line}`)

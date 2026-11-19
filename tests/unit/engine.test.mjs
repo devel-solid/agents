@@ -35,15 +35,23 @@ const MANAGED_SKILLS = [
   'agentscli-update-agents',
   'agentscli-write-conventions',
 ];
+const contextBase = {
+  en: 'project-context',
+  'pt-br': 'contexto-do-projeto',
+};
 const resources = {
   templates: {
     en: {
       'AGENTS.tpl.md': bytes(main),
-      'conventions/project.tpl.md': bytes(convention('Project')),
+      [`conventions/${contextBase.en}.tpl.md`]: bytes(
+        convention('Project context'),
+      ),
     },
     'pt-br': {
       'AGENTS.tpl.md': bytes(main.replace('My project', 'Meu projeto')),
-      'conventions/project.tpl.md': bytes(convention('Projeto')),
+      [`conventions/${contextBase['pt-br']}.tpl.md`]: bytes(
+        convention('Contexto do projeto'),
+      ),
     },
   },
   skills: Object.fromEntries(
@@ -62,15 +70,17 @@ const documentResources = {
     ['en', 'pt-br'].map((locale) => [
       locale,
       Object.fromEntries(
-        ['AGENTS.tpl.md', 'conventions/project.tpl.md'].map((filename) => [
-          filename,
-          readFileSync(
-            new URL(
-              `../../assets/templates/${locale}/${filename}`,
-              import.meta.url,
+        ['AGENTS.tpl.md', `conventions/${contextBase[locale]}.tpl.md`].map(
+          (filename) => [
+            filename,
+            readFileSync(
+              new URL(
+                `../../assets/templates/${locale}/${filename}`,
+                import.meta.url,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     ]),
   ),
@@ -342,8 +352,8 @@ test('rendering preserves full authored body and produces localized LF notices, 
     },
     [
       {
-        source: '.agentscli/templates/conventions/nested/a b(.tpl.md',
-        output: '.agentscli/conventions/nested/a b(.md',
+        source: '.agentscli/templates/conventions/nested/a b(/rules.tpl.md',
+        output: '.agentscli/conventions/nested/a b(/rules.md',
         text: convention('Rules'),
       },
     ],
@@ -355,19 +365,19 @@ test('rendering preserves full authored body and produces localized LF notices, 
   );
   assert.match(
     output.get('AGENTS.md'),
-    /Before\.[\s\S]*\[Rules\]\(\.agentscli\/conventions\/nested\/a%20b%28.md\)[\s\S]*After\./u,
+    /Before\.[\s\S]*\[Rules\]\(\.agentscli\/conventions\/nested\/a%20b%28\/rules\.md\)[\s\S]*After\./u,
   );
   assert.match(
-    output.get('.agentscli/conventions/nested/a b(.md'),
+    output.get('.agentscli/conventions/nested/a b(/rules.md'),
     /Keep useful rules/u,
   );
   assert.ok(
     output
-      .get('.agentscli/conventions/nested/a b(.md')
-      .includes('.agentscli/templates/conventions/nested/a b(.tpl.md;'),
+      .get('.agentscli/conventions/nested/a b(/rules.md')
+      .includes('.agentscli/templates/conventions/nested/a b(/rules.tpl.md;'),
   );
   assert.doesNotMatch(
-    output.get('.agentscli/conventions/nested/a b(.md'),
+    output.get('.agentscli/conventions/nested/a b(/rules.md'),
     /AGENT-CARD/u,
   );
   assert.doesNotMatch(output.get('AGENTS.md'), /\r/u);
@@ -377,13 +387,14 @@ test('rendering preserves full authored body and produces localized LF notices, 
 });
 
 for (const [locale, copy] of Object.entries(defaultCopy)) {
+  const basename = contextBase[locale];
+  const filename = `${basename}.tpl.md`;
+  const source = `.agentscli/templates/conventions/${filename}`;
+  const destination = `.agentscli/conventions/${basename}.md`;
   test(`${locale} bundled defaults keep authoring hints in comments and render usable discovery`, () => {
     const defaults = documentResources.templates[locale];
     const mainText = decode(defaults['AGENTS.tpl.md'], 'AGENTS.tpl.md');
-    const contextText = decode(
-      defaults['conventions/project.tpl.md'],
-      'conventions/project.tpl.md',
-    );
+    const contextText = decode(defaults[`conventions/${filename}`], filename);
     assert.ok(mainText.startsWith('# AGENTS.md\n'));
     assert.deepEqual(values(mainText, 'heading'), [
       'AGENTS.md',
@@ -399,24 +410,21 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
       copy.contextHint,
     ]);
     validateTemplate(mainText, 'AGENTS.tpl.md');
-    assert.equal(
-      validateConvention(contextText, 'project.tpl.md').card,
-      copy.card,
-    );
+    assert.equal(validateConvention(contextText, source).card, copy.card);
 
     const output = render(
       { source: '.agentscli/templates/AGENTS.tpl.md', text: mainText },
       [
         {
-          source: '.agentscli/templates/conventions/project.tpl.md',
-          output: '.agentscli/conventions/project.md',
+          source,
+          output: destination,
           text: contextText,
         },
       ],
       locale,
     );
     const generatedMain = output.get('AGENTS.md');
-    const generatedContext = output.get('.agentscli/conventions/project.md');
+    const generatedContext = output.get(destination);
     assert.ok(
       generatedMain.startsWith(
         `${GENERATED}\n<!-- ${copy.notice} .agentscli/templates/AGENTS.tpl.md;`,
@@ -424,7 +432,7 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
     );
     assert.ok(
       generatedContext.startsWith(
-        `${GENERATED}\n<!-- ${copy.notice} .agentscli/templates/conventions/project.tpl.md;`,
+        `${GENERATED}\n<!-- ${copy.notice} ${source};`,
       ),
     );
     assert.deepEqual(values(generatedMain, 'heading'), [
@@ -433,7 +441,7 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
     ]);
     assert.ok(
       generatedMain.includes(
-        `- [${copy.contextTitle}](.agentscli/conventions/project.md)\n  ${copy.card}`,
+        `- [${copy.contextTitle}](${destination})\n  ${copy.card}`,
       ),
     );
     assert.ok(!generatedMain.includes(INSERTION));
@@ -457,7 +465,7 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
     }
   });
 
-  test(`${locale} real defaults initialize in memory without replacing older or customized sources`, async () => {
+  test(`${locale} real defaults initialize in memory without replacing valid customized sources`, async () => {
     const fs = memory();
     const run = (command) =>
       execute(
@@ -473,16 +481,16 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
         decode(content, name),
       );
     assert.ok(fs.text('AGENTS.md').includes(copy.mainHint));
-    assert.ok(
-      fs.text('.agentscli/conventions/project.md').includes(copy.contextHint),
-    );
+    assert.ok(fs.text(destination).includes(copy.contextHint));
     assert.equal(
       parseManifest(fs.text('.agentscli/config.yml')).language,
       locale,
     );
 
+    let previousSource = source;
     for (const authored of [
       {
+        basename: 'project-context',
         main:
           '# Project instructions\n\nCustomize this template with the project purpose.\n\n' +
           INSERTION +
@@ -495,6 +503,7 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
           '\n\nRecord actual project information here.\n',
       },
       {
+        basename: 'workspace-overview',
         main:
           '# Team handbook\n\n## Entry points\n\nUse the existing workspace.\n\n' +
           INSERTION +
@@ -507,11 +516,12 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
           '\n\nThis project processes local input files.\n',
       },
     ]) {
+      const authoredSource = `.agentscli/templates/conventions/${authored.basename}.tpl.md`;
+      const authoredOutput = `.agentscli/conventions/${authored.basename}.md`;
+      fs.nodes.delete(join(fs.root, previousSource));
       fs.put('.agentscli/templates/AGENTS.tpl.md', authored.main);
-      fs.put(
-        '.agentscli/templates/conventions/project.tpl.md',
-        authored.context,
-      );
+      fs.put(authoredSource, authored.context);
+      previousSource = authoredSource;
       const oldOutput = fs.text('AGENTS.md');
       assert.equal((await run('init')).exitCode, 0);
       assert.equal(fs.text('AGENTS.md'), oldOutput);
@@ -519,64 +529,56 @@ for (const [locale, copy] of Object.entries(defaultCopy)) {
         fs.text('.agentscli/templates/AGENTS.tpl.md'),
         authored.main,
       );
-      assert.equal(
-        fs.text('.agentscli/templates/conventions/project.tpl.md'),
-        authored.context,
-      );
+      assert.equal(fs.text(authoredSource), authored.context);
       assert.equal((await run('sync')).exitCode, 0);
       assert.equal(
         fs.text('.agentscli/templates/AGENTS.tpl.md'),
         authored.main,
       );
-      assert.equal(
-        fs.text('.agentscli/templates/conventions/project.tpl.md'),
-        authored.context,
-      );
+      assert.equal(fs.text(authoredSource), authored.context);
       const expected = render(
         { source: '.agentscli/templates/AGENTS.tpl.md', text: authored.main },
         [
           {
-            source: '.agentscli/templates/conventions/project.tpl.md',
-            output: '.agentscli/conventions/project.md',
+            source: authoredSource,
+            output: authoredOutput,
             text: authored.context,
           },
         ],
         locale,
       );
       assert.equal(fs.text('AGENTS.md'), expected.get('AGENTS.md'));
-      assert.equal(
-        fs.text('.agentscli/conventions/project.md'),
-        expected.get('.agentscli/conventions/project.md'),
-      );
+      assert.equal(fs.text(authoredOutput), expected.get(authoredOutput));
     }
   });
 }
 
-test('discovery automatically maps independent nested and dotted names and supports no conventions', () => {
+test('discovery maps independent canonical names and preserves nesting and display titles', async () => {
   const fs = client({
-    '.agentscli/templates/conventions/testing/unit.tpl.md': convention('Unit'),
-    '.agentscli/templates/conventions/policy.details.tpl.md':
-      convention('Policy'),
+    '.agentscli/templates/conventions/testing/api-e-validacao.tpl.md':
+      convention('**API** e validação'),
+    '.agentscli/templates/conventions/policy-details.tpl.md':
+      convention('Policy... Details!'),
     '.agentscli/templates/conventions/readme.md': 'ignored',
     '.agentscli/templates/ignored.tpl.md': '# Invalid unrelated source',
     '.agentscli/templates/other/ignored.tpl.md': '# Invalid unrelated source',
-    '.agentscli/templates/conventions/AGENTS.tpl.md':
-      convention('Nested AGENTS'),
+    '.agentscli/templates/conventions/agents.tpl.md': convention('AGENTS'),
   });
   const effects = plan(fs.io, fs.root, 'sync', resources);
   assert.ok(
     effects.find(
-      (item) => item.path === '.agentscli/conventions/testing/unit.md',
+      (item) =>
+        item.path === '.agentscli/conventions/testing/api-e-validacao.md',
     ),
   );
   assert.ok(
     effects.find(
-      (item) => item.path === '.agentscli/conventions/policy.details.md',
+      (item) => item.path === '.agentscli/conventions/policy-details.md',
     ),
   );
   assert.ok(!effects.find((item) => item.path.endsWith('AGENTS.md.md')));
   assert.ok(
-    effects.find((item) => item.path === '.agentscli/conventions/AGENTS.md'),
+    effects.find((item) => item.path === '.agentscli/conventions/agents.md'),
   );
   assert.ok(!effects.some((item) => item.path.includes('ignored')));
   assert.ok(
@@ -589,11 +591,66 @@ test('discovery automatically maps independent nested and dotted names and suppo
     0,
   );
   fs.put(
-    '.agentscli/templates/conventions/POLICY.details.tpl.md',
-    convention('Conflict'),
+    '.agentscli/templates/conventions/POLICY-DETAILS.tpl.md',
+    convention('Policy details'),
   );
-  assert.throws(() => plan(fs.io, fs.root, 'sync', resources));
+  assert.throws(() => plan(fs.io, fs.root, 'sync', resources), {
+    code: 'PATH_ALIAS',
+  });
   assert.equal(fs.writes.length, 0);
+  fs.nodes.delete(
+    join(fs.root, '.agentscli/templates/conventions/POLICY-DETAILS.tpl.md'),
+  );
+  assert.equal((await invoke(fs, 'sync')).exitCode, 0);
+  assert.ok(
+    fs
+      .text('AGENTS.md')
+      .includes(
+        '[API e validação](.agentscli/conventions/testing/api-e-validacao.md)',
+      ),
+  );
+});
+
+test('invalid convention basenames block all ordinary modes before writes', async () => {
+  for (const [filename, title, message] of [
+    [
+      'componentes.tpl.md',
+      'Aplicação web e componentes',
+      'Expected filename aplicacao-web-e-componentes.tpl.md',
+    ],
+    [
+      'policy.details.tpl.md',
+      'Policy... Details!',
+      'Expected filename policy-details.tpl.md',
+    ],
+    ['RULE.tpl.md', 'Rule', 'Expected filename rule.tpl.md'],
+    ['café.tpl.md', 'Café', 'Expected filename cafe.tpl.md'],
+    ['rule.tpl.md', '！？', 'cannot form a filename'],
+    ['rule.tpl.md', '', 'cannot form a filename'],
+  ]) {
+    const source = `.agentscli/templates/conventions/nested/${filename}`;
+    const authored = convention(title);
+    const output = GENERATED + '\nKeep old generated output until corrected.\n';
+    const fs = client({ [source]: authored, 'AGENTS.md': output });
+    for (const [command, options] of [
+      ['init', {}],
+      ['init', { dryRun: true }],
+      ['validate', {}],
+      ['sync', {}],
+      ['sync', { dryRun: true }],
+      ['sync', { check: true }],
+    ]) {
+      const { exitCode, result } = await invoke(fs, command, options);
+      assert.equal(exitCode, 2, source);
+      assert.deepEqual(result.changes, []);
+      assert.equal(result.diagnostics[0].code, 'SOURCE_FILENAME');
+      assert.equal(result.diagnostics[0].path, source);
+      assert.ok(result.diagnostics[0].message.includes(message));
+      assert.equal(fs.writes.length, 0);
+      assert.equal(fs.text(source), authored);
+      assert.equal(fs.text('AGENTS.md'), output);
+    }
+  }
 });
 
 test('explicit init language changes only preference and missing resources until sync', async () => {
@@ -607,11 +664,11 @@ test('explicit init language changes only preference and missing resources until
       0,
     );
     const mainBefore = fs.text('.agentscli/templates/AGENTS.tpl.md');
-    const conventionBefore = fs.text(
-      '.agentscli/templates/conventions/project.tpl.md',
-    );
+    const source = `.agentscli/templates/conventions/${contextBase[previous]}.tpl.md`;
+    const destination = `.agentscli/conventions/${contextBase[previous]}.md`;
+    const conventionBefore = fs.text(source);
     const rootBefore = fs.text('AGENTS.md');
-    const outputBefore = fs.text('.agentscli/conventions/project.md');
+    const outputBefore = fs.text(destination);
     fs.nodes.delete(
       join(fs.root, '.agents/skills/agentscli-build-agents/references/rule.md'),
     );
@@ -625,12 +682,9 @@ test('explicit init language changes only preference and missing resources until
       ].sort(),
     );
     assert.equal(fs.text('.agentscli/templates/AGENTS.tpl.md'), mainBefore);
-    assert.equal(
-      fs.text('.agentscli/templates/conventions/project.tpl.md'),
-      conventionBefore,
-    );
+    assert.equal(fs.text(source), conventionBefore);
     assert.equal(fs.text('AGENTS.md'), rootBefore);
-    assert.equal(fs.text('.agentscli/conventions/project.md'), outputBefore);
+    assert.equal(fs.text(destination), outputBefore);
     assert.equal(
       parseManifest(fs.text('.agentscli/config.yml')).language,
       selected,
@@ -654,7 +708,10 @@ test('explicit init language changes only preference and missing resources until
   );
   assert.equal(
     missingMain.nodes.has(
-      join(missingMain.root, '.agentscli/templates/conventions/project.tpl.md'),
+      join(
+        missingMain.root,
+        '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
+      ),
     ),
     false,
   );
@@ -701,7 +758,8 @@ test('init previews and creates missing setup without writes during preview', as
   assert.ok(
     preview.result.changes.some(
       (change) =>
-        change.path === '.agentscli/templates/conventions/project.tpl.md',
+        change.path ===
+        '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
     ),
   );
   const applied = await invoke(fs, 'init', { language: 'PT-BR' });
@@ -721,7 +779,7 @@ test('first init preserves unrelated template resources and invalid config block
   assert.equal((await invoke(fs, 'init')).exitCode, 0);
   assert.ok(
     fs.nodes.has(
-      join(fs.root, '.agentscli/templates/conventions/project.tpl.md'),
+      join(fs.root, '.agentscli/templates/conventions/project-context.tpl.md'),
     ),
   );
   assert.equal(fs.text('.agentscli/templates/unrelated.txt'), 'Keep');
@@ -759,7 +817,10 @@ test('repeated init preserves valid sources, regular skill edits, generated bodi
   );
   assert.equal(
     fs.nodes.has(
-      join(fs.root, '.agentscli/templates/conventions/project.tpl.md'),
+      join(
+        fs.root,
+        '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
+      ),
     ),
     false,
   );
@@ -950,9 +1011,8 @@ test('fixed outputs use configured notice language and preserve literal authored
   const fs = memory({
     '.agentscli/config.yml': 'language: pt-br\n',
     '.agentscli/templates/AGENTS.tpl.md': main,
-    '.agentscli/templates/conventions/nested/rule.tpl.md': convention(
-      'English authored title',
-    ),
+    '.agentscli/templates/conventions/nested/english-authored-title.tpl.md':
+      convention('English authored title'),
     'docs/conventions/previous.md': GENERATED + '\nPrevious output',
   });
   assert.equal((await invoke(fs, 'sync')).exitCode, 0);
@@ -960,10 +1020,10 @@ test('fixed outputs use configured notice language and preserve literal authored
   assert.match(fs.text('AGENTS.md'), /My project/u);
   assert.match(
     fs.text('AGENTS.md'),
-    /\.agentscli\/conventions\/nested\/rule.md/u,
+    /\.agentscli\/conventions\/nested\/english-authored-title\.md/u,
   );
   assert.match(
-    fs.text('.agentscli/conventions/nested/rule.md'),
+    fs.text('.agentscli/conventions/nested/english-authored-title.md'),
     /English authored title/u,
   );
   assert.match(fs.text('docs/conventions/previous.md'), /Previous output/u);
@@ -1033,8 +1093,9 @@ test('init retry at every file boundary converges to clean setup without resurre
     assert.equal(baseline.exitCode, 0);
     const plannedPaths = baseline.result.changes.map((change) => change.path);
     assert.ok(
-      plannedPaths.indexOf('.agentscli/templates/conventions/project.tpl.md') <
-        plannedPaths.indexOf('.agentscli/templates/AGENTS.tpl.md'),
+      plannedPaths.indexOf(
+        '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
+      ) < plannedPaths.indexOf('.agentscli/templates/AGENTS.tpl.md'),
     );
     assert.equal(plannedPaths.at(-1), '.agentscli/config.yml');
     for (let boundary = 1; boundary <= plannedPaths.length; boundary++) {
@@ -1068,7 +1129,7 @@ test('init retry at every file boundary converges to clean setup without resurre
       interrupted.nodes.delete(
         join(
           interrupted.root,
-          '.agentscli/templates/conventions/project.tpl.md',
+          '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
         ),
       );
       assert.equal(
@@ -1079,7 +1140,7 @@ test('init retry at every file boundary converges to clean setup without resurre
         interrupted.nodes.has(
           join(
             interrupted.root,
-            '.agentscli/templates/conventions/project.tpl.md',
+            '.agentscli/templates/conventions/contexto-do-projeto.tpl.md',
           ),
         ),
         false,

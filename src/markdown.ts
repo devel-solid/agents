@@ -74,9 +74,9 @@ function structure(input: string, path: string): Structure {
         .join('')
     );
   }
-  const title =
-    inlineText(headings[0]! as Parameters<typeof inlineText>[0]).trim() ||
-    'Convention';
+  const title = inlineText(
+    headings[0]! as Parameters<typeof inlineText>[0],
+  ).trim();
   function markers(marker: string): number[] {
     let offset = 0;
     const found: number[] = [];
@@ -107,6 +107,29 @@ export function validateTemplate(
       path,
     );
   return { text: parsed.text, insertion: found[0]! };
+}
+export function validateConventionFilename(title: string, path: string): void {
+  const basename = title
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[A-Z]/gu, (letter) => letter.toLowerCase())
+    .replace(/[^a-z0-9]+/gu, '-')
+    .replace(/^-|-$/gu, '');
+  if (!basename)
+    throw new EngineError(
+      'SOURCE_FILENAME',
+      `${path}: H1 ${JSON.stringify(title)} cannot form a filename. Use a title with letters or digits that normalize to ASCII.`,
+      2,
+      path,
+    );
+  const expected = `${basename}.tpl.md`;
+  if (path.slice(path.lastIndexOf('/') + 1) !== expected)
+    throw new EngineError(
+      'SOURCE_FILENAME',
+      `${path}: Expected filename ${expected} for H1 ${JSON.stringify(title)}.`,
+      2,
+      path,
+    );
 }
 export interface ParsedConvention {
   title: string;

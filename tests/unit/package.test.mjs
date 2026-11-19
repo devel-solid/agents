@@ -7,6 +7,16 @@ import {
   skillDirectories,
 } from '../../scripts/package-assets.mjs';
 
+const starterConventions = [
+  ['en', 'project-context', 'Project context', 'Replace this comment'],
+  [
+    'pt-br',
+    'contexto-do-projeto',
+    'Contexto do projeto',
+    'Substitua este comentário',
+  ],
+];
+
 function resourceIO(overrides = {}) {
   const root = resolve('unit-resources');
   const files = new Map();
@@ -34,13 +44,11 @@ function resourceIO(overrides = {}) {
     );
     add(`${path}/references/example.md`, 'Support content\n');
   }
-  for (const language of ['en', 'pt-br']) {
+  for (const [language, basename, title, hint] of starterConventions) {
     add(`assets/templates/${language}/AGENTS.tpl.md`, '# Project\n');
     add(
-      `assets/templates/${language}/conventions/project.tpl.md`,
-      language === 'pt-br'
-        ? '# Contexto\n\n<!-- AGENT-CARD START -->\nLeia antes de trabalhar.\n<!-- AGENT-CARD END -->\n\n<!-- Substitua este comentário pelo contexto do projeto. -->\n'
-        : '# Context\n\n<!-- AGENT-CARD START -->\nRead before working.\n<!-- AGENT-CARD END -->\n\n<!-- Replace this comment with project context. -->\n',
+      `assets/templates/${language}/conventions/${basename}.tpl.md`,
+      `# ${title}\n\n<!-- AGENT-CARD START -->\nRead before working.\n<!-- AGENT-CARD END -->\n\n<!-- ${hint}. -->\n`,
     );
   }
   const writes = [];
@@ -138,30 +146,29 @@ test('whole skill trees and both document locales map without duplicated sources
       'agentscli-write-conventions',
     ],
   );
-  for (const [language, title, hint] of [
-    ['en', '# Context', 'Replace this comment'],
-    ['pt-br', '# Contexto', 'Substitua este comentário'],
-  ]) {
+  for (const [language, basename, title, hint] of starterConventions) {
     const resource = resources.find(
       (item) =>
-        item.destination === `templates/${language}/conventions/project.tpl.md`,
+        item.destination ===
+        `templates/${language}/conventions/${basename}.tpl.md`,
     );
     assert.ok(resource);
-    assert.ok(resource.content.toString().startsWith(title));
+    assert.ok(resource.content.toString().startsWith(`# ${title}\n`));
     assert.ok(resource.content.toString().includes(hint));
     assert.equal(
       resource.content.toString(),
       io.readFileSync(
         resolve(
           root,
-          `assets/templates/${language}/conventions/project.tpl.md`,
+          `assets/templates/${language}/conventions/${basename}.tpl.md`,
         ),
         'utf8',
       ),
     );
     assert.ok(
       !resources.some(
-        (item) => item.destination === `templates/${language}/project.tpl.md`,
+        (item) =>
+          item.destination === `templates/${language}/${basename}.tpl.md`,
       ),
     );
   }

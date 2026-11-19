@@ -213,6 +213,8 @@ export function planMigration(
     .filter((source) => source !== main)
     .map((source) => ({
       source,
+      // The transfer preserves the basename. Point authors to the editable path.
+      authoredSource: cleaning ? source : toOldSource(source),
       output: toNewOutput(source),
       text: decode(transferred.get(source)!, source),
     }));
@@ -241,6 +243,7 @@ export function planMigration(
     },
     oldConventions,
     legacy.language,
+    { legacyLayout: true },
   );
   if (!original.has(oldMain) || oldSources.length !== inventory.length)
     oldDocuments.delete('AGENTS.md');

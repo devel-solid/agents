@@ -28,7 +28,8 @@ This workflow does not edit templates or configuration to repair validation erro
 
 ## Explain effects accurately
 
-- The main source is `.agentscli/templates/AGENTS.tpl.md`. Only `*.tpl.md` below `.agentscli/templates/conventions/` participate as conventions. Their paths relative to that subtree map into `.agentscli/conventions/`; nested and dotted names are independent and an empty set is valid. Other templates are ignored. Sync regenerates complete documents; customizations belong in templates.
+- The main source is `.agentscli/templates/AGENTS.tpl.md`. Only `*.tpl.md` below `.agentscli/templates/conventions/` participate as conventions. Their paths relative to that subtree map into `.agentscli/conventions/`. An empty set is valid. Other templates are ignored. Sync regenerates complete documents; customizations belong in templates.
+- The convention template filename must match the CLI's ASCII lowercase kebab-case form of its H1 plus `.tpl.md`. For example, `# Contexto do projeto` uses `contexto-do-projeto.tpl.md`. Validation blocks all writes on a mismatch and reports the expected filename when the title yields one.
 - Sync fully restores `agentscli-write-conventions`, `agentscli-update-agents`, and `agentscli-build-agents` under `.agents/skills`, including support files and removal of extra files inside those directories. Direct edits there are overwritten. Other skill directories are preserved.
 - Unmarked expected document destinations block preflight. Preserve useful handwritten content in its template and resolve the collision within the user's requested scope; do not delete the document blindly.
 - Stale generated Markdown is removed only under `.agentscli/conventions/` and must have exactly `<!-- agentscli:generated -->` as its first line. Previous roots and unrelated manual documents remain untouched by normal sync.
